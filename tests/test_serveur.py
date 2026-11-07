@@ -303,3 +303,43 @@ def test_travail_en_cours_traduit_et_videos_lues(tmp_path):
     assert evenements[-1]["type"] == "compteur" and evenements[-1]["donnees"]["videos_lues"] == 4
     fin = [e for e in evenements if e["type"] == "etape"][-1]["donnees"]
     assert fin["nom"] == "enquete" and fin["etat"] == "fin" and fin["cas"] == "reel"
+
+
+class _FauxComprendre:
+    """Remplace `enquete.comprendre` le temps d'un test (aucun appel à Claude)."""
+
+    @staticmethod
+    def variantes_locales(question):
+        return {"mots": [{"mot": "séisme", "variantes": ["seisme", "séismes"], "champs": ["transcript"]}]}
+
+    @staticmethod
+    def lire_graine(texte):
+        return {"plateforme": "tiktok", "pseudo": "the911onabc"} if "tiktok" in texte else None
+
+    @staticmethod
+    def comprendre(question, graine=None):
+        return {"reformulation": f"Lecture de : {question}", "mots": []}
+
+    @staticmethod
+    def resumer_piece(piece, question):
+        return f"Résumé de {piece['libelle']}"
+
+
+def test_comprendre_et_resume(serveur, monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules, "enquete.comprendre", _FauxComprendre)
+    rapide = get_json(serveur, "/api/comprendre?q=s%C3%A9isme&graine=" + TIKTOK)
+    assert rapide["locales"]["mots"][0]["mot"] == "séisme"
+    assert rapide["graine"]["plateforme"] == "tiktok" and "profond" not in rapide
+    profond = get_json(serveur, "/api/comprendre?q=s%C3%A9isme&profond=1")
+    assert profond["profond"]["reformulation"].startswith("Lecture de")
+    resume = get_json(serveur, "/api/resume?enquete=affaire&piece=v1")
+    assert resume == {"piece": "v1", "resume": "Résumé de Vidéo tiktok"}
+
+
+def test_comprendre_absent_renvoie_503(serveur, monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules, "enquete.comprendre", None)
+    with pytest.raises(urllib.error.HTTPError) as erreur:
+        get(serveur, "/api/comprendre?q=test")
+    assert erreur.value.code == 503

@@ -93,6 +93,29 @@ class ErreurHttp(Exception):
         self.message = message
 
 
+_RE_LIEN = re.compile(r"^https?://", re.IGNORECASE)
+
+
+def _module_comprendre() -> Any:
+    """Le module qui lit la question (variantes, graine, Claude) ; 503 tant qu'il n'est pas installé."""
+    try:
+        from enquete import comprendre
+    except ImportError:
+        raise ErreurHttp(503, "la compréhension de la question n'est pas installée (enquete.comprendre)") from None
+    return comprendre
+
+
+def _mots_locaux(question: str) -> list[str]:
+    """Les mots clés tirés de la question sans modèle, si le module de compréhension est là."""
+    try:
+        locales = _module_comprendre().variantes_locales(question)
+    except ErreurHttp:
+        return []
+    entrees = locales.get("mots", []) if isinstance(locales, dict) else locales
+    mots = [e.get("mot") if isinstance(e, dict) else e for e in entrees or []]
+    return [str(m).strip() for m in mots if m and str(m).strip()]
+
+
 # ---------------------------------------------------------------------------
 # Du journal aux événements du flux
 # ---------------------------------------------------------------------------
@@ -409,17 +432,20 @@ class Serveur:
                     })
         return resultat
 
-    def lancer(self, question: str, graine: Any = None) -> str:
+    def lancer(self, question: str, graine: Any = None, mots: Any = None) -> str:
         question = (question or "").strip()
         if not question:
             raise ErreurHttp(400, "« question » est obligatoire")
-        if isinstance(graine, str):
+        if isinstance(mots, list):
+            # Les mots validés à l'écran (ceux que la compréhension a proposés).
+            mots = [str(m).strip() for m in mots if str(m).strip()]
+        elif isinstance(graine, str) and not _RE_LIEN.match(graine.strip()):
             mots = [m.strip() for m in re.split(r"[,;]", graine) if m.strip()]
         elif isinstance(graine, list):
             mots = [str(m).strip() for m in graine if str(m).strip()]
         else:
             mots = []
-        mots = mots or [question]
+        mots = mots or _mots_locaux(question) or [question]
         identifiant = f"{_slug(question)}-{uuid.uuid4().hex[:6]}"
         dossier = self.racine / identifiant
         dossier.mkdir(parents=True, exist_ok=True)
@@ -439,6 +465,32 @@ class Serveur:
 
         threading.Thread(target=courir, name=f"enquete-{identifiant}", daemon=True).start()
         return identifiant
+
+    def comprendre(self, question: str, graine: str | None = None, profond: bool = False) -> dict[str, Any]:
+        """Ce que l'outil a compris de la frappe : variantes locales (instantanées), graine datée
+        par son identifiant, et, sur demande, la lecture de Claude (plusieurs secondes)."""
+        question = (question or "").strip()
+        if not question and not graine:
+            raise ErreurHttp(400, "« q » ou « graine » est obligatoire")
+        module = _module_comprendre()
+        reponse: dict[str, Any] = {"question": question}
+        if question:
+            reponse["locales"] = module.variantes_locales(question)
+        if graine:
+            reponse["graine"] = module.lire_graine(graine)
+        if profond and question:
+            reponse["profond"] = module.comprendre(question, graine=graine)
+        return reponse
+
+    def resumer(self, identifiant: str, piece_id: str) -> dict[str, Any]:
+        """Le résumé de 25 mots d'une pièce du dossier, écrit à partir de ses seuls champs."""
+        module = _module_comprendre()
+        export = self.exporter(identifiant)
+        for dossier in export["dossiers"]:
+            for piece in dossier["pieces"]:
+                if piece["id"] == piece_id:
+                    return {"piece": piece_id, "resume": module.resumer_piece(piece, export["question"])}
+        raise ErreurHttp(404, f"pièce inconnue : {piece_id}")
 
     def poser_question(self, identifiant: str, texte: str) -> str:
         texte = (texte or "").strip()
@@ -571,9 +623,16 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                     self._flux_direct(serveur.valider_id(params.get("enquete")), self._depuis(params))
                 elif route == ("GET", "/api/rejouer"):
                     self._flux_rejeu(serveur.valider_id(params.get("enquete")), params)
+                elif route == ("GET", "/api/comprendre"):
+                    self._json(200, serveur.comprendre(
+                        params.get("q", ""), params.get("graine"), params.get("profond") == "1"))
+                elif route == ("GET", "/api/resume"):
+                    identifiant = serveur.valider_id(params.get("enquete"))
+                    self._json(200, serveur.resumer(identifiant, params.get("piece", "")))
                 elif route == ("POST", "/api/enquetes"):
                     corps = self._corps()
-                    self._json(201, {"id": serveur.lancer(corps.get("question"), corps.get("graine"))})
+                    self._json(201, {"id": serveur.lancer(
+                        corps.get("question"), corps.get("graine"), corps.get("mots"))})
                 elif route == ("POST", "/api/questions"):
                     corps = self._corps()
                     identifiant = serveur.valider_id(corps.get("enquete"))
