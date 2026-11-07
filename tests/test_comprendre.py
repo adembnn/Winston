@@ -199,3 +199,142 @@ def test_verifier_resume_refuse_un_fait_absent_de_la_piece():
 def test_resume_repli_toujours_25_mots_au_plus():
     piece = dict(PIECE, libelle="mot " * 60)
     assert len(c.resumer_piece(piece, "q", executeur=lambda p, d: "") .split()) <= 25
+
+
+# --- résumé de l'enquête ------------------------------------------------------
+
+def _petit_export(tmp_path):
+    """Un petit réseau construit ici : 3 vidéos en 1 série, une société solide et un site, un
+    témoin, un expert, un mis en cause, une zone d'ombre."""
+    from datetime import datetime, timezone
+
+    from enquete.reseau import (FamilleLien, Lien, Noeud, Piste, Preuve, ReseauEnquete, Solidite,
+                                TypeNoeud)
+    t = datetime(2026, 11, 7, 10, 0, tzinfo=timezone.utc)
+    prv = lambda url, extrait, src="registre": Preuve(url, extrait, src, t)
+    with ReseauEnquete("Qui vend ces gélules ?", str(tmp_path / "reseau.sqlite")) as r:
+        for i in (1, 2, 3):
+            r.ajouter_noeud(Noeud(TypeNoeud.VIDEO, f"Vidéo TikTok de @compte{i}", Role.AMPLIFICATEUR, id=f"v{i}",
+                                  solidite=Solidite("E", 2)))
+        r.ajouter_noeud(Noeud(TypeNoeud.GRAPPE, "Série 1", Role.INCONNU, id="g1", attributs={"videos": 3},
+                              solidite=Solidite("C", 3)))
+        r.ajouter_noeud(Noeud(TypeNoeud.SITE, "gelules-direct.shop", Role.INFRASTRUCTURE, id="site",
+                              solidite=Solidite("B", 2)))
+        r.ajouter_noeud(Noeud(TypeNoeud.SOCIETE, "Dorvane SARL", Role.BENEFICIAIRE, id="soc",
+                              attributs={"creee_le": "2026-10-04"}, solidite=Solidite("A", 1)))
+        r.ajouter_noeud(Noeud(TypeNoeud.PERSONNE, "Camille Fontaine", Role.MIS_EN_CAUSE, id="pers",
+                              attributs={"fonction": "gérant déclaré"}, solidite=Solidite("A", 2)))
+        r.ajouter_noeud(Noeud(TypeNoeud.PERSONNE, "Hélène Marchetti", Role.TEMOIN, id="tem",
+                              solidite=Solidite("F", 6)))
+        r.ajouter_noeud(Noeud(TypeNoeud.VIDEO, "Dr Ruben Tessier, YouTube, à 2:10", Role.EXPERT, id="exp",
+                              attributs={"plateforme": "youtube"}, solidite=Solidite("E", 2)))
+        for i in (1, 2, 3):
+            r.ajouter_lien(Lien(type_lien="dit_phrase", famille=FamilleLien.CONTENU_DIT, source_id=f"v{i}",
+                                cible_id="g1", preuves=(prv(f"https://t.exemple/{i}", "Un clic", "Oriane"),),
+                                explication="Répète la phrase.", methode="phrase", agent="test"))
+        r.ajouter_lien(Lien(type_lien="renvoie_vers", famille=FamilleLien.INFRASTRUCTURE, source_id="v1",
+                            cible_id="site", preuves=(prv("https://t.exemple/1", "lien en bio", "Oriane"),),
+                            explication="Le lien en bio mène à la boutique.", methode="url", agent="test"))
+        r.ajouter_lien(Lien(type_lien="encaisse_pour", famille=FamilleLien.ARGENT, source_id="site",
+                            cible_id="soc", preuves=(prv("https://registre.exemple/d", "Mentions : Dorvane"),),
+                            explication="Les mentions légales citent Dorvane SARL.", methode="mentions",
+                            agent="test"))
+        r.poser_zone("Qui a écrit le premier message ?", "hors de portée", ["Recherche sur 3 plateformes"],
+                     [Piste("Interroger l'archive du web", "archive.org", "Chercher la boutique", "facile")],
+                     role_manquant=Role.ORIGINE)
+        export = r.exporter_pour_interface()
+    export["videos_lues"] = 90
+    return export
+
+
+def test_chiffres_sont_des_mesures_et_sources_independantes_est_null(tmp_path):
+    ch = c.mesurer_chiffres(_petit_export(tmp_path))
+    assert ch == {"videos": 90, "repetent": 3, "series": 1, "sources_independantes": None}
+
+
+def test_resume_par_code_sur_un_petit_reseau(tmp_path):
+    export = _petit_export(tmp_path)
+    r = c.resume_enquete(export, profond=False)
+    assert r["source"] == "code"
+    assert r["ombre"] == [z["id"] for z in export["zones_d_ombre"]]
+    ids = {p["id"] for d in export["dossiers"] for p in d["pieces"]}
+    cites = ([e["piece_id"] for e in r["etabli"]] + [e["piece_id"] for e in r["chronologie"]]
+             + [q["piece_id"] for q in r["qui_appeler"]])
+    assert cites and set(cites) <= ids
+    assert {e["piece_id"] for e in r["etabli"]} == {"site", "soc", "pers"}
+    assert r["certitude"] == "probable"
+    assert r["prochaines_etapes"] == ["Interroger l'archive du web", "Envoyer la sollicitation au mis en cause"]
+    # témoins d'abord, mis en cause en dernier ; personne nommée nulle part
+    assert [q["piece_id"] for q in r["qui_appeler"]] == ["tem", "exp", "pers"]
+    texte = json.dumps(r, ensure_ascii=False)
+    for nom in ("Fontaine", "Marchetti", "Tessier", "Camille", "Hélène"):
+        assert nom not in texte
+    assert {"role": "mis_en_cause", "nom_ou_type": "gérant déclaré"} in r["acteurs"]
+    assert {"role": "beneficiaire", "nom_ou_type": "Dorvane SARL"} in r["acteurs"]
+    assert [l["date"] for l in r["chronologie"]] == ["2026-10-04"]
+
+
+def test_certitude_non_etabli_possible_probable():
+    def export(*pieces):
+        return {"dossiers": [{"pieces": list(pieces)}]}
+
+    piece = lambda role, matiere: {"id": role + matiere, "type": "site", "libelle": "s", "role": role,
+                                   "solidite": {"matiere": matiere}}
+    assert c._certitude(export()) == "non établi"
+    assert c._certitude(export(piece("infrastructure", "indice"))) == "possible"
+    assert c._certitude(export(piece("infrastructure", "solide"))) == "possible"
+    assert c._certitude(export(piece("beneficiaire", "solide"))) == "probable"
+    assert c._certitude(export(piece("mis_en_cause", "solide"))) == "probable"
+
+
+def _phrases_valides():
+    return {"en_bref": [
+        {"texte": "90 vidéos lues, dont 3 répètent la même phrase en 1 séries distinctes.", "pieces": ["g1"]},
+        {"texte": "Selon le registre, Dorvane SARL est liée à la boutique.", "pieces": ["soc", "site"]}],
+        "mecanisme": [{"texte": "Des vidéos mènent à une boutique rattachée à une société.",
+                       "pieces": ["v1", "site"]}]}
+
+
+def test_claude_valide_est_garde_et_le_cache_evite_un_second_appel(tmp_path, monkeypatch):
+    monkeypatch.setenv("ENQUETE_CACHE", str(tmp_path / "cache"))
+    export = _petit_export(tmp_path)
+    appels = []
+
+    def faux(prompt, delai):
+        appels.append(prompt)
+        return json.dumps(_phrases_valides())
+
+    r1 = c.rediger_resume(export, executeur=faux)
+    assert r1["source"] == "claude" and r1["en_bref"].startswith("90 vidéos lues")
+    assert "Fontaine" not in appels[0] and "Marchetti" not in appels[0] and "Tessier" not in appels[0]
+    r2 = c.rediger_resume(export, executeur=faux)
+    assert r2 == r1 and len(appels) == 1
+
+
+@pytest.mark.parametrize("modif", [
+    lambda p: p["en_bref"][0].update(pieces=["inconnu"]),            # piece_id inconnu
+    lambda p: p["en_bref"][0].update(pieces=[]),                     # aucune citation
+    lambda p: p["en_bref"][0].update(texte="214 vidéos lues, 3 répètent."),    # nombre inventé
+    lambda p: p["en_bref"][0].update(texte="Quarante vidéos se répètent."),  # nombre en lettres inventé
+    lambda p: p["mecanisme"][0].update(texte="Une arnaque bien rodée."),        # mot interdit
+    lambda p: p["en_bref"][0].update(texte="Camille Fontaine dirige la société."),  # personne nommée
+    lambda p: p["en_bref"][0].update(texte="5 sources indépendantes le disent."),
+    lambda p: p.update(en_bref=p["en_bref"][:1]),                    # une seule phrase
+])
+def test_reponse_rejetee_repli_par_code(tmp_path, monkeypatch, modif):
+    monkeypatch.setenv("ENQUETE_CACHE", str(tmp_path / "cache"))
+    export = _petit_export(tmp_path)
+    mauvais = _phrases_valides()
+    modif(mauvais)
+    r = c.rediger_resume(export, executeur=lambda p, d: json.dumps(mauvais))
+    assert r["source"] == "code"
+    assert not list((tmp_path / "cache").glob("resume-*.json")), "une réponse rejetée n'entre pas au cache"
+
+
+def test_claude_muet_repli_par_code(tmp_path, monkeypatch):
+    monkeypatch.setenv("ENQUETE_CACHE", str(tmp_path / "cache"))
+
+    def casse(prompt, delai):
+        raise c.ErreurClaude("pas de réponse")
+
+    assert c.rediger_resume(_petit_export(tmp_path), executeur=casse)["source"] == "code"

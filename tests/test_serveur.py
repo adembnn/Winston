@@ -334,8 +334,65 @@ def test_comprendre_et_resume(serveur, monkeypatch):
     assert rapide["graine"]["plateforme"] == "tiktok" and "profond" not in rapide
     profond = get_json(serveur, "/api/comprendre?q=s%C3%A9isme&profond=1")
     assert profond["profond"]["reformulation"].startswith("Lecture de")
-    resume = get_json(serveur, "/api/resume?enquete=affaire&piece=v1")
+    resume = get_json(serveur, "/api/resume_piece?enquete=affaire&piece=v1")
     assert resume == {"piece": "v1", "resume": "Résumé de Vidéo tiktok"}
+
+
+def test_resume_enquete_route_petit_reseau(serveur, monkeypatch, tmp_path):
+    """profond=0 : version par code, sans Claude ; sans profond : Claude (faux exécuteur) puis repli."""
+    import json as _json
+
+    from enquete import comprendre as c
+    monkeypatch.setenv("ENQUETE_CACHE", str(tmp_path / "cache"))
+    r = get_json(serveur, "/api/resume?enquete=affaire&profond=0")["resume"]
+    assert r["source"] == "code"
+    assert r["chiffres"] == {"videos": 0, "repetent": 0, "series": 0, "sources_independantes": None}
+    assert set(r) == {"en_bref", "etabli", "mecanisme", "acteurs", "chronologie", "chiffres", "ombre",
+                      "prochaines_etapes", "qui_appeler", "certitude", "source"}
+    assert r["certitude"] == "non établi" and r["ombre"] == []
+    # le faux Claude répond bien : source claude ; un exécuteur muet : repli par code
+    bon = {"en_bref": [{"texte": "Le dossier ne compte aucune pièce solide.", "pieces": ["v1"]},
+                       {"texte": "Tout reste à recouper.", "pieces": ["c1"]}],
+           "mecanisme": [{"texte": "Le mécanisme n'est pas établi.", "pieces": ["v1"]}]}
+    monkeypatch.setattr(c, "executeur_claude", lambda modele="sonnet": (lambda p, d: _json.dumps(bon)))
+    assert get_json(serveur, "/api/resume?enquete=affaire")["resume"]["source"] == "claude"
+    monkeypatch.setenv("ENQUETE_CACHE", str(tmp_path / "autre-cache"))
+
+    def muet(p, d):
+        raise c.ErreurClaude("muet")
+
+    monkeypatch.setattr(c, "executeur_claude", lambda modele="sonnet": muet)
+    assert get_json(serveur, "/api/resume?enquete=affaire")["resume"]["source"] == "code"
+    with pytest.raises(urllib.error.HTTPError) as erreur:
+        get(serveur, "/api/resume?enquete=inconnue&profond=0")
+    assert erreur.value.code == 404
+
+
+def test_resume_du_cas_fictif(tmp_path, monkeypatch):
+    """Le cas fictif des stylos : variable ENQUETE_CAS_FICTIF = chemin de son reseau.sqlite."""
+    import os
+    import shutil
+    source = os.environ.get("ENQUETE_CAS_FICTIF")
+    if not source or not Path(source).is_file():
+        pytest.skip("ENQUETE_CAS_FICTIF absent : cas fictif non fourni")
+    (tmp_path / "stylos").mkdir()
+    shutil.copy(source, tmp_path / "stylos" / "reseau.sqlite")
+    with Serveur(tmp_path, port=0) as s:
+        r = get_json(s, "/api/resume?enquete=stylos&profond=0")["resume"]
+        export = get_json(s, "/api/export?enquete=stylos")
+    assert r["chiffres"] == {"videos": 214, "repetent": 47, "series": 6, "sources_independantes": None}
+    assert r["ombre"] == [z["id"] for z in export["zones_d_ombre"]]
+    assert sorted(r["ombre"]) == ["z-malades", "z-orvane", "z-telegram"]
+    ids = {p["id"] for d in export["dossiers"] for p in d["pieces"]}
+    cites = ([e["piece_id"] for e in r["etabli"]] + [e["piece_id"] for e in r["chronologie"]]
+             + [q["piece_id"] for q in r["qui_appeler"]])
+    assert cites and set(cites) <= ids
+    texte = __import__("json").dumps(r, ensure_ascii=False)
+    for personne in [p for d in export["dossiers"] for p in d["pieces"] if p["type"] == "personne"]:
+        assert personne["libelle"] not in texte
+    assert "Vasseur" not in texte and "Roussel" not in texte
+    assert r["certitude"] in ("non établi", "possible", "probable")
+    assert r["source"] == "code" and r["prochaines_etapes"][-1] == "Envoyer la sollicitation au mis en cause"
 
 
 def test_comprendre_absent_renvoie_503(serveur, monkeypatch):
