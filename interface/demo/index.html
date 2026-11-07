@@ -98,42 +98,44 @@ function imageDe(p) {
   const k = Array.isArray(a.images_cles) ? (a.images_cles.find(x => x && /^https?:/.test(x.url)) || {}).url : null;
   return [im, a.image, k].find(u => typeof u === 'string' && /^https?:/.test(u)) || null;
 }
+// Un vrai cas : les écrans ne montrent que des images de l'enquête (images clés des vidéos, vignettes des posts,
+// captures des pages sources), jamais des phrases. Les vidéos passent d'abord ; sans aucune image, l'écran reste éteint.
+let VIGN = {};
 function ecranReel(pieces) {
-  const videos = pieces.filter(p => p.type === 'video');
-  const liste = videos.length ? videos : pieces;
+  const img = p => imageDe(p) || VIGN[p.id] || null;
+  const avec = pieces.filter(p => img(p));
+  const liste = avec.filter(p => p.type === 'video').concat(avec.filter(p => p.type !== 'video')).map(img);
   petits.forEach(([x,y,w,h], i) => {
     const e = document.createElement('div'); e.className = 'ecran lecteur';
     Object.assign(e.style, { left:x+'px', top:y+'px', width:w+'px', height:h+'px' });
     salle.append(e);
-    if (!liste.length) return;                       // écran neutre, éteint
-    let k = i % liste.length;
-    const montre = () => {
-      const p = liste[k = (k + petits.length) % liste.length], a = p.attributs || {}, img = imageDe(p);
-      const legende = ((p.preuves && p.preuves[0] && p.preuves[0].extrait) || p.libelle || '').replace(/\s+/g, ' ').slice(0, 70);
-      const f = Math.max(8, Math.round(Math.min(w, h * 1.4) / 12));
-      e.innerHTML = (img ? `<img class="vu" src="${img}" alt="" referrerpolicy="no-referrer">` : '')
-        + `<div class="lt" style="font-size:${f}px">${(p.libelle || 'Vidéo').replace(/\s*\(.*\)$/, '')}</div>`
-        + `<div class="ll" style="font-size:${f}px">${legende}${legende.length >= 70 ? '…' : ''}</div><div class="lb"><i></i></div>`;
-    };
-    montre(); setInterval(montre, 5200 + (i * 733) % 2600);
+    if (!liste.length) return;
+    const a = new Image(), b = new Image(); [a, b].forEach(im => { im.referrerPolicy = 'no-referrer'; im.alt = ''; e.append(im); });
+    let k = i % liste.length, cur = a;
+    const suivant = () => { const nxt = cur === a ? b : a;
+      nxt.onload = () => { nxt.classList.remove('vu'); void nxt.offsetWidth; nxt.classList.add('vu'); cur.classList.remove('vu'); cur = nxt; };
+      nxt.onerror = () => { k = (k + 1) % liste.length; };
+      nxt.src = liste[k = (k + petits.length) % liste.length]; };
+    suivant(); setInterval(suivant, 3200 + (i * 677) % 2600);
   });
 }
 if (VRAI_CAS) {
   // la ligne et les écrans lisent les mêmes compteurs que le réseau, et se mettent à jour pendant une enquête en direct
   const BASE_E = Q0.get('base') || 'http://127.0.0.1:8802', SOURCES = ['video', 'publication_texte', 'document', 'site', 'societe', 'personne'];
-  const FAM = [['video', 'vidéos'], ['publication_texte', 'articles'], ['document', 'documents'], ['site', 'sites'], ['societe', 'registres et sociétés'], ['personne', 'personnes']];
-  const SING = { 'vidéos': 'vidéo', 'articles': 'article', 'documents': 'document', 'sites': 'site', 'registres et sociétés': 'société ou registre', 'personnes': 'personne' };
+  // mêmes familles que la ligne du réseau (reseau.js) : vidéos, articles et documents, sites, registres et sociétés
+  const FAM = [[['video'], 'vidéos', 'vidéo'], [['publication_texte', 'document'], 'articles et documents', 'article ou document'], [['site'], 'sites', 'site'], [['societe'], 'registres et sociétés', 'société ou registre']];
   let vus = -1;
   const lire = () => fetch(BASE_E + '/api/export?enquete=' + encodeURIComponent(ENQ)).then(r => r.json()).then(d => {
     const ps = (d.dossiers || []).flatMap(x => x.pieces || []);
     if (ps.length !== vus) { vus = ps.length; salle.querySelectorAll('.ecran.lecteur').forEach(e => e.remove()); ecranReel(ps); }
     const par = {}; ps.forEach(x => { par[x.type] = (par[x.type] || 0) + 1; });
     const vl = (d.compteurs && d.compteurs.videos_lues) || 0; if (vl > (par.video || 0)) par.video = vl;
-    const tot = SOURCES.reduce((t, k) => t + (par[k] || 0), 0);
+    const nb = ks => ks.reduce((t, k) => t + (par[k] || 0), 0), tot = FAM.reduce((t, [ks]) => t + nb(ks), 0);
     const l = document.getElementById('ligne');
-    if (l) { l.hidden = !tot; l.textContent = tot + ' sources lues : ' + FAM.filter(([k]) => par[k]).map(([k, m]) => par[k] + ' ' + (par[k] > 1 ? m : SING[m])).join(', '); }
+    if (l) { l.hidden = !tot; l.textContent = tot + ' sources lues : ' + FAM.filter(([ks]) => nb(ks)).map(([ks, pl, sg]) => nb(ks) + ' ' + (nb(ks) > 1 ? pl : sg)).join(', '); }
   }).catch(() => { if (vus < 0) { vus = 0; ecranReel([]); } const l = document.getElementById('ligne'); if (l) l.hidden = true; });
-  lire(); if (Q0.get('mode') === 'direct') setInterval(lire, 4000);
+  fetch('vignettes-' + encodeURIComponent(ENQ) + '.json').then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    .then(v => { VIGN = v || {}; lire(); if (Q0.get('mode') === 'direct') setInterval(lire, 4000); });
 } else {
   fetch('fonds/frames.json').then(r => r.json()).then(ecranFictif);
 }

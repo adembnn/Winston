@@ -44,7 +44,17 @@ let jauneRole = null;    // rôle arrivé il y a moins de 600 ms
 let questionTapee = P.get("q") || P.get("question") || "";
 
 let VIGN = {};   // vignettes-<enquete>.json : piece_id -> URL de la vraie image
+// Une image n'illustre une pièce que si elle est la pièce elle-même (capture, miniature, aperçu de la source) :
+// jamais un article de presse (photo d'illustration), jamais une affirmation, une personne seulement si son profil public est vérifié.
+function imageOK(p) {
+  if (p.type === "publication_texte" || p.type === "affirmation") return false;
+  if (p.type === "personne") return !!(p.attributs && p.attributs.profil_public_verifie === true);
+  return true;
+}
 function imageDe(p) {
+  // capture locale de la page source (captures/<piece_id>.jpg) : toujours permise, c'est la pièce elle-même
+  if (typeof VIGN[p.id] === "string" && /^captures\//.test(VIGN[p.id])) return VIGN[p.id];
+  if (!imageOK(p)) return "";
   const a = p.attributs || {};
   return p.image || a.image || (Array.isArray(a.images_cles) && a.images_cles[0] && a.images_cles[0].url) || VIGN[p.id] || "";
 }
@@ -205,6 +215,37 @@ function rendre() {
   if (STATIQUE && VERIF && !document.body.classList.contains("fige")) verifier();
 }
 
+const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const NOMS = { tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", x: "X", twitter: "X", facebook: "Facebook",
+  reddit: "Reddit", telegram: "Telegram", bluesky: "Bluesky" };
+const HOTES = [["tiktok.", "TikTok"], ["instagram.", "Instagram"], ["youtube.", "YouTube"], ["youtu.be", "YouTube"], ["twitter.", "X"], ["x.com", "X"]];
+const maj1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+function dateDe(p) {
+  const a = p.attributs || {};
+  for (const k of ["date", "publiee", "publiee_le_selon_oriane", "mise_en_ligne", "premier_vu", "premiere_date", "creee_le", "indexe_depuis"]) {
+    const m = typeof a[k] === "string" && /^(\d{4})-(\d{2})-(\d{2})/.exec(a[k]);
+    if (m) return Number(m[3]) + " " + MOIS[Number(m[2]) - 1] + " " + m[1];
+  }
+  return "";
+}
+function sourceDe(p) {
+  const a = p.attributs || {};
+  const pf = typeof a.plateforme === "string" ? a.plateforme.toLowerCase() : "";
+  if (NOMS[pf]) return NOMS[pf];
+  const url = a.url || (p.preuves && p.preuves[0] && p.preuves[0].url) || "";
+  if (/^https?:\/\//.test(url)) {
+    try {
+      const h = new URL(url).hostname.replace(/^www\./, "");
+      const k = HOTES.find(([x]) => h.includes(x));
+      return k ? k[1] : h;
+    } catch (_) { /* adresse illisible */ }
+  }
+  return pf ? maj1(pf) : (TYPE_LIBELLE[p.type] || p.type || "");
+}
+function meilleure(r) {
+  return [...piecesDe(r)].sort((x, y) => rang(x) - rang(y) || ((y.preuves && y.preuves.length ? 1 : 0) - (x.preuves && x.preuves.length ? 1 : 0)))[0];
+}
+
 function imgHtml(cands, type) {
   if (!cands.length) return picto(type);
   return `<img src="${esc(cands[0])}" referrerpolicy="no-referrer" alt="" data-c="${esc(JSON.stringify(cands))}" data-i="0" data-t="${esc(type)}">`;
@@ -226,6 +267,25 @@ function carte(e, label, n, cands, type, f20, sh, faibleCadre, avecCompteur) {
   e.style.fontSize = f20 + "px";
   e.firstChild.nextSibling.style.height = sh + "px";
   e.classList.toggle("faible", !!faibleCadre);
+}
+
+function carteRole(e, r, n, cands, type, f20, sh, h) {
+  if (cands.length) { e.classList.remove("texte"); carte(e, LIBELLE[r], n, cands, type, f20, sh, false, true); return; }
+  const p = meilleure(r);
+  const src = sourceDe(p), date = dateDe(p) || TYPE_LIBELLE[p.type] || "";
+  const sig = ["T", LIBELLE[r], n, src, date, p.type].join("|");
+  if (e.__sig !== sig) {
+    e.__sig = sig;
+    e.innerHTML = `<div class="tx"><div class="pc">${picto(p.type)}</div><div class="tn">${esc(src)}</div><div class="td">${esc(date)}</div></div>` +
+      `<div class="etiq"><span class="nom">${esc(LIBELLE[r])}</span><b class="cpt">${n}</b></div>`;
+  }
+  e.classList.add("texte"); e.classList.remove("faible");
+  e.style.fontSize = f20 + "px";
+  e.lastChild.style.height = sh + "px";
+  const place = h - 4 - sh - 20 * K;
+  const f24 = Math.round(24 * K);
+  e.querySelector(".tn").style.webkitLineClamp = place > 2.4 * f24 * 1.1 ? "2" : "1";
+  e.querySelector(".pc").style.display = place > 3.4 * f24 * 1.1 ? "block" : "none";
 }
 
 // Une grande question : sa première proposition, jusqu'à la première parenthèse, terminée par « ? »
@@ -283,7 +343,8 @@ function route(c0, b0, c1, b1, obst) {
 
 function niveau1(m, aTop, aBot, f20) {
   const pleins = ROLES.filter((r) => r !== "inconnu" && piecesDe(r).length > 0);
-  const prim = [...pleins].sort((a, b) => piecesDe(b).length - piecesDe(a).length || ROLES.indexOf(a) - ROLES.indexOf(b)).slice(0, 6);
+  const fixes = ["origine", "mis_en_cause"].filter((r) => pleins.includes(r));
+  const prim = [...fixes, ...pleins.filter((r) => !fixes.includes(r)).sort((a, b) => piecesDe(b).length - piecesDe(a).length || ROLES.indexOf(a) - ROLES.indexOf(b)).slice(0, 6 - fixes.length)];
   const primOrdre = ROLES.filter((r) => prim.includes(r));
   const autres = pleins.filter((r) => !prim.includes(r));
   const vides = (STATIQUE || M.termine) ? ROLES.filter((r) => r !== "inconnu" && !piecesDe(r).length) : [];
@@ -322,7 +383,7 @@ function niveau1(m, aTop, aBot, f20) {
   const obst = [];
   primOrdre.forEach((r, i) => {
     const gauche = i < nL, idx = gauche ? i : i - nL, n = gauche ? nL : nR;
-    const t = 0.72 + 0.28 * Math.sqrt(piecesDe(r).length / nmax);
+    const t = 0.58 + 0.42 * Math.sqrt(piecesDe(r).length / nmax);
     const w = Math.round(cw * t), h = Math.round(cell * t);
     const cyc = aTop + (aH - colH(n)) / 2 + idx * (cell + g) + cell / 2;
     slots.push({ r, w, h, x: gauche ? m + cw - w : W - m - cw, y: cyc - h / 2, cy: cyc, gauche });
@@ -333,7 +394,7 @@ function niveau1(m, aTop, aBot, f20) {
     const n = piecesDe(s.r).length;
     const lignes = LIBELLE[s.r].length * f20 * 0.5 + 56 > s.w - 16 ? 2 : 1;
     const sh = Math.round(lignes * f20 * 1.1 + 12);
-    carte(e, LIBELLE[s.r], n, choisis[s.r], typeDominant(s.r), f20, sh, false, true);
+    carteRole(e, s.r, n, choisis[s.r], typeDominant(s.r), f20, sh, s.h);
     e.querySelector(".nom").style.webkitLineClamp = String(lignes);
     e.classList.toggle("jaune", jauneRole === s.r);
     pose(e, s.x, s.y, s.w, s.h);
@@ -543,11 +604,26 @@ function mots(p) {
   return [maj(t[0] || "Non évaluée"), maj(t[1] || "Non évaluée")];
 }
 
+function cartePiece(e, p, img, f24) {
+  const src = sourceDe(p), date = dateDe(p) || TYPE_LIBELLE[p.type] || "";
+  const sig = ["PP", p.id, img, src, date].join("|");
+  if (e.__sig !== sig) {
+    e.__sig = sig;
+    e.innerHTML = img
+      ? `<div class="img">${imgHtml([img], p.type)}</div><div class="etiq"><span class="nom"><b>${esc(src)}</b><br>${esc(date)}</span></div>`
+      : `<div class="tx"><div class="pc">${picto(p.type)}</div><div class="tn">${esc(src)}</div><div class="td">${esc(date)}</div></div>`;
+  }
+  e.classList.toggle("texte", !img);
+  e.classList.remove("faible");
+  e.style.fontSize = f24 + "px";
+  if (img) { const t = e.querySelector(".etiq"); t.style.height = Math.round(2 * f24 * 1.15 + 12) + "px"; e.querySelector(".nom").style.webkitLineClamp = "2"; }
+}
+
 function niveau2(m, aTop, aBot, f20, lh) {
   $traits.innerHTML = ""; $traits.__tr = "";
   const r = niveau;
   const toutes = [...piecesDe(r)].sort((a, b) => rang(a) - rang(b));
-  const vis = toutes.slice(0, 8);
+  const vis = toutes.slice(0, 6);
   const reste = toutes.length - vis.length;
   if (!vis.find((p) => p.id === selId)) selId = vis[0] ? vis[0].id : null;
   const sel = vis.find((p) => p.id === selId);
@@ -556,6 +632,7 @@ function niveau2(m, aTop, aBot, f20, lh) {
   const gut = Math.max(40, Math.round(W * 0.035));
   const Wm = panX - gut - m;
   const g = Math.round(20 * K);
+  const f24 = Math.round(24 * K);
 
   // en-tête
   const rt = nd("retour", "retour");
@@ -571,24 +648,37 @@ function niveau2(m, aTop, aBot, f20, lh) {
   pose(t2, m, ty, tf.w, tf.h);
   const hdrBottom = ty + tf.h;
 
-  // bande de repli pour l'infobulle, en bas de la zone principale
   const bandH = Math.round(3 * f20 * 1.2 + 16 * K + 4);
   bande = { x: m, y: aBot - bandH, w: Wm, h: bandH };
-  const sh = Math.round(2 * f20 * 1.1 + 16);
   const plusH = reste > 0 ? Math.round(f20 * 1.2 + 10) : 0;
+
+  // mis en cause : le droit de réponse, une ligne
+  let repH = 0;
+  if (r === "mis_en_cause" && vis.length) {
+    const e = nd("reponse", "reponse");
+    e.style.fontSize = Math.round(28 * K) + "px";
+    e.style.width = Wm + "px"; e.style.height = "auto";
+    html(e, "Demander une réponse à " + esc(vis[0].libelle || vis[0].id));
+    repH = e.offsetHeight;
+    pose(e, m, bande.y - 12 - repH, Wm, repH);
+  }
   const gridTop = hdrBottom + Math.round(24 * K);
-  const gridBot = bande.y - 12 - (plusH ? plusH + 10 : 0);
+  const gridBot = bande.y - 12 - (plusH ? plusH + 10 : 0) - (repH ? repH + 24 : 0);
   const n = vis.length;
-  const cols = n <= 4 ? Math.max(n, 1) : n <= 6 ? 3 : 4;
+  const cols = n <= 3 ? Math.max(n, 1) : 3;
   const rows = Math.ceil(n / cols) || 1;
-  const cw = Math.min(Math.round(300 * K), Math.floor((Wm - (cols - 1) * g) / cols));
-  const ch = Math.min(Math.round(cw * 0.8) + sh, Math.floor((gridBot - gridTop - (rows - 1) * g) / rows));
+  const cw = Math.min(Math.round((n === 1 ? 380 : 300) * K), Math.floor((Wm - (cols - 1) * g) / cols));
+  const ch = Math.min(Math.round(cw * 0.85), Math.floor((gridBot - gridTop - (rows - 1) * g) / rows));
   const gw = cols * cw + (cols - 1) * g, gh = rows * ch + (rows - 1) * g;
   const gx = m + (Wm - gw) / 2, gy = gridTop + (gridBot - gridTop - gh) / 2;
+  const usedImg = new Set();
   vis.forEach((p, i) => {
+    let img = imageDe(p);
+    if (img && usedImg.has(img)) img = "";
+    if (img) usedImg.add(img);
     const e = nd("piece:" + p.id, "carte piece");
     e.dataset.piece = p.id;
-    carte(e, p.libelle || p.id, 0, imageDe(p) ? [imageDe(p)] : [], p.type, f20, sh, rang(p) > 0, false);
+    cartePiece(e, p, img, f24);
     e.classList.toggle("sel", p.id === selId);
     const c = i % cols, rr = Math.floor(i / cols);
     pose(e, gx + c * (cw + g), gy + rr * (ch + g), cw, ch);
@@ -597,31 +687,27 @@ function niveau2(m, aTop, aBot, f20, lh) {
   if (reste > 0) {
     const e = nd("plus", "plus");
     e.style.fontSize = f20 + "px"; e.style.height = plusH + "px";
-    html(e, `+${reste} autres ${reste > 1 ? "pièces" : "pièce"}`);
+    html(e, reste > 1 ? `+${reste} autres pièces` : "+1 autre pièce");
     const pw = e.offsetWidth;
     pose(e, gx + (gw - pw) / 2, gy + gh + 10, null, plusH);
   }
 
-  // panneau de résumé
+  // panneau de résumé, allégé : la pièce, sa citation, ses deux notes sur une ligne, le lien
   const pn = nd("panneau", "panneau");
   pose(pn, panX, aTop, panW, aBot - aTop);
   pn.style.fontSize = f20 + "px";
   let h = "";
   if (sel) {
-    const a = sel.attributs || {};
     const [fs, ci] = mots(sel);
-    const type = (TYPE_LIBELLE[sel.type] || sel.type || "") + (a.plateforme ? " · " + a.plateforme : "") +
-      (typeof a.abonnes === "number" ? " · " + a.abonnes.toLocaleString("fr-FR") + " abonnés" : "");
+    const date = dateDe(sel);
+    const type = [TYPE_LIBELLE[sel.type] || sel.type, sourceDe(sel), date].filter(Boolean).join(" · ");
     const pr = (sel.preuves || [])[0];
-    const ext = pr && pr.extrait ? (pr.extrait.length > 220 ? pr.extrait.slice(0, 217).trimEnd() + "…" : pr.extrait) : "";
+    const ext = pr && pr.extrait ? (pr.extrait.length > 200 ? pr.extrait.slice(0, 197).trimEnd() + "…" : pr.extrait) : "";
     const url = pr && /^https?:\/\//.test(pr.url || "") ? pr.url : "";
     h = `<h2 style="font-size:${Math.round(28 * K)}px">${esc(sel.libelle || sel.id)}</h2>` +
       `<div class="typ">${esc(type)}</div>` +
-      `<p class="rub"><b>Fiabilité de la source</b><span>${esc(fs)}</span></p>` +
-      `<p class="rub"><b>Crédibilité de l'information</b><span>${esc(ci)}</span></p>` +
-      (ext ? `<div class="ext" style="-webkit-line-clamp:3">${esc(ext)}</div>` : "") +
-      (imageDe(sel) ? `<div class="leg">Image : capture de la source</div>` : "") +
-      (M.question.length > 90 ? `<div class="leg" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden">${esc(M.question)}</div>` : "") +
+      (ext ? `<div class="ext" style="-webkit-line-clamp:4" title="${esc(pr.extrait)}">« ${esc(ext)} »</div>` : "") +
+      `<div class="notes">${esc(fs)} · ${esc(ci.charAt(0).toLowerCase() + ci.slice(1))}</div>` +
       (url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la publication d'origine</a>` : "");
   }
   html(pn, h);
@@ -767,7 +853,7 @@ let verifFaite = false;
 const seuils = [];
 async function chargerVignettes() {
   try {
-    const r = await fetch(`vignettes-${encodeURIComponent(ID)}.json`);
+    const r = await fetch(`vignettes-${encodeURIComponent(ID)}.json`, { cache: "no-store" });
     if (r.ok) VIGN = await r.json();
   } catch (_) { /* pas de vignettes pour cette enquête : cadres neutres */ }
 }

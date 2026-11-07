@@ -22,6 +22,12 @@ Puis ouvrir http://127.0.0.1:8795/.
 ## Un vrai cas (enquête Brut OpenAI / Hugging Face)
 Avec le serveur d'enquête lancé : http://127.0.0.1:8795/?flux&enquete=openai-agents-huggingface . Le réseau vient tout entier de l'export de l'enquête (`reseau.html`) : rôles, compteurs, images des sources (`vignettes-<enquete>.json`), zones d'ombre et ligne des sources lues. `&mode=direct` suit une enquête en cours.
 
+Les images réelles du cas (miniatures des vidéos, aperçus des pages) se génèrent avant la démo, avec le serveur lancé :
+```
+python vignettes.py openai-agents-huggingface
+```
+(nécessite yt-dlp et ffmpeg ; les images et la liste produites ne sont pas commitées).
+
 ## Paramètres
 - `?base=http://127.0.0.1:8802` : adresse du serveur d'enquête (8802 par défaut).
 - `?verif` (sur `jet-d-plan-sequence.html`) : vérification automatique des chevauchements, rapport dans le titre de la page.
