@@ -1,0 +1,167 @@
+{
+ "commentaire": "Un résultat réel d'Oriane (projection full, parole « minceur »), pseudos et noms remplacés, images clés réduites.",
+ "data": {
+  "results": [
+   {
+    "id": "cnt_e95e4e34256ea5d49b33f2471214",
+    "matchedQueries": [],
+    "platform": "tiktok",
+    "profileHandle": "compte_a",
+    "profileDisplayName": "Compte A",
+    "format": "video",
+    "platformType": "video",
+    "title": null,
+    "caption": "On était venus poser des questions, mais on a préféré vous faire goûter 🥄 Marque ! débarque chez Enseigne… Vous gardez une place pour le dessert ?",
+    "thumbnailMediaId": "med_edbcb6ca3e606696f33d98ba0d25",
+    "publishedAt": "2026-10-19T10:00:03.000Z",
+    "profileId": "prf_anonyme_0",
+    "thumbnailMediaUrl": "https://social-catalog-static.oriane.xyz/oriane-contents/tiktok/7698316626466311456/thumbnail.webp",
+    "viewsCount": 1100000,
+    "likesCount": 1034,
+    "sharesCount": 55,
+    "commentsCount": 8,
+    "interactionsCount": 1097,
+    "profileFollowersCount": 12600,
+    "mediaCount": 1,
+    "hashtags": [],
+    "platformId": "7698316626466311456",
+    "profilePictureUrl": null,
+    "media": [
+     {
+      "type": "video",
+      "duration": 34,
+      "caption": null,
+      "onScreenText": [
+       "ENSEIGNE",
+       "ENTREPRISE FAMILIERE FRANÇAISE",
+       "Team entrée",
+       "MARQUE",
+       "BE",
+       "NUTS!",
+       "NUTS!\nJEU D'ENTREME\nCACAHUÈTE CRÉMELUX\nou dessert ?",
+       "BEC",
+       "MARQUE\nBE\nNUTS!",
+       "01.42.85.15",
+       "BEG",
+       "BROS",
+       "DUN",
+       "LUNCH",
+       "ENTREPRISE FAMILIALE FRANÇAISE",
+       "Cacahuète",
+       "ou chocolat?",
+       "CACAHUÈTE CRÉMEUX",
+       "d",
+       "00",
+       "BEG\nNUT",
+       "66",
+       "WU",
+       "ANBROX\nBE\nNUTS!",
+       "MARQUE\nBE\nLA CACAHUÉTE\nOUI A TOUT BON !",
+       "ENSEIGNE X NUTS!\nTHAI STREET FOOD",
+       "MOELLEUX CHOCO",
+       "COCO CHIA",
+       "MARQUE BE NUTS !",
+       "À DECOUVRIR\nDÈS MAINTENANT\nCHEZ ENSEIGNE"
+      ],
+      "transcript": "Ok. J'adore ! Plutôt entrée, entrée plus plat en général, ça dépend. Ok, bon, j'ai un plat dessert s'il préfère. Coco, chia, binuts ? Je ne vous ferai pas un minceur. J'adore ! Ah, le chocolat, c'est la vie en vrai. Moi, je suis plutôt genre 70% ou un peu au lait. Salut ! Les deux, ça marche, ça marche.",
+      "tags": [],
+      "transcriptLanguage": "fr",
+      "transcriptChunks": [
+       {
+        "startSeconds": 0,
+        "endSeconds": 0.24,
+        "text": "Ok."
+       },
+       {
+        "startSeconds": 1.24,
+        "endSeconds": 2.3,
+        "text": "J'adore !"
+       },
+       {
+        "startSeconds": 2.3,
+        "endSeconds": 7.9,
+        "text": "Plutôt entrée, entrée plus plat en général, ça dépend."
+       },
+       {
+        "startSeconds": 10.32,
+        "endSeconds": 13.28,
+        "text": "Ok, bon, j'ai un plat dessert s'il préfère."
+       },
+       {
+        "startSeconds": 14.66,
+        "endSeconds": 17,
+        "text": "Coco, chia, binuts ?"
+       },
+       {
+        "startSeconds": 17,
+        "endSeconds": 17.66,
+        "text": "Je ne vous ferai pas un minceur."
+       },
+       {
+        "startSeconds": 19.1,
+        "endSeconds": 20.66,
+        "text": "J'adore !"
+       },
+       {
+        "startSeconds": 20.66,
+        "endSeconds": 23.22,
+        "text": "Ah, le chocolat, c'est la vie en vrai."
+       },
+       {
+        "startSeconds": 23.62,
+        "endSeconds": 26.12,
+        "text": "Moi, je suis plutôt genre 70% ou un peu au lait."
+       },
+       {
+        "startSeconds": 26.62,
+        "endSeconds": 27.24,
+        "text": "Salut !"
+       },
+       {
+        "startSeconds": 27.24,
+        "endSeconds": 29.66,
+        "text": "Les deux, ça marche, ça marche."
+       }
+      ],
+      "frames": [
+       {
+        "id": "med_5ee3135e4e836e36f3e72bdc1d36",
+        "position": 1,
+        "timestampSeconds": 0,
+        "onScreenTextRegions": [],
+        "url": "https://social-catalog-static.oriane.xyz/oriane-frames/tiktok/7698316626466311456/1_0.00.webp"
+       },
+       {
+        "id": "med_49de28bb5aa431086a4923fdd14d",
+        "position": 2,
+        "timestampSeconds": 2,
+        "onScreenTextRegions": [],
+        "url": "https://social-catalog-static.oriane.xyz/oriane-frames/tiktok/7698316626466311456/2_2.00.webp"
+       }
+      ]
+     }
+    ],
+    "engagementRatePerViews": 0.09972727272727273,
+    "engagementRatePerFollowers": 8.706349206349206,
+    "viewsRatePerFollowers": 8730.15873015873,
+    "profileFollowingCount": 5,
+    "profilePostsCount": 132,
+    "profileVerified": true,
+    "locationPlatformId": null,
+    "locationLatitude": null,
+    "locationLongitude": null,
+    "profileLocationPlatformId": null,
+    "profileLocationLatitude": null,
+    "profileLocationLongitude": null,
+    "audioPlatformId": "7698316676206807841",
+    "audioTitle": "son original - Compte A",
+    "audioAuthor": "Compte A",
+    "audioType": "original",
+    "audioCopyrighted": false,
+    "captionLanguage": "fr",
+    "createdAt": "2026-10-26T22:28:05.346Z",
+    "updatedAt": "2026-11-03T08:42:08.254Z"
+   }
+  ]
+ }
+}
