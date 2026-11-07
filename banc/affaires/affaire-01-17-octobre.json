@@ -1,0 +1,270 @@
+{
+  "id": "affaire-01-17-octobre",
+  "question": "Qui a lancé en ligne la date du « 17 octobre » 2026 (appel à manifester), sur quelle plateforme et à quel moment, qui l'a relayée, et les comptes qui l'ont reprise forment-ils une opération identifiée ?",
+  "gel_donnees": "2026-09-16",
+  "reserve": false,
+  "notes": "Gel au 16 septembre 2026, jour de publication des enquêtes de TF1 Info et du Monde. Les chiffres postérieurs (550 000 à 800 000 manifestants le 17 octobre, 123 000 vidéos jusqu'au 20 octobre, étude Cepremap du 3 novembre) ne sont volontairement pas des faits attendus. Le créateur de la première vidéo n'est pas désigné par son pseudo : son âge n'est pas établi dans les sources, il est donc décrit par son type de compte.",
+  "faits": [
+    {
+      "id": "F1",
+      "phrase": "La date du 17 octobre apparaît pour la première fois dans une vidéo TikTok d'un petit compte de créateur de contenus football, publiée vingt-cinq minutes après son premier clip, dans la soirée du 7 septembre (La Croix date la vidéo du 8 septembre).",
+      "type": "origine",
+      "poids": 3,
+      "correspondance": {
+        "mots_cles": ["17 octobre", "première", "tiktok", "football", "vingt-cinq minutes", "25 minutes", "7 septembre", "8 septembre"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html",
+      "autres_sources": ["https://www.la-croix.com/societe/manifestation-du-17-octobre-qui-est-derriere-l-appel-a-la-mobilisation-qui-agite-les-reseaux-20261014"]
+    },
+    {
+      "id": "F2",
+      "phrase": "Le même créateur avait publié peu avant un clip dénonçant le prix de l'essence, sans appeler encore à une manifestation datée.",
+      "type": "chronologie",
+      "poids": 2,
+      "correspondance": {
+        "mots_cles": ["prix", "essence", "clip", "avant", "sans", "manifestation", "datée", "carburants"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F3",
+      "phrase": "La vidéo qui fixe la date du 17 octobre est vue 1,5 million de fois et commentée plus de 4 000 fois à la mi-septembre, plusieurs centaines de fois plus de vues que les contenus habituels de ce compte.",
+      "type": "reprise",
+      "poids": 2,
+      "correspondance": {
+        "mots_cles": ["1,5 million", "vues", "4000", "commentaires", "centaines de fois", "habituels"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F4",
+      "phrase": "Sur X, les premiers messages portant une date apparaissent dès le 8 septembre.",
+      "type": "chronologie",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["premiers", "messages", "x", "8 septembre", "date"],
+        "seuil": 0.6
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F5",
+      "phrase": "Le 9 septembre au soir, X devient le principal vecteur de diffusion de l'appel : trois comptes X totalisent plus de 5,8 millions de vues contre environ 800 000 pour les trois principaux relais TikTok.",
+      "type": "role",
+      "poids": 3,
+      "correspondance": {
+        "mots_cles": ["9 septembre", "x", "principal vecteur", "trois comptes", "5,8 millions", "800000", "tiktok", "relais"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F6",
+      "phrase": "Sur X, le message est surtout repris par des canaux d'alertes en temps réel et un « média citoyen » habitué aux fausses informations (2,7 millions de vues avec trois publications pour l'un, 650 000 vues avec quatre publications pour l'autre), pas par les figures historiques des gilets jaunes.",
+      "type": "acteur",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["x", "canaux", "alertes", "temps réel", "média citoyen", "2,7 millions", "650000", "figures historiques"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F7",
+      "phrase": "Une chanson née pendant la mobilisation de novembre 2018 revient comme « tendance » sur TikTok et devient la bande-son d'une centaine de clips publiés chaque jour.",
+      "type": "lien",
+      "poids": 2,
+      "correspondance": {
+        "mots_cles": ["chanson", "musique", "son", "2018", "tendance", "tiktok", "centaine", "clips", "chaque jour"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F8",
+      "phrase": "Sur TikTok, la date du 17 octobre gagne en visibilité dès les 8 au 10 septembre, avant même les premiers articles de presse sur le sujet.",
+      "type": "chronologie",
+      "poids": 2,
+      "correspondance": {
+        "mots_cles": ["17 octobre", "visibilité", "8", "10 septembre", "avant", "premiers articles", "presse", "tiktok"],
+        "seuil": 0.5
+      },
+      "source": "https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"
+    },
+    {
+      "id": "F9",
+      "phrase": "Le Monde identifie un compte TikTok créé le 9 septembre qui ne publie que des visuels générés par IA, et une douzaine d'autres comptes aux noms et visuels évoquant les gilets jaunes, tous créés ou renommés le 9 septembre, qui diffusent très intensivement des appels à manifester.",
+      "type": "lien",
+      "poids": 3,
+      "correspondance": {
+        "mots_cles": ["compte", "tiktok", "créé", "9 septembre", "ia", "douzaine", "comptes", "renommés", "gilets jaunes", "appels"],
+        "seuil": 0.5
+      },
+      "source": "https://www.lemonde.fr/politique/article/2026/09/16/les-gilets-jaunes-de-retour-le-17-octobre-itineraire-d-une-rumeur-nee-sur-tiktok_6775349_823448.html",
+      "autres_sources": ["https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"]
+    },
+    {
+      "id": "F10",
+      "phrase": "L'appel ne vient ni des figures historiques des gilets jaunes ni d'une organisation syndicale, et les principaux groupes Facebook de 2018 n'ont pas été réactivés.",
+      "type": "acteur",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["figures historiques", "gilets jaunes", "syndicale", "facebook", "pas réactivés", "origine"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F11",
+      "phrase": "Sur X, le référentiel des gilets jaunes est explicitement réactivé par les pseudonymes et les montages visuels, et l'analyste de données décrit une propagation authentique du mot d'ordre.",
+      "type": "role",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["x", "référentiel", "gilets jaunes", "pseudonymes", "montages", "propagation", "authentique"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F12",
+      "phrase": "TF1 Info a contacté le créateur de la première vidéo, qui n'a pas répondu dans l'immédiat ; ses objectifs restent flous.",
+      "type": "interlocuteur",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["contacté", "créateur", "pas répondu", "objectifs", "flous"],
+        "seuil": 0.6
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    },
+    {
+      "id": "F13",
+      "phrase": "À la mi-septembre, le service de l'État chargé de détecter les ingérences numériques étrangères (Viginum) n'a relevé que de très maigres reprises de l'appel hors de France, presque sans audience.",
+      "type": "lien",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["viginum", "maigres", "reprises", "hors de France", "sans audience", "ingérences"],
+        "seuil": 0.5
+      },
+      "source": "https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"
+    },
+    {
+      "id": "F14",
+      "phrase": "Le sujet cumule 45 millions de vues en sept jours, avec une ambiance plutôt enjouée dans les commentaires et un mélange de contenus de divertissement et de publications opportunistes.",
+      "type": "reprise",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["45 millions", "vues", "sept jours", "enjouée", "divertissement", "opportunistes"],
+        "seuil": 0.5
+      },
+      "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
+    }
+  ],
+  "non_etabli": [
+    {
+      "id": "N1",
+      "phrase": "Les objectifs du créateur de la première vidéo : TF1 Info dit qu'ils restent flous.",
+      "correspondance": {
+        "mots_cles": ["objectifs", "créateur", "but", "intention", "voulait", "cherchait"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "N2",
+      "phrase": "Qui a créé la douzaine de comptes du 9 septembre, qui les contrôle, et leur modèle économique (but « apparemment lucratif », rien de prouvé).",
+      "correspondance": {
+        "mots_cles": ["comptes", "9 septembre", "créés", "contrôlés", "commanditaire", "revente", "lucratif"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "N3",
+      "phrase": "Le lien de cause entre l'appel du 7 septembre et l'ampleur de la journée du 17 octobre, au milieu des blocus lycéens et des relais militants déjà en cours.",
+      "correspondance": {
+        "mots_cles": ["appel", "7 septembre", "provoqué", "à l'origine", "mobilisation", "17 octobre", "ampleur", "grâce"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "N4",
+      "phrase": "Toute implication d'un acteur étranger : aucun indice public à la date du gel.",
+      "correspondance": {
+        "mots_cles": ["acteur", "étranger", "implication", "ingérence", "russe", "financé"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "N5",
+      "phrase": "Ce qui circule hors des vues publiques de TikTok et de X (messageries privées, Snapchat, Instagram) et si la vidéo du 7 septembre est bien la toute première mention de la date : l'échantillon observé n'est pas exhaustif.",
+      "correspondance": {
+        "mots_cles": ["messageries", "privées", "snapchat", "instagram", "toute première", "exhaustif"],
+        "seuil": 0.5
+      }
+    }
+  ],
+  "pieges": [
+    {
+      "id": "P1",
+      "phrase": "Désigner le créateur de la première vidéo, ou son compte, comme l'organisateur, le responsable ou l'auteur d'une manipulation.",
+      "correspondance": {
+        "mots_cles": ["créateur", "organisateur", "responsable", "coupable", "manipulation", "première vidéo"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "P2",
+      "phrase": "Affirmer que l'appel est une manipulation ou une ingérence russe ou étrangère.",
+      "correspondance": {
+        "mots_cles": ["manipulation", "russe", "ingérence", "étrangère", "appel"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "P3",
+      "phrase": "Attribuer l'appel aux figures historiques des gilets jaunes ou à un syndicat.",
+      "correspondance": {
+        "mots_cles": ["appel", "lancé", "initiative", "figures historiques", "gilets jaunes", "syndicat"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P4",
+      "phrase": "Présenter la douzaine de comptes du 9 septembre comme une opération coordonnée prouvée, un réseau de bots ou une campagne commanditée par un acteur identifié.",
+      "correspondance": {
+        "mots_cles": ["comptes", "9 septembre", "opération", "coordonnée", "bots", "réseau", "commanditée", "prouvée"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "P5",
+      "phrase": "Attribuer à la première vidéo les 45 millions de vues du sujet ou les 5,8 millions de vues des trois comptes X (périmètres différents de ses 1,5 million de vues).",
+      "correspondance": {
+        "mots_cles": ["première vidéo", "45 millions", "5,8 millions", "vues", "millions"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "P6",
+      "phrase": "Dire que l'appel est né sur Facebook ou sur X : il est apparu d'abord sur TikTok, puis amplifié sur X.",
+      "correspondance": {
+        "mots_cles": ["appel", "né", "facebook", "x", "origine", "première"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "P7",
+      "phrase": "Présenter la propagation sur X comme artificielle, automatisée ou fabriquée par des robots.",
+      "correspondance": {
+        "mots_cles": ["x", "propagation", "artificielle", "automatisée", "robots", "fabriquée"],
+        "seuil": 0.6
+      }
+    }
+  ],
+  "mots_cles_recherche": {
+    "parole": ["samedi 17 octobre", "le 17 octobre", "retenez bien la date", "c'est un samedi", "c'est les vacances", "prix de l'essence", "gilets jaunes", "dix-sept octobre"],
+    "texte_ecran": ["17 octobre", "17/10", "samedi 17", "gilet jaune 2026", "gilets jaunes", "mobilisation générale", "prix de l'essence", "carburant"],
+    "hashtags": ["#17octobre", "#17oct", "#giletsjaunes", "#blocus", "#essence", "#carburant"]
+  }
+}
