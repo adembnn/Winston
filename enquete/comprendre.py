@@ -357,11 +357,13 @@ def executeur_claude(modele: str = "sonnet") -> Executeur:
     def appeler(prompt: str, delai: float) -> str:
         dossier_neutre.mkdir(parents=True, exist_ok=True)
         env = {k: v for k, v in os.environ.items() if k.upper() != "ANTHROPIC_API_KEY"}
-        cmd = ["claude", "-p", prompt, "--model", modele, "--output-format", "json",
+        # La consigne passe par l'entrée standard : sous Windows, une ligne de commande est limitée à
+        # 32 767 caractères (WinError 206), et la consigne du résumé d'une grosse enquête la dépasse.
+        cmd = ["claude", "-p", "--model", modele, "--output-format", "json",
                "--tools", "", "--permission-mode", "dontAsk", "--no-session-persistence",
                "--disable-slash-commands"]
         try:
-            r = subprocess.run(cmd, cwd=dossier_neutre, env=env, capture_output=True, text=True,
+            r = subprocess.run(cmd, cwd=dossier_neutre, env=env, input=prompt, capture_output=True, text=True,
                                encoding="utf-8", timeout=delai)
         except subprocess.TimeoutExpired as e:
             raise TimeoutError(f"délai de {delai:g} s dépassé") from e

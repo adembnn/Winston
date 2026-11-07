@@ -338,3 +338,25 @@ def test_claude_muet_repli_par_code(tmp_path, monkeypatch):
         raise c.ErreurClaude("pas de réponse")
 
     assert c.rediger_resume(_petit_export(tmp_path), executeur=casse)["source"] == "code"
+
+
+def test_executeur_claude_passe_la_consigne_par_l_entree_standard(monkeypatch):
+    """La consigne d'une grosse enquête dépasse la ligne de commande Windows (32 767 caractères) :
+    elle passe par l'entrée standard, jamais dans les arguments."""
+    from enquete import comprendre
+
+    vus = {}
+
+    class Fini:
+        stdout = '{"result": "ok", "is_error": false}'
+        stderr = ""
+
+    def faux_run(cmd, **options):
+        vus["cmd"], vus["input"] = cmd, options.get("input")
+        return Fini()
+
+    monkeypatch.setattr(comprendre.subprocess, "run", faux_run)
+    longue = "x" * 40000
+    assert comprendre.executeur_claude()(longue, 5) == "ok"
+    assert vus["input"] == longue
+    assert all(len(argument) < 200 for argument in vus["cmd"])
