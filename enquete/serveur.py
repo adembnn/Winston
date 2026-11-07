@@ -19,6 +19,10 @@ POST /api/enquetes   {question, graine?}            lance l'enquête, rend {id}
 POST /api/questions  {enquete, texte}               question du journaliste -> {id}
 GET  /api/enquetes                                  liste des enquêtes (ajout hors contrat)
 GET  /api/sante                                     {ok: true}
+GET  /api/comprendre?q=<texte>[&graine=<lien>][&profond=1]   lecture de la frappe (voir enquete.comprendre)
+GET  /api/resume?enquete=<id>&piece=<id>            résumé de 25 mots d'une pièce
+GET  /                                              `index.html` du dossier de l'interface (404 s'il manque)
+GET  /interface/<chemin>                            fichiers de ce dossier, jamais au-dessus
 
 Mode : `export.mode` vaut « direct » si l'enquête tourne en ce moment, « demo »
 sinon (journal enregistré, rejouable).
@@ -65,6 +69,7 @@ import re
 import sqlite3
 import threading
 import time
+import mimetypes
 import unicodedata
 import uuid
 from dataclasses import dataclass, field
@@ -72,7 +77,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from enquete.recherche import Index, documents_depuis_export
 from enquete.reseau import Lien, Noeud, ReseauEnquete, Role, Solidite
@@ -83,6 +88,15 @@ _RE_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 _RE_ORIGINE = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 _NOMS_JOURNAL = ("reseau.sqlite", "journal.sqlite")
 _TAILLE_MAX_CORPS = 64 * 1024
+# Le dossier de l'écran : `interface/` à la racine du dépôt (à côté du paquet `enquete`).
+DOSSIER_INTERFACE = Path(__file__).resolve().parent.parent / "interface"
+_TYPES_MIME = {
+    ".html": "text/html", ".htm": "text/html", ".js": "text/javascript", ".mjs": "text/javascript",
+    ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".txt": "text/plain",
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+    ".gif": "image/gif", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff",
+    ".ttf": "font/ttf", ".otf": "font/otf", ".mp4": "video/mp4", ".webm": "video/webm",
+}
 _BATTEMENT_S = 15.0  # un commentaire SSE tous les 15 s garde la connexion ouverte
 
 
@@ -320,8 +334,10 @@ class Serveur:
         sur_question: Callable[[str, str, str], None] | None = None,
         pas_sondage: float = 0.25,
         autoriser_fichiers: bool = True,
+        dossier_interface: str | Path | None = None,
     ) -> None:
         self.racine = Path(racine)
+        self.dossier_interface = Path(dossier_interface) if dossier_interface is not None else DOSSIER_INTERFACE
         self.enqueteur = enqueteur or enqueteur_par_defaut
         self.sur_question = sur_question  # (enquete_id, question_id, texte) : les agents s'y branchent
         self.pas_sondage = pas_sondage
@@ -361,6 +377,31 @@ class Serveur:
 
     def __exit__(self, *_: object) -> None:
         self.arreter()
+
+    # -- l'écran ------------------------------------------------------------
+
+    def fichier_interface(self, relatif: str) -> tuple[Path, str]:
+        """Le fichier de l'interface demandé et son type MIME ; 404 s'il manque ou sort du dossier."""
+        base = self.dossier_interface.resolve()
+        if chr(0) in relatif:
+            raise ErreurHttp(404, "fichier introuvable")
+        try:
+            chemin = (base / relatif).resolve() if relatif else base
+        except (OSError, ValueError):
+            raise ErreurHttp(404, "fichier introuvable") from None
+        if chemin.is_dir():
+            chemin = chemin / "index.html"
+        if not chemin.is_relative_to(base) or not chemin.is_file():
+            if not relatif and not base.is_dir():
+                raise ErreurHttp(404, f"pas d'interface : le dossier {self.dossier_interface} n'existe pas")
+            if not relatif or chemin.name == "index.html" and chemin.parent == base:
+                raise ErreurHttp(404, f"pas d'interface : {self.dossier_interface / 'index.html'} n'existe pas")
+            raise ErreurHttp(404, "fichier introuvable")
+        suffixe = chemin.suffix.lower()
+        mime = _TYPES_MIME.get(suffixe) or mimetypes.guess_type(chemin.name)[0] or "application/octet-stream"
+        if mime.startswith("text/") or mime in ("application/json", "image/svg+xml"):
+            mime += "; charset=utf-8"
+        return chemin, mime
 
     # -- enquêtes -----------------------------------------------------------
 
@@ -575,6 +616,17 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
             self.end_headers()
             self.wfile.write(corps)
 
+        def _fichier(self, relatif: str) -> None:
+            chemin, mime = serveur.fichier_interface(relatif)
+            corps = chemin.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(corps)))
+            self.send_header("Cache-Control", "no-store")
+            self._entetes_cors()
+            self.end_headers()
+            self.wfile.write(corps)
+
         def _ouvrir_flux(self) -> None:
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -611,7 +663,11 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                 url = urlparse(self.path)
                 params = {k: v[0] for k, v in parse_qs(url.query).items()}
                 route = (methode, url.path.rstrip("/"))
-                if route == ("GET", "/api/sante"):
+                if methode == "GET" and url.path == "/":
+                    self._fichier("")
+                elif methode == "GET" and url.path.startswith("/interface/"):
+                    self._fichier(unquote(url.path[len("/interface/"):]))
+                elif route == ("GET", "/api/sante"):
                     self._json(200, {"ok": True})
                 elif route == ("GET", "/api/enquetes"):
                     self._json(200, {"enquetes": serveur.lister()})
@@ -796,10 +852,11 @@ def main(argv: list[str] | None = None) -> int:
 
     analyseur = argparse.ArgumentParser(prog="python -m enquete.serveur", description=__doc__.split("\n")[0])
     analyseur.add_argument("--racine", default="donnees", help="dossier des enquêtes (un sous-dossier par enquête)")
-    analyseur.add_argument("--port", type=int, default=PORT)
+    analyseur.add_argument("--port", type=int, default=PORT, help="0 = un port libre (affiché au démarrage)")
+    analyseur.add_argument("--interface", default=None, help="dossier de l'écran (défaut : interface/ du dépôt)")
     args = analyseur.parse_args(argv)
-    with Serveur(args.racine, port=args.port) as serveur:
-        print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}")
+    with Serveur(args.racine, port=args.port, dossier_interface=args.interface) as serveur:
+        print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}", flush=True)
         try:
             while True:
                 time.sleep(3600)
