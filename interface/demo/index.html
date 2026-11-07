@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salle des écrans</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  html,body { margin:0; height:100%; background:#080808; overflow:hidden; font-family:Archivo, Arial, sans-serif; }
+  #vue { position:fixed; inset:0; overflow:hidden; cursor:pointer; }
+  body.dedans #vue { cursor:default; }
+  #scene { position:absolute; left:0; top:0; width:1536px; height:1024px; transform-origin:0 0;
+           transition: transform 1200ms cubic-bezier(.16,1,.3,1); }
+  #salle { position:absolute; inset:0; transition: filter 1200ms cubic-bezier(.16,1,.3,1); }
+  #salle > img { position:absolute; inset:0; width:100%; height:100%; }
+  body.dedans #salle { filter: brightness(.38) blur(4px); }
+  .ecran { position:absolute; overflow:hidden; background:#050607; }
+  .ecran img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0;
+               transition: opacity 700ms linear; filter: blur(1.4px) saturate(.9) brightness(.78); }
+  .ecran img.vu { opacity:1; animation: zoom 9s linear forwards; }
+  @keyframes zoom { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+  /* lignes de balayage et léger scintillement : de vrais écrans, pas des images collées */
+  .ecran::after { content:""; position:absolute; inset:0; pointer-events:none;
+                  background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, rgba(0,0,0,0) 1px 3px);
+                  animation: scintille 3.7s steps(1,end) infinite; }
+  @keyframes scintille { 0%{opacity:.9} 41%{opacity:.75} 43%{opacity:.95} 77%{opacity:.85} }
+  .ecran .st { position:absolute; left:6%; right:6%; bottom:9%; text-align:center; color:#fff; font-weight:800;
+               font-stretch:92%; line-height:1.05; letter-spacing:-.01em; text-shadow:0 1px 3px rgba(0,0,0,.9);
+               opacity:0; transition: opacity 120ms; }
+  body.unisson .ecran .st { opacity:1; }
+  body.unisson .ecran.chante { outline: 0; }
+  /* lecteur neutre d'un vrai cas : jamais les images d'un autre cas */
+  .ecran.lecteur { background:#0b0d10; color:#e8e8e8; font-family:Archivo, Arial, sans-serif; }
+  .ecran.lecteur .lt { position:absolute; left:7%; top:9%; right:7%; font-weight:700; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ecran.lecteur .ll { position:absolute; left:7%; right:7%; top:30%; bottom:20%; font-weight:800; line-height:1.15; text-shadow:0 1px 3px #000; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+  .ecran.lecteur .lb { position:absolute; left:7%; right:7%; bottom:10%; height:2px; background:rgba(255,255,255,.25); }
+  .ecran.lecteur .lb i { display:block; height:100%; width:0; background:#fff; animation: lect 5s linear infinite; }
+  @keyframes lect { to { width:100%; } }
+  #mural { position:absolute; overflow:hidden; background:#080808; }
+  #mural iframe { position:absolute; left:0; top:0; border:0; transform-origin:0 0; background:#080808; }
+  body:not(.dedans) #mural iframe { pointer-events:none; }
+  #grain { position:fixed; inset:-50%; width:200%; height:200%; pointer-events:none; opacity:.05; animation: grain .9s steps(6) infinite; }
+  @keyframes grain { 0%{transform:translate(0,0)} 20%{transform:translate(-3%,2%)} 40%{transform:translate(2%,-3%)} 60%{transform:translate(-2%,-1%)} 80%{transform:translate(3%,3%)} }
+  #ligne { position:fixed; left:50%; bottom:5vh; transform:translateX(-50%); color:#fff; font-weight:800; font-stretch:94%;
+           font-size:clamp(22px,1.7vw,34px); text-shadow:0 2px 10px rgba(0,0,0,.9); white-space:nowrap; transition: opacity 500ms; }
+  body.dedans #ligne { opacity:0; }
+  #fictif { position:fixed; left:2vw; bottom:2vh; font-weight:600; font-size:18px; color:rgba(255,255,255,.75);
+            text-shadow:0 1px 6px rgba(0,0,0,.95); transition: opacity 500ms; z-index:4; pointer-events:none; }
+  #fictif[hidden] { display:none; }
+  body.dedans #fictif { opacity:0; }
+  #choix { position:fixed; left:2vw; bottom:2vh; display:flex; gap:8px; font-weight:600; font-size:20px; z-index:5; }
+  #choix a { color:#fff; text-decoration:none; border:2px solid #fff; padding:4px 12px; background:#080808; }
+  #choix a.actif { background:#fff; color:#080808; }
+  body.dedans #choix { display:none; }
+</style>
+</head>
+<body>
+<div id="vue"><div id="scene"><div id="salle"><img id="fond" alt=""></div><div id="mural"><iframe id="reseau" title="Dossier d'enquête"></iframe></div></div></div>
+<svg id="grain" aria-hidden="true"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+<div id="ligne">312 pièces dépouillées : vidéos, articles, études, registres</div>
+<div id="fictif">Cas fictif, maquette, données d'exemple</div>
+<nav id="choix" hidden></nav>
+<script>
+const FONDS = {
+  d: { img:'fonds/d-mur-ecrans-noir.jpg', rects:[[523,327,499,305],[1215,486,280,144],[1216,327,279,142],[1215,170,276,141],[39,327,258,145],[39,490,255,141],[44,167,252,142],[316,168,248,141],[973,169,223,140],[576,170,196,139],[650,647,237,109],[784,170,178,139],[316,326,189,119],[317,457,189,119],[316,589,189,114],[1038,326,158,122],[1038,460,157,117],[1038,589,157,114],[1211,650,144,108],[899,647,123,108],[523,648,116,108]] },
+  e: { img:'fonds/e-bureau-ecrans-noir.jpg', rects:[[529,186,524,299],[85,533,218,144],[80,363,225,136],[467,556,207,123],[967,556,186,119],[111,218,147,107],[1313,485,135,102],[811,639,134,81],[1192,485,111,97],[1224,264,116,92],[1180,641,105,88],[704,601,42,86]] }
+};
+const cle = new URLSearchParams(location.search).get('fond') || 'e';
+const F = FONDS[cle] || FONDS.e;
+document.querySelectorAll('#choix a').forEach(a => a.classList.toggle('actif', a.getAttribute('href') === '?fond=' + cle));
+document.getElementById('fond').src = F.img;
+const salle = document.getElementById('salle');
+const [M, ...petits] = F.rects;           // le plus grand écran porte le réseau
+// Les écrans suivent le cas affiché : le cas fictif garde ses illustrations ; un vrai cas montre ses propres vidéos
+// (image clé si l'export en donne une, sinon un lecteur neutre : plateforme, compte, début de la légende réelle).
+const Q0 = new URLSearchParams(location.search);
+const ENQ = Q0.has('flux') ? (Q0.get('enquete') || 'stylos-minceur') : 'stylos-minceur';
+const VRAI_CAS = ENQ !== 'stylos-minceur';
+function ecranFictif(FR) {
+  const ids = Object.keys(FR);
+  petits.forEach(([x,y,w,h], i) => {
+    const e = document.createElement('div'); e.className = 'ecran';
+    Object.assign(e.style, { left:x+'px', top:y+'px', width:w+'px', height:h+'px' });
+    const a = new Image(), b = new Image(); e.append(a, b);
+    // une écran sur deux « chante » la phrase commune, au même instant que les autres
+    if (i % 2 === 0) { const s = document.createElement('div'); s.className = 'st'; s.textContent = 'Un clic, trois kilos';
+      s.style.fontSize = Math.max(9, Math.round(Math.min(w, h*1.4) / 9)) + 'px'; e.append(s); }
+    salle.append(e);
+    const film = FR[ids[i % ids.length]]; let k = Math.floor(Math.random()*film.length), cur = a;
+    const suivant = () => { const nxt = cur === a ? b : a; nxt.onload = () => { nxt.classList.remove('vu'); void nxt.offsetWidth; nxt.classList.add('vu'); cur.classList.remove('vu'); cur = nxt; };
+      nxt.src = film[k = (k + 1) % film.length]; };
+    suivant(); setInterval(suivant, 2600 + (i * 677) % 2900);
+  });
+}
+function imageDe(p) {
+  const im = p.image && typeof p.image === 'object' ? p.image.src : p.image;
+  const a = p.attributs || {};
+  const k = Array.isArray(a.images_cles) ? (a.images_cles.find(x => x && /^https?:/.test(x.url)) || {}).url : null;
+  return [im, a.image, k].find(u => typeof u === 'string' && /^https?:/.test(u)) || null;
+}
+function ecranReel(pieces) {
+  const videos = pieces.filter(p => p.type === 'video');
+  const liste = videos.length ? videos : pieces;
+  petits.forEach(([x,y,w,h], i) => {
+    const e = document.createElement('div'); e.className = 'ecran lecteur';
+    Object.assign(e.style, { left:x+'px', top:y+'px', width:w+'px', height:h+'px' });
+    salle.append(e);
+    if (!liste.length) return;                       // écran neutre, éteint
+    let k = i % liste.length;
+    const montre = () => {
+      const p = liste[k = (k + petits.length) % liste.length], a = p.attributs || {}, img = imageDe(p);
+      const legende = ((p.preuves && p.preuves[0] && p.preuves[0].extrait) || p.libelle || '').replace(/\s+/g, ' ').slice(0, 70);
+      const f = Math.max(8, Math.round(Math.min(w, h * 1.4) / 12));
+      e.innerHTML = (img ? `<img class="vu" src="${img}" alt="" referrerpolicy="no-referrer">` : '')
+        + `<div class="lt" style="font-size:${f}px">${(p.libelle || 'Vidéo').replace(/\s*\(.*\)$/, '')}</div>`
+        + `<div class="ll" style="font-size:${f}px">${legende}${legende.length >= 70 ? '…' : ''}</div><div class="lb"><i></i></div>`;
+    };
+    montre(); setInterval(montre, 5200 + (i * 733) % 2600);
+  });
+}
+if (VRAI_CAS) {
+  fetch((Q0.get('base') || 'http://127.0.0.1:8802') + '/api/export?enquete=' + encodeURIComponent(ENQ)).then(r => r.json())
+    .then(d => { const ps = (d.dossiers || []).flatMap(x => x.pieces || []); ecranReel(ps);
+      const n = (d.compteurs && d.compteurs.pieces) || ps.length, v = ps.filter(x => x.type === 'video').length;
+      const l = document.getElementById('ligne'); if (l) l.textContent = n + ' pièces dépouillées, dont ' + v + ' vidéos'; })
+    .catch(() => ecranReel([]));
+} else {
+  fetch('fonds/frames.json').then(r => r.json()).then(ecranFictif);
+}
+const [mx,my,mw,mh] = M, mural = document.getElementById('mural');
+Object.assign(mural.style, { left:mx+'px', top:my+'px', width:mw+'px', height:mh+'px' });
+const IW = 1600, IH = Math.round(IW*mh/mw), ifr = document.getElementById('reseau');
+ifr.width = IW; ifr.height = IH; ifr.style.transform = `scale(${mw/IW})`; const RESEAUX = { a:'jet-a-planche.html', d:'jet-d-plan-sequence.html', e:'jet-e-regie.html', f:'jet-f-lampe.html', v4a:'jet-a-planche.html' };
+const P = new URLSearchParams(location.search);
+// la chaîne de requête de la salle passe au réseau, sauf ses propres paramètres (fond, reseau, etat)
+// avec ?flux, le réseau vient tout entier des données de l'enquête (reseau.html) ; sans, la démo scriptée du cas fictif (jet-d)
+const EN_FLUX = P.has('flux');
+const QR = (EN_FLUX ? ['enquete', 'mode', 'base', 'entree'] : []).filter(k => P.has(k)).map(k => P.get(k) === '' ? k : k + '=' + encodeURIComponent(P.get(k))).join('&');
+// repli sûr tant que le mode flux n'est pas vérifié sans chevauchement : état final calculé depuis l'export (vérifié à 0 conflit)
+const STATIQUE = P.get('mode') !== 'direct';   // une enquête lancée en direct doit se remplir en temps réel
+ifr.src = EN_FLUX ? 'reseau.html' + (QR ? '?' + QR : '') + (STATIQUE ? (QR ? '&' : '?') + 'statique' : '')
+                  : (RESEAUX[P.get('reseau')] || RESEAUX.d) + '#' + (P.get('etat') || 'niveau0');
+// la mention « cas fictif » ne vaut que pour l'enquête fictive
+if (P.has('flux') && (P.get('enquete') || 'stylos-minceur') !== 'stylos-minceur') document.getElementById('fictif').hidden = true;
+// l'unisson : toutes les 8 s, la même phrase s'allume au même instant sur la moitié des écrans
+const unisson = () => { document.body.classList.add('unisson'); setTimeout(() => document.body.classList.remove('unisson'), 2200); };
+setTimeout(unisson, 1500); setInterval(unisson, 8000);
+const scene = document.getElementById('scene');
+function cadre() {
+  const vw = innerWidth, vh = innerHeight; let s, tx, ty;
+  if (document.body.classList.contains('dedans')) { s = Math.min(vw*.96/mw, vh*.94/mh); tx = vw/2-(mx+mw/2)*s; ty = vh/2-(my+mh/2)*s; }
+  else { s = Math.max(vw/1536, vh/1024); tx = (vw-1536*s)/2; ty = (vh-1024*s)/2; }
+  scene.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
+}
+const etat = () => { document.body.classList.toggle('dedans', location.hash === '#dedans'); cadre(); };
+addEventListener('resize', cadre); addEventListener('hashchange', etat);
+// le parcours de démo : la salle, la caméra entre dans l'écran, puis le réseau prend la main (flèches, Échap)
+const dedans = () => document.body.classList.contains('dedans');
+// la touche part du body du réseau, comme une vraie frappe (un envoi sur window ferait sauter la construction)
+const versReseau = key => { try { ifr.contentDocument.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })); } catch (_) {} };
+const lancerReseau = () => { if (!EN_FLUX) versReseau('ArrowRight'); };   // jet-d : passe au niveau 1, ce qui lance la construction
+const etatReseau = () => { try { return ifr.contentWindow.location.hash.replace('#', '') || 'niveau0'; } catch (_) { return ''; } };
+function entrer() {
+  if (dedans()) return;
+  location.hash = 'dedans';
+  // une fois la caméra posée, la question déploie ses rôles
+  setTimeout(() => { if (etatReseau() === 'niveau0') lancerReseau(); try { ifr.contentWindow.focus(); } catch (_) {} }, 1250);
+}
+document.getElementById('vue').addEventListener('click', entrer);
+addEventListener('keydown', e => {
+  if (!dedans()) { if (['Enter', 'ArrowRight', ' '].includes(e.key)) { e.preventDefault(); entrer(); } return; }
+  if (e.key === 'Escape' && etatReseau() === 'niveau0') { location.hash = ''; return; }
+  if (['ArrowRight', 'ArrowLeft', 'Escape'].includes(e.key)) { e.preventDefault(); versReseau(e.key); }
+});
+// Échap depuis l'intérieur du réseau, une fois revenu à la question seule : on ressort dans la salle
+ifr.addEventListener('load', () => { try { ifr.contentWindow.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && etatReseau() === 'niveau0') setTimeout(() => { location.hash = ''; focus(); }, 0); }); } catch (_) {} });
+scene.style.transition = 'none'; etat(); requestAnimationFrame(() => requestAnimationFrame(() => scene.style.transition = ''));
+</script>
+</body>
+</html>

@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stylos minceur : qui est derrière ?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+:root{--u:1;--ink:#080808;--w:#fff;--g:#c7c7c7;--y:#ffd817;--r:#ec2c2c;--bw:3px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--w);
+  font-family:'Archivo',system-ui,sans-serif;font-stretch:92%;font-weight:700;font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased}
+::selection{background:var(--y);color:var(--ink)}
+button,a{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.it:focus-visible{outline-width:var(--ow,3px);outline-offset:var(--ow,3px)}
+#panel :focus-visible,#proof :focus-visible{outline-color:#080808}
+#zone .zc :focus-visible{outline-color:#080808}
+#q:focus-visible{outline-offset:6px}
+#stage{position:fixed;inset:0;overflow:hidden}
+#grain{position:fixed;inset:0;pointer-events:none;z-index:9000;opacity:.05;background-size:256px 256px}
+#wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
+#wires .vis{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:butt}
+#wires .dash{stroke-dasharray:9 8}
+#wires .hit{fill:none;stroke:transparent;stroke-width:26;pointer-events:stroke;cursor:help}
+#items{position:absolute;inset:0;z-index:5}
+.it{position:absolute;left:0;top:0;--ow:3px;transform-origin:50% 50%;border:var(--bw) solid #fff;background:var(--ink);overflow:hidden;cursor:pointer;will-change:transform}
+.it.dash{border-style:dashed}
+.it .in{position:absolute;inset:0}
+.it .im{position:absolute;inset:0;background-size:cover;background-position:center}
+.it.contour{background:transparent;border-width:var(--bw);border-style:solid}
+.it.contour .in,.it.contour .im{display:none}
+.it.ghost{display:none}
+.it.dots{border-style:dashed;background:var(--ink)}
+.it.sel{border-color:#fff}
+.bar{position:absolute;background:var(--ink)}
+.reg,.press,.rd,.site{background:#fff}
+.dl{position:absolute;left:12%;right:12%;height:0;border-top:calc(3px) dotted #fff}
+.bub{position:absolute;background:#5a5a5a;border-radius:14px}
+#q{position:absolute;left:0;top:0;z-index:20;text-align:center;font-weight:800;font-stretch:90%;line-height:1.02;letter-spacing:-.025em;
+  white-space:nowrap;cursor:pointer;color:#fff;padding:.1em .15em;will-change:transform}
+#q:hover{text-decoration:underline;text-decoration-thickness:.06em;text-underline-offset:.12em}
+#q.one br{display:none}
+#labs{position:absolute;inset:0;z-index:30;pointer-events:none}
+.lab{position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap;will-change:transform}
+.lab.on{visibility:visible}
+.chip{background:#fff;color:var(--ink);font-weight:800;font-size:max(19px,calc(24px*var(--u)));padding:calc(5px*var(--u)) calc(12px*var(--u));line-height:1.1;letter-spacing:-.01em}
+.chip .n{display:inline-block;background:var(--ink);color:#fff;margin-left:.5em;padding:0 .4em;font-size:.9em}
+.chip small{display:block;font-size:.82em;font-weight:700;color:#3a3a3a}
+.chip.dz{white-space:normal}
+.tag{background:#fff;color:var(--ink);font-weight:800;font-size:max(18px,calc(20px*var(--u)));padding:calc(4px*var(--u)) calc(10px*var(--u)) calc(4px*var(--u)) calc(7px*var(--u));display:flex;align-items:center;gap:calc(7px*var(--u));line-height:1.1}
+.tag .cn{background:#080808;color:#fff;font-size:.9em;padding:0 .4em;margin-left:.2em}
+.tag svg{width:calc(20px*var(--u));height:calc(20px*var(--u));flex:none}
+.plain{font-weight:800;font-size:max(18px,calc(20px*var(--u)));color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+.lab.two{white-space:normal;width:max(138px,calc(142px*var(--u)));line-height:1.1}
+.plain .n{display:inline-block;border:2px solid #fff;margin-left:.45em;padding:0 .35em;font-size:.95em}
+.dzc{border:calc(2px) dashed #fff;font-size:max(19px,calc(24px*var(--u)));font-weight:800;padding:calc(6px*var(--u)) calc(14px*var(--u));background:var(--ink)}
+.hl{background:var(--y);color:var(--ink);font-weight:800;font-size:max(20px,calc(26px*var(--u)));padding:0 calc(8px*var(--u));line-height:1.25}
+.time{background:#fff;color:var(--ink);font-weight:800;font-size:max(18px,calc(20px*var(--u)));padding:calc(2px*var(--u)) calc(9px*var(--u))}
+#sub{position:absolute;left:50%;bottom:max(14px,calc(22px*var(--u)));transform:translateX(-50%);z-index:60;text-align:center;font-weight:800;
+  font-size:max(28px,calc(34px*var(--u)));line-height:1.12;letter-spacing:-.015em;width:min(86vw,calc(1000px*var(--u)));text-wrap:balance;
+  text-shadow:0 2px 10px rgba(0,0,0,.65);pointer-events:none}
+#fict{line-height:1.15;position:absolute;left:max(14px,calc(28px*var(--u)));bottom:max(14px,calc(22px*var(--u)));z-index:60;font-size:max(18px,calc(20px*var(--u)));font-weight:700;color:var(--g)}
+#logo{position:absolute;right:max(calc(34px*var(--u)),3.2vw);top:calc(26px*var(--u));width:max(calc(110px*var(--u)),110px);z-index:70;filter:invert(1);pointer-events:none}
+#bc{position:absolute;left:calc(32px*var(--u));top:calc(28px*var(--u));z-index:70;display:flex;flex-wrap:wrap;gap:0 calc(10px*var(--u));
+  font-size:max(18px,calc(20px*var(--u)));font-weight:700;color:var(--g);max-width:calc(100vw - 220px*var(--u))}
+#bc button{background:none;border:0;color:var(--g);font-weight:700;text-decoration:underline;text-underline-offset:.2em;text-decoration-thickness:1px}
+#bc button:hover{color:#fff}
+#bc span.cur{color:#fff}
+#bc i{font-style:normal;color:var(--g)}
+#rail{position:absolute;left:calc(32px*var(--u));top:calc(72px*var(--u));z-index:70;display:flex;gap:calc(9px*var(--u));}
+#rail .lg{font-size:max(18px,calc(20px*var(--u)));color:var(--g);margin-right:.5em;align-self:center}
+#rail{align-items:center}
+#rail button{width:calc(22px*var(--u));height:calc(22px*var(--u));background:transparent;border:2px solid #fff}
+#rail button.cur{background:#fff;border-style:solid}
+#rail button.dz{border-style:dashed}
+#rail button.dz.cur{border-style:solid}
+#rail button:hover{background:var(--g)}
+#panel{position:absolute;left:64vw;top:calc(50% - 24px*var(--u));transform:translateY(-50%);width:min(33vw,calc(540px*var(--u)));max-width:calc(100vw - 64vw - 20px);z-index:65;
+  background:#fff;color:var(--ink);padding:calc(18px*var(--u)) calc(20px*var(--u)) calc(20px*var(--u));}
+#panel .ph{font-size:max(18px,calc(20px*var(--u)));font-weight:800;display:flex;align-items:center;gap:calc(8px*var(--u));margin-bottom:calc(10px*var(--u))}
+#panel .ph svg{width:calc(20px*var(--u));height:calc(20px*var(--u))}
+#panel p{font-size:max(20px,calc(26px*var(--u)));font-weight:800;line-height:1.16;letter-spacing:-.01em;margin-bottom:calc(14px*var(--u));text-wrap:pretty}
+#panel mark,.card mark{white-space:nowrap;background:var(--y);color:var(--ink);padding:0 .1em}
+.nt{display:flex;flex-wrap:wrap;gap:calc(8px*var(--u));margin-bottom:calc(16px*var(--u))}
+.nt span{background:var(--ink);color:#fff;font-size:max(18px,calc(20px*var(--u)));font-weight:700;padding:calc(3px*var(--u)) calc(10px*var(--u));line-height:1.2}
+.bt{display:flex;flex-wrap:wrap;gap:calc(10px*var(--u))}
+.b1,.b2{display:inline-flex;align-items:center;gap:calc(8px*var(--u));font-size:max(18px,calc(22px*var(--u)));font-weight:800;padding:calc(8px*var(--u)) calc(16px*var(--u));text-decoration:none;border:2px solid var(--ink)}
+.b1{background:var(--ink);color:#fff}
+.b2{background:#fff;color:var(--ink)}
+.b1:hover{background:#333}.b2:hover{background:#e6e6e6}
+.b1 svg{width:calc(18px*var(--u));height:calc(18px*var(--u))}
+#proof{position:absolute;left:calc(50% + (700px - 720px)*var(--u));top:calc(50% - 24px*var(--u));transform:translateY(-50%);width:calc(680px*var(--u));max-width:calc(100vw - 50% - (700px - 720px)*var(--u) - 20px);z-index:65;}
+.card{background:#fff;color:var(--ink);padding:calc(18px*var(--u)) calc(22px*var(--u)) calc(20px*var(--u))}
+.card .row{font-size:max(20px,calc(26px*var(--u)));font-weight:800;line-height:1.16;letter-spacing:-.01em;margin-bottom:calc(10px*var(--u))}
+.card .row small{display:block;font-size:max(18px,calc(22px*var(--u)));font-weight:700;color:#3a3a3a}
+.card .fp{font-size:max(19px,calc(24px*var(--u)));font-weight:700;margin-bottom:calc(14px*var(--u));letter-spacing:.04em}
+#banner{position:absolute;left:0;top:0;z-index:66;background:var(--r);color:#fff;font-weight:800;
+  font-size:max(22px,calc(28px*var(--u)));line-height:1.12;padding:calc(10px*var(--u)) calc(18px*var(--u));}
+#tip{position:fixed;left:0;top:0;z-index:9500;pointer-events:none;background:#fff;color:#080808;font-weight:800;font-size:max(20px,calc(20px*var(--u)));line-height:1.15;padding:6px 12px;max-width:min(420px,calc(100vw - 24px));visibility:hidden}
+#tip.on{visibility:visible;opacity:1!important;animation:none!important;transition:none!important;background:#fff!important;color:#080808!important}
+.off{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+@media (prefers-reduced-motion:reduce){.lab{transition:none}}
+.pg{color:#080808;font-weight:800;font-size:max(18px,calc(22px*var(--u)));line-height:1.15;letter-spacing:-.01em;white-space:normal}
+.pg.w{color:#fff;display:flex;justify-content:space-between;gap:10px;white-space:nowrap;font-size:max(18px,calc(21px*var(--u)))}
+.pg mark{background:var(--y);color:#080808;padding:0 .12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.pg.sm{font-size:20px;letter-spacing:-.02em;white-space:nowrap}
+.pg.cap{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.75);font-size:max(19px,calc(26px*var(--u)));white-space:nowrap}
+#pbar{position:absolute;z-index:66;height:0;visibility:hidden}
+#pbar .tr{position:absolute;left:0;right:0;top:0;border-top:2px dashed #fff}
+#pbar .fi{position:absolute;left:0;top:-1px;height:4px;background:#fff}
+#pbar .hd{position:absolute;top:-9px;width:4px;height:20px;background:#fff;margin-left:-2px}
+#pbar.on{visibility:visible}
+#banner{white-space:nowrap}
+.ill{background:#080808;color:#fff;font-weight:700;font-size:17px;line-height:1.15;padding:1px 7px}
+.lab.zg{white-space:normal;pointer-events:auto}
+.zrow{display:flex;gap:var(--zgap,14px);align-items:stretch}
+.zn{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:calc(10px*var(--u));text-align:left;
+  background:var(--ink);color:#fff;border:3px dashed #fff;padding:max(10px,calc(12px*var(--u))) max(12px,calc(14px*var(--u)));
+  font-size:max(20px,calc(24px*var(--u)));font-weight:800;line-height:1.12;letter-spacing:-.014em;cursor:pointer}
+.zn:hover:not(.zx){background:#1d1d1d}
+.zn .zt{text-wrap:balance;hyphens:manual}
+.zw{display:inline-block;background:#fff;color:var(--ink);font-size:max(18px,calc(19px*var(--u)));font-weight:800;padding:0 .45em;line-height:1.28;white-space:nowrap}
+.zn.zx{cursor:default;border-style:dotted;margin-top:calc(10px*var(--u));flex-direction:row;align-items:center;justify-content:space-between}
+.zcap{display:flex;align-items:center;justify-content:space-between;gap:calc(16px*var(--u));margin-top:calc(10px*var(--u))}
+.zq{background:none;border:0;color:#fff;font-weight:800;font-size:max(18px,calc(20px*var(--u)));text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1px;padding:2px 0;white-space:nowrap}
+.zq:hover{text-decoration-thickness:2px}
+.zcap input{background:transparent;border:0;border-bottom:2px dashed #fff;color:#fff;font:inherit;font-size:max(18px,calc(20px*var(--u)));width:100%;min-width:0;padding:2px 0;outline-offset:4px;border-radius:0}
+.zcap input::placeholder{color:#c7c7c7;opacity:1}
+#wires .zlv{fill:none;stroke:#fff;stroke-width:2;stroke-dasharray:3 8;stroke-linecap:butt}
+#zone{position:absolute;left:50%;top:calc(50% + 24px*var(--u));transform:translate(-50%,-50%);width:min(90vw,calc(1380px*var(--u)));z-index:65;display:flex;flex-direction:column;gap:max(18px,calc(24px*var(--u)))}
+.zh{border:3px dashed #fff;background:var(--ink);padding:max(14px,calc(20px*var(--u))) max(18px,calc(26px*var(--u)));display:grid;grid-template-columns:.95fr 1.05fr;gap:max(24px,calc(40px*var(--u)))}
+.zh h2{font-size:max(28px,calc(40px*var(--u)));line-height:1.04;letter-spacing:-.022em;font-weight:800;text-wrap:balance;margin-bottom:max(10px,calc(14px*var(--u)))}
+.zh p{font-size:max(20px,calc(23px*var(--u)));line-height:1.2;font-weight:700;text-wrap:pretty}
+.zh p .zw{margin-right:.5em}
+.zh h3{font-size:max(18px,calc(19px*var(--u)));font-weight:700;color:var(--g);margin-bottom:max(4px,calc(6px*var(--u)))}
+.zh ul{list-style:none;font-size:max(19px,calc(21px*var(--u)));line-height:1.2;font-weight:700;margin-bottom:max(10px,calc(14px*var(--u)))}
+.zh li+li{margin-top:.25em}
+.za{display:flex;gap:max(8px,calc(12px*var(--u)));flex-wrap:wrap}
+.zth{display:flex;flex-direction:column;gap:4px;width:max(104px,calc(126px*var(--u)));background:none;border:0;text-align:left;font-size:max(18px,calc(18px*var(--u)));font-weight:700;line-height:1.1}
+.zth i{display:block;height:max(54px,calc(66px*var(--u)));background-size:cover;background-position:center;border:2px solid #fff}
+.zth:hover i{border-width:4px}
+.zcards{display:grid;grid-template-columns:repeat(3,1fr);gap:max(14px,calc(20px*var(--u)));list-style:none}
+.zc{background:#fff;color:var(--ink);padding:max(14px,calc(18px*var(--u))) max(16px,calc(20px*var(--u))) max(14px,calc(18px*var(--u)));display:flex;flex-direction:column;gap:max(6px,calc(8px*var(--u)))}
+.zc .g{display:flex;gap:.55em;align-items:flex-start;font-size:max(21px,calc(25px*var(--u)));line-height:1.1;font-weight:800;letter-spacing:-.012em;text-wrap:balance}
+.zno{flex:none;background:var(--ink);color:#fff;font-size:.85em;padding:0 .42em;line-height:1.25}
+.zc .o{font-size:max(19px,calc(21px*var(--u)));font-weight:800;line-height:1.15;color:#3a3a3a}
+.zc .c{font-size:max(19px,calc(21px*var(--u)));font-weight:600;line-height:1.2}
+.zc .d{align-self:flex-start;background:var(--ink);color:#fff;font-size:max(18px,calc(19px*var(--u)));font-weight:700;padding:0 .5em;line-height:1.3;margin-top:auto}
+#banner{padding:0}
+#banner .bnb{display:block;background:none;border:0;color:#fff;text-align:left;font-weight:800;font-size:inherit;line-height:1.12;padding:calc(10px*var(--u)) calc(18px*var(--u));white-space:nowrap}
+#banner .bnl{display:flex;align-items:center;gap:.4em;font-size:.82em;font-weight:700;margin-top:.15em;text-decoration:underline;text-underline-offset:.2em;text-decoration-thickness:1px}
+#banner .bnl svg{width:.8em;height:.8em}
+#banner .bnb:hover .bnl{text-decoration-thickness:2px}
+#banner :focus-visible{outline-color:#fff}
+#panel .cap{font-size:max(18px,calc(18px*var(--u)));font-weight:600;margin:4px 0 12px;line-height:1.2}
+#panel .pimg{position:relative;height:calc(96px*var(--u));background-size:cover;background-position:center}
+#panel .pimg .ill{position:absolute;right:0;bottom:0}
+.b2[disabled]{opacity:1;background:#080808;color:#fff;cursor:default}
+.it.thumbf{}
+</style>
+</head>
+<body>
+<!--
+THESIS: l'enquête est un seul plan continu de documentaire. On ne change jamais d'écran : la caméra voyage dans le noir, le long des fils, de la question vers un rôle, puis une pièce, puis la preuve.
+OWN-WORLD: un plateau noir à grain de pellicule, des cadres blancs qui changent d'échelle et de netteté selon la profondeur, des étiquettes blanches à texte noir à taille d'écran fixe.
+STORY: Stylos minceur, cas fictif. 47 vidéos répètent la même phrase, elles remontent à 6 sources, 3 zones d'ombre restent à creuser.
+FIRST VIEWPORT: la question en intertitre blanc, au centre, seule dans le noir ; le compteur « 3 zones d'ombre » dessous ; les fils poussent vers les rôles.
+FORM: plan-séquence en projection perspective maison (translation et échelle seulement, un axe dominant), clé de tirage 0faf8ac0.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+<div id="bc" class="off"></div>
+<div id="rail" class="off"></div>
+<div id="stage">
+  <svg id="wires" aria-hidden="true"></svg>
+  <div id="items"></div>
+  <h1 id="q" tabindex="0" role="button" data-tip="La question de l'enquête. Un clic revient en arrière.">Stylos minceur :<br>qui est derrière ?</h1>
+  <div id="labs"></div>
+  <div id="pbar"><i class="tr"></i><i class="fi"></i><i class="hd"></i></div>
+</div>
+<div id="panel" class="off"></div>
+<div id="proof" class="off"></div>
+<div id="zone" class="off"></div>
+<div id="banner" class="off"><button class="bnb" data-zonego="z-telegram" data-tip="La zone d'ombre : existe-t-il une publication antérieure au 11 octobre ?">Réserve : la réponse tombe si une publication plus ancienne existe sur Telegram.<span class="bnl">Voir la zone d'ombre <svg viewBox="0 0 20 20"><path d="M5 15 15 5M7 5h8v8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span></button></div>
+<div id="sub"></div>
+<div id="fict">Cas fictif, maquette,<br>données d'exemple</div>
+<img id="logo" src="brut-logo.svg" alt="Brut.">
+<div id="tip"></div>
+<canvas id="grain-src" width="256" height="256" style="display:none"></canvas>
+<div id="grain"></div>
+
+<script>
+(()=>{
+'use strict';
+const F=1000;
+const de=document.documentElement;
+let W=de.clientWidth,H=de.clientHeight,u=1,CY=H/2,BAND=100;
+const $=s=>document.querySelector(s);
+const qEl=$('#q'),itemsEl=$('#items'),labsEl=$('#labs'),wiresEl=$('#wires');
+const NS='http://www.w3.org/2000/svg';
+function size(){W=de.clientWidth||innerWidth;H=de.clientHeight||innerHeight;u=Math.max(.55,Math.min(W/1440,H/900,(H-100)/790,2.4));BAND=Math.max(100,104*u);CY=(56*u+H-BAND)/2;document.documentElement.style.setProperty('--u',u)}
+size();
+
+/* grain de pellicule : bruit généré une fois, déplacé par à-coups */
+(()=>{const c=$('#grain-src'),x=c.getContext('2d'),d=x.createImageData(256,256);
+  for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255|0;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}
+  x.putImageData(d,0,0);const g=$('#grain');g.style.backgroundImage='url('+c.toDataURL()+')';
+  setInterval(()=>{g.style.backgroundPosition=(Math.random()*256|0)+'px '+(Math.random()*256|0)+'px'},110)})();
+
+/* pictogrammes de plateforme, dessinés */
+const IC={
+ tiktok:'<svg viewBox="0 0 20 20"><path d="M11 2v10.2a3.2 3.2 0 1 1-3.2-3.2" fill="none" stroke="#080808" stroke-width="2.4"/><path d="M11 2c.3 2.4 1.9 3.9 4.2 4.1" fill="none" stroke="#080808" stroke-width="2.4"/></svg>',
+ telegram:'<svg viewBox="0 0 20 20"><path d="M2 9.2 18 3 15.4 17l-5-3.7-2.6 2.6-.4-4.3z" fill="#080808"/></svg>',
+ youtube:'<svg viewBox="0 0 20 20"><rect x="1" y="4" width="18" height="12" rx="3.5" fill="#080808"/><path d="M8 7.5v5l4.5-2.5z" fill="#fff"/></svg>',
+ reddit:'<svg viewBox="0 0 20 20"><ellipse cx="10" cy="12" rx="7.5" ry="5.5" fill="#080808"/><circle cx="14.5" cy="4.5" r="1.8" fill="#080808"/><circle cx="7" cy="11.5" r="1.4" fill="#fff"/><circle cx="13" cy="11.5" r="1.4" fill="#fff"/></svg>',
+ web:'<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="#080808" stroke-width="2"/><path d="M2 10h16M10 2c-3 3-3 13 0 16M10 2c3 3 3 13 0 16" fill="none" stroke="#080808" stroke-width="1.6"/></svg>',
+ doc:'<svg viewBox="0 0 20 20"><path d="M4 1.5h8l4 4v13H4z" fill="none" stroke="#080808" stroke-width="2"/><path d="M7 10h6M7 13.5h6" stroke="#080808" stroke-width="2"/></svg>'
+};
+const ARROW='<svg viewBox="0 0 20 20"><path d="M5 15 15 5M7 5h8v8" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>';
+const tag=(p,t)=>IC[p]+'<span>'+t+'</span>';
+
+/* images : 16 illustrations documentaires générées pour le cas (mention « illustration » partout) */
+const IMG={lea:'images/v-lea.jpg',marie:'images/v-marie.jpg',sofia:'images/v-sofia.jpg',nora:'images/v-nora.jpg',camille:'images/v-camille.jpg',tg:'images/v-telegram.jpg',
+ produit:'images/p-produit.jpg',boutique:'images/p-boutique.jpg',registre:'images/p-registre.jpg',agence:'images/p-agence.jpg',presse:'images/p-presse.jpg',
+ victime:'images/p-victime.jpg',expert:'images/p-expert.jpg',colis:'images/p-colis.jpg',temoin:'images/p-temoin.jpg',miscause:'images/p-miscause.jpg'};
+
+/* ---------- données ---------- */
+const roles=[
+ {id:'origin',name:"Plus ancienne trace retrouvée",n:1,ox:-470,oy:-150,s:.95,img:'lea',sw:130,sh:195,st:'net',mode:'net',wire:'solid',
+  tipN:"La plus ancienne trace retrouvée : la vidéo de @lea.glow, le 11 oct. à 22 h 47.",tipL:"Plus ancienne trace retrouvée de la phrase, à ce stade des recherches.",
+  d:{tag:['tiktok','TikTok @lea.glow'],text:"Vidéo TikTok de @lea.glow, plus ancienne trace retrouvée : 11 oct., 22 h 47. Rien n'établit qu'elle soit à l'origine de la phrase.",src:'créatrice identifiée',info:'archivée le 12 oct.',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'},
+  sub:"Plus ancienne trace retrouvée : 11 oct., à 22 h 47. Archivée le lendemain."},
+ {id:'amp',name:'Relais',n:47,ox:500,oy:-120,s:.8,wire:'solid',mode:'net',
+  tipN:"47 vidéos répètent la même phrase. Un clic les ouvre.",tipL:"Ces comptes publient la même phrase, plus tard ; rien n'établit qu'ils la copient."},
+ {id:'benef',name:'À qui ça profite',n:2,ox:-430,oy:170,s:.9,img:'registre',sw:210,sh:140,st:'net',mode:'net',wire:'dash',
+  tipN:"Orvane Trading Ltd, au registre des sociétés. Le lien avec les boutiques n'est qu'un indice.",tipL:"Lien possible : un seul indice à l'appui.",
+  d:{tag:['doc','Registre des sociétés'],text:"Orvane Trading Ltd, créée le 4 oct. Gérant déclaré au registre : P. Vasseur (nom fictif). Lien avec les boutiques : possible, un seul indice.",src:'registre officiel',info:'existence confirmée au registre',btn:'Ouvrir le document',url:'https://example.org/registre'},
+  sub:"Une société créée le 4 oct. Le lien avec les boutiques reste un indice."},
+ {id:'infra',name:'Moyens techniques',n:3,ox:450,oy:190,s:.9,img:'boutique',sw:210,sh:140,st:'net',mode:'net',wire:'solid',
+  tipN:"Deux boutiques, un même identifiant publicitaire.",tipL:"Les deux boutiques vendent le même produit.",
+  d:{tag:['web','minceur-stylo.shop'],text:"minceur-stylo.shop (29 €) et slimpen-direct.com (27 €) : même identifiant publicitaire 7731 5029, domaines créés le 6 oct.",src:'pages archivées',info:'recoupée : même identifiant publicitaire sur les deux sites',btn:'Ouvrir la page',url:'https://example.org/boutique'},
+  sub:"Deux boutiques, un même identifiant publicitaire."},
+ {id:'contra',name:'Voix contraires',n:2,ox:170,oy:-245,s:.9,img:'agence',sw:210,sh:140,st:'net',mode:'net',wire:'solid',
+  tipN:"Ceux qui contredisent la promesse : l'agence sanitaire et la presse locale.",tipL:"Ils contredisent la promesse « trois kilos ».",
+  d:{tag:['doc','Agence sanitaire, 3 nov.'],text:"Avis de l'agence sanitaire du 3 nov. : <mark>aucune autorisation pour ce produit</mark>. Le Courrier de l'Est, 2 nov.",src:'avis officiel',info:'recoupée par la presse',btn:'Ouvrir le document',url:'https://example.org/avis'},
+  sub:"L'agence sanitaire n'a donné aucune autorisation."},
+ {id:'inconnus',name:"Zones d'ombre",n:3,ox:0,oy:205,s:.9,ghost:1,sw:330,sh:200,mode:'dots',wire:'dash',
+  tipN:"Ce que l'outil n'a pas su remonter. Ici, le journaliste prend le relais.",tipL:"Ces questions touchent tous les autres rôles.",
+  sub:"Trois zones d'ombre."},
+ {id:'victimes',name:'Personnes qui se disent lésées',n:1,ox:-300,oy:-270,s:.5,img:'victime',sw:104,sh:70,thumb:1,st:'indice',mode:'thumb',wire:'dash',
+  tipN:"Indice : un seul message, auteur anonyme.",tipL:"Un témoignage isolé.",
+  d:{tag:['reddit','u/anon_4417 sur r/sante'],text:"u/anon_4417, r/sante : « Malaise après deux jours. Jamais remboursée. »",src:'anonyme',info:'possible, non recoupée',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'},
+  sub:"Un seul message, anonyme."},
+ {id:'temoins',name:'Témoins directs',n:1,ox:-600,oy:280,s:.5,img:'temoin',sw:104,sh:70,thumb:1,st:'net',mode:'thumb',wire:'dash',
+  tipN:"Non vérifié : profil public, identité à confirmer.",tipL:"Piste à confirmer.",
+  d:{tag:['telegram','Profil public'],text:"Ancienne modératrice du canal Telegram, profil public. Elle pourrait renseigner sur le financement du canal ; identité à vérifier avant tout contact.",src:'non vérifiée',info:'à confirmer',btn:'Ouvrir le profil',url:'https://example.org/exemple'},
+  sub:"Une témoin possible, pas encore vérifiée."},
+ {id:'experts',name:'Experts',n:1,ox:330,oy:-300,s:.5,img:'expert',sw:104,sh:70,thumb:1,st:'net',mode:'thumb',wire:'solid',
+  tipN:"Dr H. Roussel, endocrinologue, à 1:12 dans sa vidéo.",tipL:"Un expert à appeler.",
+  d:{tag:['youtube','Dr H. Roussel'],text:"Dr H. Roussel, endocrinologue, YouTube, 1:12 : « Ce principe actif n'a jamais fait maigrir personne. »",src:'expert qualifié',info:'avis, à citer avec accord',btn:'Ouvrir la vidéo',url:'https://example.org/exemple'},
+  sub:"Un expert, à 1:12 de sa vidéo."},
+ {id:'mis',name:'Mis en cause',n:2,ox:-600,oy:-280,s:.5,img:'miscause',sw:104,sh:70,thumb:1,st:'net',mode:'thumb',wire:'solid',
+  tipN:"Sollicitation : à envoyer avant parution.",tipL:"Ils doivent pouvoir répondre.",
+  d:{tag:['doc','Sollicitation'],text:"Orvane Trading Ltd et son gérant déclaré, P. Vasseur (nom fictif) : sollicitation à envoyer avant parution. Leur lien avec les boutiques reste à établir.",src:'registre officiel',info:'réponse à demander',btn:'Ouvrir la sollicitation',url:'#'},
+  sub:"Une sollicitation rédigée, pas encore envoyée."}
+];
+/* zones d'ombre : ce que l'outil n'a pas su remonter (contrat zones_d_ombre, cahier zones-ombre.md) ; rangées selon le rôle qui leur manque, de gauche à droite */
+const ZONES=[
+ {id:'z-telegram',court:'Telegram',titre:"Un message plus ancien que le 11 oct. existe-t-il ?",pourquoi:'hors de portée',pourquoi_en_mots:"Telegram n'est indexé qu'à partir du 9 oct., et les comptes de moins de 5 000 abonnés n'apparaissent pas.",
+  tente:["La phrase sur TikTok, Instagram et YouTube depuis le 1er sept.","Le canal Telegram depuis le 9 oct."],autour:['video-lea','telegram-canal'],
+  pistes:[
+   {geste:"Remonter le canal à la main",ou:"Application Telegram, canal « Stylo Minceur Promo »",comment:"Rejoindre le canal, faire défiler jusqu'au premier message, capturer et archiver chaque écran.",difficulte:"facile"},
+   {geste:"Chercher les boutiques dans les archives du web",ou:"Wayback Machine, archive.today",comment:"Taper l'adresse des deux boutiques et regarder les captures d'avant le 6 oct.",difficulte:"facile"},
+   {geste:"Interroger l'ancienne modératrice",ou:"Son profil public",comment:"Lui demander les premières consignes reçues et la date de création du canal.",difficulte:"demande du temps"}],
+  role_manquant:'origine',role:'origin',manque:"Il manque ici : la plus ancienne trace"},
+ {id:'z-orvane',court:'Orvane Trading',titre:"Qui détient vraiment Orvane Trading ?",pourquoi:'caché',pourquoi_en_mots:"Société écran : adresse de domiciliation partagée par 140 sociétés, bénéficiaire non publié.",
+  tente:["Registre britannique : un gérant déclaré, P. Vasseur","Nom du gérant dans la presse et sur les réseaux : aucun résultat"],autour:['registre-orvane','boutique-minceur','boutique-slimpen','miscause-demande'],
+  pistes:[
+   {geste:"Lire le registre des bénéficiaires effectifs",ou:"Companies House (registre britannique, en ligne)",comment:"Chercher le numéro de la société et télécharger l'historique des dépôts : les « personnes ayant un contrôle significatif » y figurent.",difficulte:"facile"},
+   {geste:"Remonter l'adresse de domiciliation",ou:"La société de domiciliation, à Londres",comment:"Lister les 140 sociétés de l'adresse et chercher celles qui partagent un gérant ou un site.",difficulte:"demande du temps"},
+   {geste:"Trouver un ancien salarié",ou:"Annonces d'emploi d'Orvane, LinkedIn",comment:"Message direct en proposant l'anonymat ; demander qui donne les ordres.",difficulte:"difficile"}],
+  role_manquant:'beneficiaires',role:'benef',manque:"Il manque ici : le bénéficiaire"},
+ {id:'z-malades',court:'les malades',titre:"Combien de personnes ont été malades ?",pourquoi:'introuvable',pourquoi_en_mots:"Les données de santé ne sont pas publiques ; seuls 3 témoignages en ligne.",
+  tente:["Forums de santé, avis clients, « malaise stylo minceur » : 3 témoignages"],autour:['reddit-anon','avis-agence','expert-roussel'],
+  pistes:[
+   {geste:"Demander les signalements",ou:"Agence sanitaire et centres antipoison",comment:"Écrire au service presse ; si refus, demande d'accès aux documents (CADA), réponse sous un mois.",difficulte:"difficile"},
+   {geste:"Lancer un appel à témoins",ou:"Les réseaux de Brut",comment:"Post court avec formulaire anonyme ; vérifier chaque témoignage par un justificatif d'achat.",difficulte:"demande du temps"},
+   {geste:"Demander à l'expert",ou:"Dr H. Roussel, endocrinologue",comment:"Combien de patients a-t-il vus avec ce produit, et depuis quand ?",difficulte:"facile"}],
+  role_manquant:'victimes',role:'victimes',manque:"Il manque ici : les personnes lésées"}
+];
+const AUT={'registre-orvane':['Registre','registre','benef'],'boutique-minceur':['Boutique 1','boutique','infra'],'boutique-slimpen':['Boutique 2','produit','infra'],'miscause-demande':['Mis en cause','miscause','mis'],
+ 'video-lea':['@lea.glow','lea','origin'],'telegram-canal':['Canal Telegram','tg','amp'],'reddit-anon':['Reddit anonyme','victime','victimes'],'avis-agence':['Avis agence','agence','contra'],'expert-roussel':['Dr Roussel','expert','experts']};
+const POS={origin:[-610,-250,112,168],amp:[600,-50,0,0],benef:[-445,10,192,128],infra:[330,250,192,128],contra:[50,-245,192,128],inconnus:[-100,235,372,206],
+ victimes:[-330,-125,112,75],temoins:[-230,-285,112,75],experts:[475,-255,112,75],mis:[535,195,112,75]};
+roles.forEach(r=>{const q=POS[r.id];if(q){r.ox=q[0];r.oy=q[1];if(q[2]){r.sw=q[2];r.sh=q[3]}}});
+const FRID={origin:'origine',amp:'amplificateurs',benef:'beneficiaires',infra:'infrastructure',contra:'contradicteurs',inconnus:'inconnus',victimes:'victimes',temoins:'temoins',experts:'experts',mis:'miscause'};
+const R={};roles.forEach(r=>{R[r.id]=r;r.x=r.ox/r.s;r.y=r.oy/r.s;r.z=F/r.s;r.w=(r.sw||0)/r.s;r.h=(r.sh||0)/r.s});
+const AMP=R.amp,ax=AMP.x,ay=AMP.y,zA=AMP.z;
+let EXTRA=null,posing=false,zoneBack='n1';
+const NUM=['Zéro','Une','Deux','Trois','Quatre','Cinq','Six','Sept'];
+const nZ=()=>ZONES.length+(EXTRA?1:0);
+const sub1=()=>"312 sources lues : 214 vidéos, 61 articles, 23 études, 14 registres";
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const QTITLE="Stylos minceur : qui est derrière ?";
+
+/* les 47 vidéos et leurs 6 sources */
+const G=[
+ {id:'lea',h:'@lea.glow',p:'tiktok',n:6,img:'lea',tipS:"@lea.glow : plus ancienne trace retrouvée, six vidéos qui répètent la phrase.",
+  d:{tag:['tiktok','TikTok @lea.glow'],text:"Compte @lea.glow, plus ancienne trace retrouvée : 11 oct. Six vidéos répètent la phrase.",src:'créatrice identifiée',info:'archivée, heure décodée',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'}},
+ {id:'marie',h:'@marie_slim',p:'tiktok',n:11,img:'marie',tipS:"@marie_slim : 11 vidéos, une seule source.",
+  d:{tag:['tiktok','TikTok @marie_slim'],text:"Vidéo TikTok de @marie_slim, 14 oct. Elle reprend <mark>« Un clic, trois kilos »</mark> mot pour mot.",src:'créatrice, relais',info:'recoupée avec @lea.glow',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple',b2:'Comparer avec @lea.glow'}},
+ {id:'sofia',h:'@sofia.minceur',p:'tiktok',n:9,img:'sofia',tipS:"@sofia.minceur : 9 vidéos, même montage.",
+  d:{tag:['tiktok','TikTok @sofia.minceur'],text:"TikTok @sofia.minceur, 15 oct. Neuf vidéos, même phrase, même montage.",src:'compte récent, relais',info:'montage identique',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'}},
+ {id:'nora',h:'@nora.fit',p:'tiktok',n:8,img:'nora',tipS:"@nora.fit : 8 vidéos, aucun partenariat annoncé.",
+  d:{tag:['tiktok','TikTok @nora.fit'],text:"TikTok @nora.fit, 15 oct. Huit vidéos, même phrase, aucun partenariat annoncé.",src:'créatrice, relais',info:'non recoupée ailleurs',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'}},
+ {id:'camille',h:'@camille.rtn',p:'tiktok',n:7,img:'camille',tipS:"@camille.rtn : 7 vidéos, même lien en description.",
+  d:{tag:['tiktok','TikTok @camille.rtn'],text:"TikTok @camille.rtn, 16 oct. Sept vidéos, même phrase, même lien en description.",src:'créatrice, relais',info:'lien recoupé',btn:'Ouvrir la publication d\'origine',url:'https://example.org/exemple'}},
+ {id:'tg',h:'Stylo Minceur',p:'telegram',n:6,img:'tg',tipS:"Canal Telegram, 2 300 abonnés : 6 vidéos, même phrase.",
+  d:{tag:['telegram','Telegram Stylo Minceur Promo'],text:"Canal Telegram « Stylo Minceur Promo », 2 300 abonnés. Six vidéos, même phrase.",src:'canal public, relais',info:'date à vérifier',btn:'Ouvrir le canal',url:'https://example.org/exemple'}}
+];
+const ILL="Illustration générée par IA (cas fictif)";
+const PM={origin:['lea','Image de la vidéo à 0:14'],benef:['registre',ILL],infra:['produit',ILL],contra:['presse',ILL],victimes:['victime',ILL],temoins:['temoin',ILL],experts:['expert','Image de la vidéo à 1:12'],mis:['miscause',ILL]};
+roles.forEach(r=>{const m=PM[r.id];if(r.d&&m){r.d.pimg=m[0];r.d.cap=m[1]}});
+const GT={lea:'0:14',marie:'0:09',sofia:'0:09',nora:'0:11',camille:'0:08',tg:'0:05'};
+G.forEach(g=>{g.d.pimg=g.img;g.d.cap='Image de la vidéo à '+GT[g.id]});
+const tiles=[];let k=0;
+G.forEach((g,gi)=>{g.tiles=[];for(let j=0;j<g.n;j++){const t={k:k++,g:gi,j};g.tiles.push(t);tiles.push(t)}});
+tiles.forEach(t=>{const p=(t.k*17)%47;t.col=p%7;t.row=(p/7)|0});
+
+/* ---------- éléments du monde ---------- */
+const items={},order=[];
+function inner(kind,o){return (kind==='ph'||kind==='tile')?`<i class="im" style="background-image:url(${IMG[o.img]})"></i>`:''}
+function addItem(o){
+ const it=Object.assign({op:0,bl:0,dim:1,x:0,y:0,z:1000,w:100,h:100,look:'full',zb:0,tip:''},o);
+ it.el=document.createElement('div');it.el.className='it'+(it.st==='indice'?' dash':'');it.el.dataset.id=it.id;
+ if(it.ghost)it.el.classList.add('ghost');
+ it.el.innerHTML=inner(it.kind,it);if(it.tip){it.el.dataset.tip=it.tip;it.el.setAttribute('aria-label',it.tip)}it.el.setAttribute('role','button');it.el.tabIndex=-1;
+ if(it.role&&FRID[it.role])it.el.dataset.role=FRID[it.role];
+ if(it.tile){it.el.dataset.vignette=it.tile.k;if(G[it.tile.g])it.el.dataset.pile=G[it.tile.g].id}
+ itemsEl.appendChild(it.el);items[it.id]=it;order.push(it);return it;
+}
+roles.forEach(r=>{
+ if(r.id==='amp'){addItem({id:'ampc',role:'amp',ghost:1,kind:'none',tip:r.tipN});return}
+ addItem({id:r.id,role:r.id,ghost:r.ghost,kind:r.ghost?'none':'ph',img:r.img,st:r.st,thumb:r.thumb,w:r.w,h:r.h,tip:(r.thumb?r.name+' : '+r.n+'. ':'')+r.tipN,x:r.x,y:r.y,z:r.z});
+});
+/* pièces supplémentaires des dossiers : toutes les pièces annoncées par le compteur sont montrées */
+const EXTRAS={benef:[{img:'miscause',tag:['doc','Gérant déclaré : P. Vasseur']}],
+ infra:[{img:'produit',tag:['web','slimpen-direct.com']},{img:'colis',tag:['web','Colis, même étiquette']}],
+ contra:[{img:'presse',tag:['doc',"Le Courrier de l'Est, 2 nov."]}],
+ mis:[{img:'registre',tag:['doc','Registre des sociétés']}]};
+Object.keys(EXTRAS).forEach(id=>{const r=R[id];EXTRAS[id].forEach((e,i)=>addItem({id:id+'_p'+i,role:id,kind:'ph',img:e.img,st:'net',w:r.w,h:r.h,x:r.x,y:r.y,z:r.z,tip:'Une autre pièce du rôle '+r.name}))});
+tiles.forEach(t=>{const g=G[t.g];t.id='t'+t.k;
+ addItem({id:t.id,role:'amp',tile:t,fast:1,kind:'tile',img:g.img,st:'net',w:14,h:25,zb:t.j===0?({marie:0,sofia:1,nora:2})[g.id]||0:-t.j,
+  tip:"Une des 47 vidéos qui répètent la même phrase.",x:ax,y:ay,z:zA});});
+const topId=gi=>'t'+G[gi].tiles[0].k;
+[0,1].forEach(i=>items[topId(i)].el.dataset.preuveVideo='');
+document.querySelectorAll('.it').forEach(e=>{});
+$('#q').setAttribute('data-question','');
+
+/* ---------- libellés à taille d'écran fixe ---------- */
+const labs=[];
+function lab(o){const e=document.createElement('div');e.className='lab '+(o.cls||'');e.innerHTML=o.html;labsEl.appendChild(e);o.el=e;labs.push(o);return o}
+const isRole=(sc,id)=>sc==='role'&&cur.arg===id;
+let INC=null,N0C=null;
+const zcount=()=>`<span data-compteur data-valeur="${nZ()}">${nZ()}</span> zone${nZ()>1?'s':''} d'ombre`;
+function renderInc(){
+ const n=nZ();
+ const rows=ZONES.map(z=>`<button class="zn" data-zone="${z.id}" data-tip="${esc(z.titre)} Ici, l'outil s'arrête : un clic ouvre les pistes."><span class="zt">${esc(z.titre)}</span><span class="zw">${z.pourquoi}</span></button>`).join('');
+ const ex=EXTRA?`<div class="zn zx" data-zone="zx" data-tip="Votre question est versée au dossier : l'outil cherche les pièces qui y répondent."><span class="zt">${esc(EXTRA)}</span><span class="zw">en cours de recherche</span></div>`:'';
+ const cap=EXTRA?'':(posing?`<input id="qin" type="text" maxlength="60" placeholder="Votre question, puis Entrée" aria-label="Poser une question">`:`<button class="zq" data-poser>+ Poser une question</button>`);
+ INC.el.innerHTML=`<div class="zrow">${rows}</div>${ex}<div class="zcap"><span class="chip zgh">Zones d'ombre<span class="n" data-compteur data-valeur="${n}">${n}</span></span>${cap}</div>`;
+ if(N0C)N0C.el.innerHTML=zcount();
+ const inp=INC.el.querySelector('#qin');
+ if(inp){inp.addEventListener('keydown',e=>{e.stopPropagation();
+   if(e.key==='Enter'&&inp.value.trim()){e.preventDefault();addQuestion(inp.value.trim())}
+   else if(e.key==='Escape'){posing=false;renderInc()}});
+  inp.addEventListener('blur',()=>{if(posing&&!inp.value.trim()){posing=false;renderInc()}});
+  inp.focus();}
+}
+roles.forEach(r=>{
+ const itId=r.id==='amp'?'ampc':r.id;
+ const html=`${r.name}<span class="n" data-compteur data-valeur="${r.n}">${r.n}</span>`;
+ if(r.mode==='dots'){INC=lab({it:itId,corner:'c',cls:'zg',html:'',vis:s=>s==='n1'})}
+ else if(r.thumb){
+  lab({it:itId,corner:(r.id==='victimes'||r.id==='mis')?'blo':r.id==='temoins'?'tlo':'r',cls:'plain'+(r.id==='victimes'?' two':''),html,vis:s=>s==='n1'});
+  lab({it:itId,corner:'bo',cls:'chip',html,vis:s=>isRole(s,r.id)});
+ }else lab({it:itId,corner:'bo',cls:'chip',html,vis:s=>s==='n1'||isRole(s,r.id)});
+ if(r.d&&r.id!=='inconnus')lab({it:itId,corner:'tl',cls:'tag',html:tag(r.d.tag[0],r.d.tag[1]),vis:s=>isRole(s,r.id)});
+});
+Object.keys(EXTRAS).forEach(id=>EXTRAS[id].forEach((e,i)=>lab({it:id+'_p'+i,corner:'tl',cls:'tag',html:tag(e.tag[0],e.tag[1]),vis:s=>isRole(s,id)})));
+N0C=lab({it:'__q',corner:'qb',cls:'dzc',html:zcount(),vis:s=>s==='n0'});
+renderInc();
+G.forEach((g,gi)=>{
+ const id=topId(gi);
+ lab({it:id,corner:'tl',cls:'tag',html:tag(g.p,g.h)+`<span class="cn" data-compteur data-valeur="${g.n}">${g.n}</span>`,vis:s=>s==='n2'||(s==='proof'&&(g.id==='lea'||g.id==='marie'))});
+});
+const PR={yellow:false,p:0};
+const tmL=lab({it:topId(0),corner:'bl',cls:'time',html:'0:12',vis:s=>s==='proof'});
+const tmM=lab({it:topId(1),corner:'bl',cls:'time',html:'0:07',vis:s=>s==='proof'});
+[0,1].forEach(i=>{
+ lab({it:topId(i),corner:'hl',cls:'pg cap',html:'Un clic, trois kilos',vis:s=>s==='proof'&&!PR.yellow});
+ lab({it:topId(i),corner:'hl',cls:'hl',html:'Un clic, trois kilos',vis:s=>s==='proof'&&PR.yellow});
+});
+
+/* ---------- fils ---------- */
+const wires={};
+function mkWire(id,dash,tipL,itId){
+ const g=document.createElementNS(NS,'g');
+ const v=document.createElementNS(NS,'path'),h=document.createElementNS(NS,'path');
+ v.setAttribute('class','vis'+(dash?' dash':''));h.setAttribute('class','hit');h.dataset.tip=tipL;
+ g.append(v,h);g.setAttribute('data-lien',FRID[id]||'question-posee');v.setAttribute('data-lien',FRID[id]||'question-posee');wiresEl.appendChild(g);wires[id]={id,v,h,p:0,fp:0,tp:0,delay:0,it:itId};
+}
+roles.forEach(r=>mkWire(r.id,r.wire==='dash',r.tipL,r.id==='amp'?'ampc':r.id));
+/* fils pointillés zone -> rôle qui lui manque */
+const ZL=ZONES.map(z=>{const g=document.createElementNS(NS,'g'),v=document.createElementNS(NS,'path'),h=document.createElementNS(NS,'path');
+ v.setAttribute('class','zlv');h.setAttribute('class','hit');h.dataset.tip=z.manque;g.setAttribute('data-lien','zone-'+z.id);g.append(v,h);wiresEl.appendChild(g);return{id:z.id,role:z.role,v,h,t0:0}});
+
+/* ---------- caméra, scènes ---------- */
+const cam={x:0,y:0,z:0,fx:0,fy:0,fz:0,tx:0,ty:0,tz:0};
+const Q={size:92,op:1,fs:92,ts:92,fo:1,to:1};
+let lastNom='',proofT0=0,fixedPhase=null,selfHash='',pendingResize=false;
+let cur={name:'n0',arg:null},sel='marie',t0=0,itemDur=760,maxDelay=0,moving=false,instantMode=true;
+const ease=t=>t>=1?1:1-Math.pow(2,-10*t);
+
+/* groupe des zones : une rangée de trois sous les rôles, posée en bas à gauche ; les rôles qui leur manquent sont placés au-dessus */
+function zoneGeom(){
+ const gap=Math.max(12,14*u),bw=Math.max(212,272*u),w=3*bw+2*gap;
+ INC.el.style.setProperty('--zgap',gap+'px');INC.el.style.width=w+'px';
+ const h=INC.el.offsetHeight,left=Math.max(30,.025*W),bottom=H-Math.max(74,80*u);
+ const zr=INC.el.querySelector('.zrow');
+ return{left,w,h,bw,gap,cx:left+w/2,cy:bottom-h/2,rowMid:bottom-h+(zr?zr.offsetHeight:h)/2,c:[0,1,2].map(i=>left+i*(bw+gap)+bw/2)};
+}
+function syncZone(){
+ const g=zoneGeom(),r=R.inconnus,s=r.s;
+ r.x=(g.cx-W/2)/(s*u);r.y=(g.cy-CY)/(s*u);r.w=g.w/(s*u);r.h=g.h/(s*u);
+ return g}
+function applyGhost(){const r=R.inconnus,it=items.inconnus;if(!it)return;for(const k of['x','y','w','h']){it[k]=r[k];if(it.tg)it.tg[k]=r[k];if(it.f)it.f[k]=r[k]}}
+function rowCenter(){return {x:ax+(.315*W-W/2)/u,y:ay}}
+/* niveau 2 et dossiers : pièces + panneau = un seul groupe centré, écart fixe de 48 px (à l'échelle), centres verticaux alignés */
+function layoutGroup(k,pwBase,phBase,fixedW){
+ const gap=48*u,M=W*.9;let PW=Math.min(.33*W,540*u),pw,ph;
+ if(fixedW){pw=fixedW;ph=phBase;if(pw+gap+PW>M)PW=Math.max(M-pw-gap,320*u)}else{
+  const boost=k<=2?1.4:1.15;pw=Math.min(pwBase*boost,(M-PW-k*gap)/k);
+  let f=pw/pwBase;const hmax=H*.6;if(phBase*f>hmax)f=hmax/phBase;pw=pwBase*f;ph=phBase*f}
+ const gw=k*pw+k*gap+PW,left=(W-gw)/2;
+ return{pw,ph,PW,xs:Array.from({length:k},(_,i)=>left+i*(pw+gap)+pw/2),panelLeft:left+k*(pw+gap)}}
+function camRole(r,s){return {x:r.x+(.5-.29)*W/(s*u),y:r.y,z:r.z-F/s}}
+function atScreen(sx,sy,z,c){const s=F/(z-c.z);return {x:c.x+(sx-W/2)/(s*u),y:c.y+(sy-CY)/(s*u),s}}
+
+const bo=t=>(t.j===0&&G[t.g].id===sel)?1.1:1;
+const STK={marie:[-28,21],sofia:[0,0],nora:[28,-21]};
+function spec(name,arg){
+ const sp={cam:{x:0,y:0,z:0},q:{size:66,op:1},it:{},wires:{},wireIt:{},sub:'',bc:null,rail:false,panel:null,zone:null,proof:false,banner:false,delays:{}};
+ INC&&syncZone();
+ order.forEach(it=>{sp.it[it.id]={op:0,bl:0}});
+ const restRoles=()=>{
+  roles.forEach(r=>{if(r.id==='amp')return;sp.it[r.id]={x:r.x,y:r.y,z:r.z,w:r.w,h:r.h,op:1,bl:0,dim:1,look:'full'}});
+  sp.it.ampc={x:ax,y:ay,z:zA,w:176/AMP.s,h:222/AMP.s,op:1,bl:0,dim:1};
+  tiles.forEach(t=>{const o=t.j===0&&STK[G[t.g].id];
+   sp.it[t.id]={x:ax+(o?o[0]:0)/AMP.s,y:ay+(o?o[1]:0)/AMP.s,z:zA,w:120/AMP.s,h:180/AMP.s,op:o?1:0,bl:0,dim:1,look:'full'}});
+  if(INC){const ZG=zoneGeom(),at=(id,sx,sy)=>{const r=R[id],o=sp.it[id];o.x=(sx-W/2)/(r.s*u);if(sy!=null)o.y=(sy-CY)/(r.s*u)};
+   const lw=id=>{let m=0;labs.forEach(l=>{if(l.it===id&&/^(bo|blo|tlo)$/.test(l.corner))m=Math.max(m,l.el.offsetWidth)});return m};
+   const fs0=qEl.style.fontSize;qEl.style.fontSize=(66*u)+'px';qEl.classList.remove('one');const qw66=qEl.offsetWidth;qEl.style.fontSize=fs0;qEl.classList.toggle('one',Q.size<45);const tl=W/2-qw66/2,bwid=R.benef.w*R.benef.s*u;
+   at('origin',ZG.c[0]);at('benef',Math.min(ZG.c[1],tl-48*u-Math.max(bwid,lw('benef'))+bwid/2));
+   const vx=ZG.left+ZG.w+Math.max(40,45*u)+56*u;at('victimes',vx,ZG.rowMid);
+   const dx=id=>(sp.it[id].x*R[id].s*u)+W/2,ix=Math.max(dx('infra'),vx-56*u+Math.max(112*u,128)+Math.max(24,26*u)+132*u);at('infra',ix);
+   const mw=R.mis.w*R.mis.s*u;at('mis',Math.min(Math.max(dx('mis'),ix+96*u+Math.max(24,28*u)+56*u),W*.97-Math.max(mw,lw('mis'))+mw/2))}
+ };
+ if(name==='n0'){
+  sp.q={size:92,op:1};sp.sub='';
+  restRoles();order.forEach(it=>{sp.it[it.id].op=0});
+ }else if(name==='n1'){
+  restRoles();sp.q={size:66,op:1};
+  sp.sub=sub1();
+  roles.forEach(r=>{sp.wires[r.id]=1});
+ }else if(name==='role'){
+  const r=R[arg],s=1.6,c=camRole(r,s);sp.cam=c;sp.q={size:30,op:0};
+  const ex=EXTRAS[arg]||[],ids=[r.id].concat(ex.map((e,i)=>arg+'_p'+i));
+  const L=layoutGroup(ids.length,r.w*s*u,r.h*s*u);
+  ids.forEach((id,i)=>{const p=atScreen(L.xs[i],CY,r.z,c);sp.it[id]={x:p.x,y:p.y,z:r.z,w:L.pw/(s*u),h:L.ph/(s*u),op:1,bl:0,dim:1,look:'full'}});
+  sp.layout={left:L.panelLeft,w:L.PW};
+  sp.sub=r.sub;sp.rail=true;sp.panel=r.d;sp.bc=[['Stylos minceur : qui est derrière ?','n1'],[r.name]];
+ }else if(name==='zone'){
+  const z=ZONES.find(x=>x.id===arg)||ZONES[0],r=R.inconnus;
+  sp.cam=camRole(r,1.6);sp.q={size:30,op:0};sp.rail=true;sp.zone=z.id;
+  sp.sub="Ici, l'outil s'arrête. Trois pistes pour aller plus loin.";
+  sp.bc=[[QTITLE,'n1'],["Zone d'ombre : "+z.court]];
+ }else if(name==='n2g'||name==='n2'){
+  const c={x:ax,y:ay,z:zA-F};let rc=rowCenter();sp.cam=c;sp.q={size:30,op:0};
+  if(name==='n2'){const Lp=layoutGroup(1,0,0,880*u);rc={x:ax+(Lp.xs[0]-W/2)/u-16,y:ay};sp.layout={left:Lp.panelLeft,w:Lp.PW}}
+  sp.rail=true;sp.bc=[['Stylos minceur : qui est derrière ?','n1'],['Relais']];
+  if(name==='n2g'){
+   sp.sub='47 vidéos répètent la même phrase.';
+   tiles.forEach(t=>{const cc=t.k%12,rr=(t.k/12)|0;
+    sp.it[t.id]={x:rc.x+(cc-5.5)*42,y:rc.y+(rr-1.5)*68,z:zA,w:34,h:60,op:1,bl:0,dim:1,look:'full'}});
+   sp.it.ampc={x:rc.x,y:rc.y,z:zA,w:504,h:272,op:1,bl:0};
+  }else{
+   sp.sub='47 vidéos répètent la même phrase. Elles remontent à 6 sources.';
+   tiles.forEach(t=>{const j=Math.min(t.j,5),gx=rc.x+(t.g-2.5)*140,zz=(t.g%2?52:-52);
+    sp.it[t.id]={x:gx+j*6,y:rc.y+zz-j*6,z:zA,w:150*bo(t),h:267*bo(t),op:1,bl:0,dim:1,look:'full',sel:(t.g===G.findIndex(g=>g.id===sel)&&t.j===0)}});
+   sp.it.ampc={x:rc.x,y:rc.y,z:zA,w:850,h:370,op:1,bl:0};sp.wireIt={amp:topId(0)};
+   sp.panel=G.find(g=>g.id===sel).d;
+  }
+ }else if(name==='proof'){
+  const c2={x:ax,y:ay,z:zA-F},c={x:c2.x,y:c2.y,z:c2.z+150},rc=rowCenter();
+  sp.cam=c;sp.q={size:30,op:0};sp.rail=true;sp.proof=true;sp.banner=true;
+  sp.bc=[['Stylos minceur : qui est derrière ?','n1'],['Relais','n2'],['@lea.glow et @marie_slim']];
+  sp.sub='La même phrase, mot pour mot, dans les deux vidéos.';
+  tiles.forEach(t=>{const j=Math.min(t.j,5),gx=rc.x+(t.g-2.5)*140,zz=(t.g%2?52:-52);
+    sp.it[t.id]={x:gx+j*6,y:rc.y+zz-j*6,z:zA,w:150,h:267,op:0,bl:0,dim:1,look:'full'}});
+  const zp=zA-300,place=(id,dx)=>{const p=atScreen(W/2+dx*u,CY,zp,c);
+    Object.assign(sp.it[id],{x:p.x,y:p.y,z:zp,w:250/p.s,h:444/p.s,bl:0,dim:1,op:1})};
+  place(topId(0),-490);place(topId(1),-190);
+ }
+ return sp;
+}
+
+function snapshot(){order.forEach(it=>{it.f={x:it.x,y:it.y,z:it.z,w:it.w,h:it.h,op:it.op,bl:it.bl,dim:it.dim}});
+ for(const k of['x','y','z'])cam['f'+k]=cam[k];Q.fs=Q.size;Q.fo=Q.op;
+ for(const id in wires)wires[id].fp=wires[id].p}
+
+let panelKey='',subKey='';
+function applyUI(sp,settled){
+ const sub=$('#sub');if(sub.textContent!==sp.sub)sub.textContent=sp.sub;
+ $('#bc').classList.toggle('off',!sp.bc);$('#rail').classList.toggle('off',!sp.rail);
+ $('#banner').classList.toggle('off',!(sp.banner&&settled));
+ $('#proof').classList.toggle('off',!(sp.proof&&settled));
+ $('#panel').classList.toggle('off',!(sp.panel&&settled));
+ $('#zone').classList.toggle('off',!(sp.zone&&settled));
+ if(sp.zone)renderZone(sp.zone);
+ {const pn=$('#panel').style;if(sp.layout){pn.left=sp.layout.left+'px';pn.width=sp.layout.w+'px';pn.maxWidth='none'}else{pn.left='';pn.width='';pn.maxWidth=''}}
+ {const rid=cur.name==='role'?cur.arg:cur.name==='zone'?'inconnus':(sp.rail?'amp':'');document.querySelectorAll('#rail button').forEach(b=>b.classList.toggle('cur',b.dataset.goto===rid))}
+ if(sp.bc){const bc=$('#bc');bc.innerHTML=sp.bc.map((b,i)=>{
+   const last=i===sp.bc.length-1;const sep=i?'<i>/</i>':'';
+   return sep+(last||!b[1]?`<span class="cur">${b[0]}</span>`:`<button data-go="${b[1]}">${b[0]}</button>`)}).join('')}
+ if(sp.panel){const d=sp.panel,key=JSON.stringify(d);if(key!==panelKey){panelKey=key;
+   $('#panel').innerHTML=`${d.pimg?`<div class="pimg" style="background-image:url(${IMG[d.pimg]})"></div><div class="cap">${d.cap}</div>`:''}<div class="ph">${tag(d.tag[0],d.tag[1])}</div><p>${d.text}</p><div class="nt"><span>Fiabilité de la source : ${d.src}</span><span>Crédibilité de l'information : ${d.info}</span></div><div class="bt"><a class="b1" href="${d.url}" target="_blank" rel="noopener">${d.btn} ${ARROW}</a>${d.b2?`<button class="b2" data-go="proof">${d.b2}</button>`:''}</div>`}}
+ if(sp.proof&&!$('#proof').dataset.f){$('#proof').dataset.f=1;
+  $('#proof').innerHTML=`<div class="card"><div class="row">@lea.glow, 11 oct., 22 h 47<small>Archivée le 12 oct.</small></div><div class="row">@marie_slim, 14 oct., 19 h 02<small>Archivée le 15 oct.</small></div><div class="fp">Empreinte de la copie archivée : 3f9a c07e 51d2</div><div class="nt"><span>Fiabilité de la source : créatrices, deux comptes</span><span>Crédibilité de l'information : même phrase, recoupée</span></div><div class="bt"><a class="b1" href="https://example.org/exemple" target="_blank" rel="noopener">Ouvrir la publication d'origine ${ARROW}</a></div></div>`}
+}
+let zoneKey='';
+function renderZone(id){
+ if(zoneKey===id)return;zoneKey=id;
+ const z=ZONES.find(x=>x.id===id);
+ const th=z.autour.map(a=>{const m=AUT[a];return `<button class="zth" data-goto="${m[2]}" data-tip="Ouvrir le dossier : ${m[0]}"><i style="background-image:url(${IMG[m[1]]})"></i><span>${m[0]}</span></button>`}).join('');
+ const pi=z.pistes.map((q,i)=>`<li class="zc"><div class="g"><span class="zno">${i+1}</span><span>${esc(q.geste)}</span></div><div class="o">${esc(q.ou)}</div><div class="c">${esc(q.comment)}</div><span class="d">Difficulté : ${q.difficulte}</span></li>`).join('');
+ $('#zone').innerHTML=`<div class="zh"><div><h2>${esc(z.titre)}</h2><p><span class="zw">${z.pourquoi}</span>${esc(z.pourquoi_en_mots)}</p></div><div><h3>Déjà tenté</h3><ul>${z.tente.map(t=>'<li>'+esc(t)+'</li>').join('')}</ul><h3>Autour</h3><div class="za">${th}</div></div></div><ol class="zcards">${pi}</ol>`;
+}
+function railInit(){const r=$('#rail');r.innerHTML='<span class="lg">Les 10 rôles</span>'+roles.map(x=>`<button class="${x.mode==='dots'?'dz':''}" data-goto="${x.id}" data-tip="${x.name} : ${x.n}" aria-label="${x.name}"></button>`).join('')}
+railInit();
+
+const NOM={n0:'niveau0',n1:'niveau1',n2g:'niveau2',n2:'niveau2',role:'piece',zone:'zone',proof:'preuve'};
+function emitEtat(name,detail){const nom=NOM[name];if(!nom||(nom===lastNom&&!detail))return;
+ const depuis=lastNom;lastNom=nom;document.dispatchEvent(new CustomEvent('etat',{detail:Object.assign({nom,depuis},detail||{})}))}
+function go(name,arg,instant,force){
+ if(!instant&&!force&&cur.name===name&&cur.arg===arg)return;
+ const prev=cur.name;cur={name,arg};const sp=spec(name,arg);S=sp;
+ selfHash='#'+(name==='n0'?'niveau0':name==='n1'?'niveau1':name==='proof'?'preuve':name==='role'?'dossier-'+arg:name==='zone'?'zone-'+arg:'niveau2');
+ location.replace(selfHash);
+ hideTip();
+ emitEtat(name,name==='role'?{id:FRID[arg]}:name==='zone'?{id:arg}:null);
+ snapshot();
+ for(const id in wires){const w=wires[id];w.frozen=(!sp.wires[id]&&w.p>.01&&w.last&&(name==='n0'||name==='n1'))?w.last:null;if(!sp.wires[id]&&!w.frozen){w.p=0;w.fp=0}}
+ order.forEach(it=>{const t=sp.it[it.id];it.tg=Object.assign({},{x:it.x,y:it.y,z:it.z,w:it.w,h:it.h,op:it.op,bl:it.bl,dim:it.dim},t);it.look=t.look||it.look;it.isSel=!!t.sel});
+ /* niveau 2 : pas de trajet des vignettes, elles sont déjà sur leur pile (mouvement.js les fait arriver une à une) */
+ if(name==='n2'&&prev==='n1'&&!instant){tiles.forEach(t=>{const it=items[t.id],g=it.tg;if(it.op<.5){for(const k of['x','y','z','w','h']){it[k]=g[k];it.f[k]=g[k]}}})}
+ cam.tx=sp.cam.x;cam.ty=sp.cam.y;cam.tz=sp.cam.z;Q.ts=sp.q.size;Q.to=sp.q.op;
+ // retards d'apparition (n0 -> n1) : les fils poussent un à un
+ order.forEach(it=>it.delay=0);for(const id in wires)wires[id].delay=0;
+ itemDur=760;maxDelay=0;
+ if(prev==='n0'&&name==='n1'&&!instant){
+  itemDur=820;
+  roles.forEach((r,i)=>{const d=140*i;wires[r.id].delay=d;maxDelay=Math.max(maxDelay,d);
+   const id=r.id==='amp'?'ampc':r.id;items[id].delay=d+180;if(r.id==='amp')tiles.forEach(t=>items[t.id].delay=d+180)});
+  maxDelay+=180;
+ }
+ for(const id in wires){wires[id].tp=sp.wires[id]?1:0;wires[id].delay=wires[id].tp?wires[id].delay:0;wires[id].it=sp.wireIt[id]||(id==='amp'?'ampc':id)}
+ t0=performance.now();
+ if(instant){itemDur=0;maxDelay=0;finish(1)}else{moving=true;applyUI(sp,false)}
+ clearTimeout(go.t);
+ if(name==='n2g'&&!instant&&!new URLSearchParams(location.search).get('freeze'))go.t=setTimeout(()=>{if(cur.name==='n2g')go('n2')},1700+itemDur);
+}
+let S=null;
+function finish(){
+ order.forEach(it=>{const g=it.tg;for(const k in g)it[k]=g[k]});
+ for(const k of['x','y','z'])cam[k]=cam['t'+k];Q.size=Q.ts;Q.op=Q.to;
+ for(const id in wires){wires[id].p=wires[id].tp;wires[id].frozen=null}
+ moving=false;applyUI(S,true);
+ if(cur.name==='proof')proofT0=performance.now();
+ if(pendingResize){pendingResize=false;go(cur.name,cur.arg,true)}
+}
+function lerp(a,b,t){return a+(b-a)*t}
+function step(now){
+ if(moving){
+  const FZ=new URLSearchParams(location.search).get('freeze');
+  const el=FZ?(+FZ)*(itemDur+maxDelay):now-t0;let done=!FZ&&el>=itemDur+maxDelay;
+  const e=ease(Math.min(1,el/itemDur));
+  for(const k of['x','y','z'])cam[k]=lerp(cam['f'+k],cam['t'+k],e);
+  Q.size=lerp(Q.fs,Q.ts,e);Q.op=lerp(Q.fo,Q.to,Math.min(1,e*3));
+  order.forEach(it=>{const t=Math.max(0,Math.min(1,(el-(it.delay||0))/itemDur)),e2=ease(t),f=it.f,g=it.tg;
+   it.x=lerp(f.x,g.x,e2);it.y=lerp(f.y,g.y,e2);it.z=lerp(f.z,g.z,e2);it.w=lerp(f.w,g.w,e2);it.h=lerp(f.h,g.h,e2);
+   it.bl=lerp(f.bl,g.bl,e2);it.dim=lerp(f.dim,g.dim,e2);
+   it.op=g.op<f.op?(t>.08?g.op:f.op):(t>(it.fast?.05:.5)?g.op:f.op)});
+  for(const id in wires){const w=wires[id],t=Math.max(0,Math.min(1,(el-w.delay)/(w.tp?itemDur+300:220)));w.p=w.tp?lerp(w.fp,w.tp,ease(t)):lerp(w.fp,0,t)}
+  if(done)finish();
+ }
+ draw();requestAnimationFrame(step);
+}
+
+/* ---------- dessin d'une image ---------- */
+function proj(x,y,z){const d=z-cam.z,s=F/Math.max(d,1);return{sx:W/2+(x-cam.x)*s*u,sy:CY+(y-cam.y)*s*u,s,d}}
+function rect(it){const p=proj(it.x,it.y,it.z),w=it.w*p.s*u,h=it.h*p.s*u;return{cx:p.sx,cy:p.sy,w,h,l:p.sx-w/2,t:p.sy-h/2,r:p.sx+w/2,b:p.sy+h/2,s:p.s,d:p.d}}
+function proofTick(now){
+ const on=cur.name==='proof'&&!moving,bar=$('#pbar'),bn=$('#banner');
+ bar.classList.toggle('on',on);
+ if(!on){PR.yellow=false;return}
+ const ph=fixedPhase!==null?fixedPhase:((now-proofT0)%7000);
+ const p=ph<4500?ph/4500:(ph<6500?1:0);PR.yellow=ph>=4500&&ph<6500;
+ const l=W/2-615*u,r=W/2-65*u,y=CY+222*u+16*u;
+ bar.style.left=l+'px';bar.style.width=(r-l)+'px';bar.style.top=y+'px';
+ bar.children[1].style.width=(p*(r-l))+'px';bar.children[2].style.left=(p*(r-l))+'px';
+ const k=Math.min(2,Math.floor(p*3));
+ const a='0:'+(12+k),b='0:0'+(7+k);
+ if(tmL.el.textContent!==a)tmL.el.textContent=a;if(tmM.el.textContent!==b)tmM.el.textContent=b;
+ bn.style.left=l+'px';bn.style.top=(y+34*u)+'px';
+}
+function draw(){
+ proofTick(performance.now());
+ drawZL(performance.now());
+ order.forEach(it=>{
+  const e=it.el;
+  if(it.ghost)return;
+  const r=rect(it),vis=it.op>.01&&r.d>120&&r.w>2;
+  if(!vis){e.style.visibility='hidden';return}
+  e.style.visibility='visible';
+  const sc=r.s*u;
+  e.style.width=it.w+'px';e.style.height=it.h+'px';
+  e.style.transform=`translate(${r.cx-it.w/2}px,${r.cy-it.h/2}px) scale(${sc})`;
+  const bw=it.tile?Math.min(3,Math.max(1.5,r.w*.12)):(it.isSel?6:(it.thumb?2:3));
+  e.style.setProperty('--bw',(bw/sc)+'px');
+  e.style.filter=(it.bl>.2||it.dim<.99)?`blur(${it.bl}px) brightness(${it.dim})`:'none';
+  e.style.zIndex=Math.round(20000-r.d*4)+(it.zb||0);
+  e.classList.toggle('contour',it.look==='contour');e.classList.toggle('dots',it.look==='dots');
+  e.classList.toggle('sel',!!it.isSel);
+  const act=it.op>.5&&!moving;e.style.pointerEvents=act?'auto':'none';
+  e.style.setProperty('--ow',(3/sc)+'px');
+  const ti=act?0:-1;if(it.ti!==ti){it.ti=ti;e.tabIndex=ti}
+ });
+ /* question */
+ const qp=proj(0,0,F);
+ qEl.style.fontSize=(Q.size*u)+'px';qEl.classList.toggle('one',Q.size<45);
+ qEl.style.transform=`translate(${qp.sx}px,${qp.sy}px) translate(-50%,-50%)`;
+ qEl.style.opacity=Q.op;
+ const qw=qEl.offsetWidth,qh=qEl.offsetHeight;
+ /* fils */
+ for(const id in wires){
+  const w=wires[id],it=items[w.it];
+  if(w.p<.01||(it.op<.5&&!w.frozen)){w.v.setAttribute('d','');w.h.setAttribute('d','');continue}
+  let a,b;
+  if(w.frozen){a=w.frozen.a;b=w.frozen.b}else{
+  const r=rect(it);let ax0=qp.sx,ay0=qp.sy,bx=r.cx,by=r.cy,bw2=r.w/2,bh2=r.h/2;
+  /* le trait s'arrête au bord de l'ensemble image + étiquette, jamais sous l'étiquette */
+  if(!moving){let L=r.l,T=r.t,R=r.r,B=r.b,k=0;labs.forEach(l=>{if(l.it===w.it&&l.corner!=='tl'&&l.corner!=='c'&&l.el.classList.contains('on')){const q=l.el.getBoundingClientRect();L=Math.min(L,q.left);R=Math.max(R,q.right);T=Math.min(T,q.top);B=Math.max(B,q.bottom);k=1}});
+   if(k){bx=(L+R)/2;by=(T+B)/2;bw2=(R-L)/2;bh2=(B-T)/2}}
+  const dx=bx-ax0,dy=by-ay0;const gp=it.thumb?4*u:6*u;
+  a=edge(ax0,ay0,qw/2+8*u,qh/2+6*u,dx,dy);b=edge(bx,by,bw2+gp,bh2+gp,-dx,-dy);w.last={a,b}}
+  const ex=a.x+(b.x-a.x)*w.p,ey=a.y+(b.y-a.y)*w.p;
+  const d=`M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`;
+  w.v.setAttribute('d',d);w.h.setAttribute('d',(w.p>.98&&!moving)?d:'')
+ }
+ /* libellés */
+ const sc=cur.name;
+ labs.forEach(l=>{
+  let r,vis=!moving&&l.vis(sc);
+  if(l.it==='__q'){r={l:qp.sx-qw/2,r:qp.sx+qw/2,t:qp.sy-qh/2,b:qp.sy+qh/2,cx:qp.sx,w:qw,h:qh};}
+  else{const it=items[l.it];if(it.op<.5)vis=false;r=rect(it);if(r.d<=120)vis=false;
+}
+  l.el.classList.toggle('on',vis);
+  if(!vis&&!l.el.classList.contains('on')){}
+  let x,y,tr='';
+  switch(l.corner){
+   case 'tl':x=r.l;y=r.t;break;
+   case 'tlo':x=r.l;y=r.t-6*u;tr='translateY(-100%)';break;
+   case 'blo':x=r.l;y=r.b+6*u;break;
+   case 'bl':x=r.l;y=r.b;tr='translateY(-100%)';break;
+   case 'br':x=r.r;y=r.b;tr='translate(-100%,-100%)';break;
+   case 'bo':x=r.l;y=r.b;break;
+   case 'c':x=r.cx;y=r.cy;tr='translate(-50%,-50%)';break;
+   case 'r':x=r.r+10*u;y=r.cy;tr='translateY(-50%)';break;
+   case 'qb':x=r.cx;y=r.b+16*u;tr='translateX(-50%)';break;
+   case 'hl':x=r.cx;y=r.b-r.h*.14;tr='translate(-50%,-100%)';break;
+  }
+  if(l.wf)l.el.style.width=(r.w*l.wf)+'px';
+  if(vis&&(l.corner==='bo'||l.corner==='r'||l.corner==='tl')){const ww=l.el.offsetWidth;if(x+ww>W*.97)x=W*.97-ww}
+  l.el.style.transform=`translate(${x+(l.dx||0)*u}px,${y+(l.dy||0)*u}px) ${tr}`;
+ });
+}
+function drawZL(now){
+ const ok=INC&&cur.name==='n1'&&!moving&&INC.el.classList.contains('on')&&!INC.el.classList.contains('mv-g');
+ ZL.forEach(l=>{
+  const it=items[l.role],zel=ok&&INC.el.querySelector('[data-zone="'+l.id+'"]');
+  if(!ok||!zel||it.op<.5||zel.classList.contains('mv-zs')||it.el.style.visibility!=='visible'){l.t0=0;l.v.setAttribute('d','');l.h.setAttribute('d','');return}
+  if(!l.t0)l.t0=now;
+  const zb=zel.getBoundingClientRect(),r=rect(it);
+  let lo=r.l,hi=r.r,bot=r.b;
+  const cl=labs.find(x=>x.it===l.role&&x.cls==='chip');
+  if(cl&&cl.el.classList.contains('on')){const lb=cl.el.getBoundingClientRect();hi=Math.max(hi,lb.right);bot=Math.max(bot,lb.bottom)}
+  let sx=zb.left+zb.width/2,sy=zb.top-6*u,tx=Math.max(lo+8*u,Math.min(sx,hi-8*u)),ty=bot+6*u;
+  if(l.role==='victimes'){sx=zb.right+6*u;sy=zb.top+zb.height/2;tx=r.l-6*u;ty=r.cy}
+  const p=ease(Math.min(1,(now-l.t0)/700)),ex=sx+(tx-sx)*p,ey=sy+(ty-sy)*p;
+  const d=`M${sx.toFixed(1)} ${sy.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`;
+  l.v.setAttribute('d',d);l.h.setAttribute('d',p>.98?d:'');
+ })}
+function edge(cx,cy,hw,hh,dx,dy){const sx=Math.abs(dx)<1e-6?1e9:hw/Math.abs(dx),sy=Math.abs(dy)<1e-6?1e9:hh/Math.abs(dy),t=Math.min(sx,sy);return{x:cx+dx*t,y:cy+dy*t}}
+
+/* ---------- interactions ---------- */
+const SEQ=['n0','n1','n2','proof'];
+function seqIndex(){const n=cur.name;return n==='role'?1.5:n==='n2g'?2:SEQ.indexOf(n)}
+function next(){const n=cur.name;if(n==='n0')go('n1');else if(n==='n1'||n==='role')go('n2');else if(n==='n2g'||n==='n2')go('proof')}
+function prev(){const n=cur.name;if(n==='zone')go(zoneBack);else if(n==='proof')go('n2');else if(n==='n2'||n==='n2g'||n==='role')go('n1');else if(n==='n1')go('n0')}
+addEventListener('keydown',e=>{
+ if(e.target&&e.target.tagName==='INPUT')return;
+ if(e.key==='ArrowRight'){e.preventDefault();next()}
+ else if(e.key==='ArrowLeft'||e.key==='Escape'){e.preventDefault();prev()}
+});
+function addQuestion(txt){
+ if(EXTRA)return;EXTRA=txt;posing=false;renderInc();syncZone();applyGhost();
+ const M=window.Mouvement;if(M&&M.zone){M.zone('zx','silhouette');setTimeout(()=>M.zone('zx','revele'),700)}
+}
+function goRole(id){if(id==='inconnus'){zoneBack='n1';go('zone',ZONES[0].id);return}if(!R[id])return;if(id==='amp')go('n2');else go('role',id)}
+document.addEventListener('click',e=>{
+ hideTip();
+ const t=e.target;
+ const zg=t.closest('[data-zonego]');if(zg){zoneBack=cur.name==='proof'?'proof':'n1';go('zone',zg.dataset.zonego);return}
+ const zn=t.closest('.zn[data-zone]');if(zn){if(zn.dataset.zone!=='zx'){zoneBack='n1';go('zone',zn.dataset.zone)}return}
+ if(t.closest('[data-poser]')){posing=true;renderInc();return}
+ const b=t.closest('[data-go]');if(b){e.preventDefault();go(b.dataset.go);return}
+ const rl=t.closest('[data-goto]');if(rl){goRole(rl.dataset.goto);return}
+ if(t.closest('#q')){if(cur.name==='n1')go('n0');else if(cur.name==='n0')go('n1');else go('n1');return}
+ const it=t.closest('.it');
+ if(it){const o=items[it.dataset.id];
+  if(cur.name==='n1'&&o.role){goRole(o.role);return}
+  if((cur.name==='n2')&&o.tile){sel=G[o.tile.g].id;go('n2',null,true);emitEtat('role',{id:G[o.tile.g].id,pile:true});return}
+ }
+});
+const tip=$('#tip');
+function hideTip(){tip.classList.remove('on')}
+function segHit(a,b,r){let t0=0,t1=1;const dx=b.x-a.x,dy=b.y-a.y;
+ for(const [pp,qq] of [[-dx,a.x-r.left],[dx,r.right-a.x],[-dy,a.y-r.top],[dy,r.bottom-a.y]]){
+  if(pp===0){if(qq<0)return false}else{const t=qq/pp;if(pp<0){if(t>t1)return false;t0=Math.max(t0,t)}else{if(t<t0)return false;t1=Math.min(t1,t)}}}
+ return t0<=t1}
+function showTip(txt,x,y,target){
+ tip.textContent=txt;tip.classList.add('on');
+ const w=tip.offsetWidth,h=tip.offsetHeight,M=10;
+ const obs=[];
+ order.forEach(it=>{const e=it.el;if(it.ghost||e===target||it.op<.5||e.style.visibility==='hidden')return;obs.push(e.getBoundingClientRect())});
+ labs.forEach(l=>{if(l.el.classList.contains('on'))obs.push(l.el.getBoundingClientRect())});
+ ['#panel','#proof','#zone','#banner','#sub','#logo','#bc','#rail','#fict'].forEach(q=>{const e=$(q);if(e&&!e.classList.contains('off'))obs.push(e.getBoundingClientRect())});
+ const tid=target&&target.dataset.id,tr0=tid&&items[tid]&&items[tid].role;
+ const segs=[];for(const id in wires){const wr=wires[id];if(wr.p>.5&&!moving&&wr.last&&wr.it!==tid&&!(tr0&&(wr.id===tr0||(tr0==='amp'&&wr.id==='amp'))))segs.push(wr.last)}
+ const tr=target?target.getBoundingClientRect():{left:x,right:x,top:y,bottom:y,width:0,height:0};
+ const cy=tr.top+(tr.height-h)/2,cx=tr.left+(tr.width-w)/2;
+ const C=target?[[tr.right+M,cy],[tr.left-M-w,cy],[cx,tr.bottom+M],[cx,tr.top-M-h],[tr.right+M,tr.top],[tr.left-M-w,tr.top]]
+  :[[x+18,y+22],[x-w-18,y+22],[x+18,y-h-22],[x-w-18,y-h-22],[x-w/2,y+26],[x-w/2,y-h-26]];
+ let best=null;
+ for(const [px0,py0] of C){
+  const px=Math.max(8,Math.min(px0,W-w-8)),py=Math.max(8,Math.min(py0,H-h-8));
+  const r={left:px,right:px+w,top:py,bottom:py+h};let sc=Math.abs(px-px0)+Math.abs(py-py0);
+  for(const o of obs)if(r.left<o.right+4&&r.right>o.left-4&&r.top<o.bottom+4&&r.bottom>o.top-4)sc+=1000;
+  for(const sg of segs)if(segHit(sg.a,sg.b,r))sc+=600;
+  if(!best||sc<best.sc)best={sc,px,py};
+  if(sc===0)break;
+ }
+ tip.style.transform=`translate(${best.px}px,${best.py}px)`;
+}
+document.addEventListener('mousemove',e=>{
+ const t=e.target.closest&&e.target.closest('[data-tip]');
+ if(t&&!moving&&!t.classList.contains('off')){
+  let txt=t.dataset.tip;
+  if(t.classList.contains('it')){const o=items[t.dataset.id];if(o&&o.tile&&cur.name==='n2')txt=G[o.tile.g].tipS;}
+  showTip(txt,e.clientX,e.clientY,t.classList.contains('it')?t:null);
+ }else hideTip();
+});
+document.addEventListener('mousedown',hideTip,true);
+document.documentElement.addEventListener('mouseleave',hideTip);
+addEventListener('blur',hideTip);
+document.addEventListener('keydown',e=>{
+ if((e.key==='Enter'||e.key===' ')&&e.target.classList&&(e.target.classList.contains('it')||e.target.id==='q')){e.preventDefault();e.target.click()}
+});
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>dispatchEvent(new Event('resize')));
+addEventListener('resize',()=>{size();if(INC){syncZone();applyGhost()}if(!S)return;if(moving){pendingResize=true;return}go(cur.name,cur.arg,true)});
+
+/* ---------- démarrage ---------- */
+function fromHash(){
+ const h=location.hash.replace('#','');
+ if(h.startsWith('zone-')&&ZONES.some(z=>z.id===h.slice(5)))return['zone',h.slice(5)];
+ if(h==='dossier-inconnus')return['zone',ZONES[0].id];
+ if(h==='niveau0')return['n0'];if(h==='niveau1')return['n1'];if(h==='niveau2')return['n2'];if(h==='preuve')return['proof'];
+ if(h.startsWith('dossier-')&&R[h.slice(8)])return h.slice(8)==='amp'?['n2']:['role',h.slice(8)];
+ return null;
+}
+const QS=new URLSearchParams(location.search);if(QS.get('phase'))fixedPhase=+QS.get('phase');
+const st=fromHash();
+if(st){go(st[0],st[1],true)}
+else{go('n0',null,true);setTimeout(()=>go('n1'),900)}
+addEventListener('hashchange',()=>{if(location.hash===selfHash)return;const s=fromHash();if(s&&(s[0]!==cur.name||s[1]!==cur.arg))go(s[0],s[1])});
+if(QS.get('auto')){const [n,d]=QS.get('auto').split('@');setTimeout(()=>go(n==='role'?'role':n,n==='role'?'experts':null),+d||100)}
+if(QS.get('hover'))setTimeout(()=>{const it=items[QS.get('hover')];if(!it)return;const r=it.el.getBoundingClientRect();showTip(it.tip,r.left+r.width/2,r.top+r.height/2,it.el)},400);
+if(window.ResizeObserver&&INC)new ResizeObserver(()=>{syncZone();applyGhost()}).observe(INC.el);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{syncZone();applyGhost()});
+requestAnimationFrame(step);
+})();
+</script>
+<script src="mouvement.js"></script>
+<script type="module" src="flux.js"></script>
+<script>
+/* ?verif : nomme les éléments que verif.js doit comparer (cartes, étiquettes, titre, sous-titre, zones, bandeau, panneaux) */
+if(/[?&]verif/.test(location.search))setInterval(()=>{document.querySelectorAll('.it:not(.ghost),.lab:not(.zg),.zn,.zcap>*,#q,#sub,#fict,#logo,#bc,#rail,#panel,#proof,#banner,#zone .zh,#zone .zc').forEach(e=>{if(/^t\d+$/.test(e.dataset.id||''))return;e.setAttribute('data-verif',e.dataset.id||e.dataset.zone||e.id||((e.className+'').split(' ').slice(0,2).join('.')+':'+(e.textContent||'').trim().slice(0,14)))})},300);
+</script>
+<script src="resume.js"></script>
+<script src="verif.js"></script>
+</body>
+</html>
