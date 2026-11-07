@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brut. Enquête</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+:root{--u:1;--ink:#080808;--g:#c7c7c7;--f24:max(24px,calc(24px*var(--u)))}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:#fff;font-family:'Archivo',system-ui,sans-serif;font-stretch:92%;font-weight:700;-webkit-font-smoothing:antialiased}
+::selection{background:#ffd817;color:var(--ink)}
+:focus-visible{outline:3px solid #fff;outline-offset:4px}
+#grain{position:fixed;inset:0;pointer-events:none;z-index:9000;opacity:.05;background-size:256px 256px}
+#brut{position:fixed;right:max(calc(34px*var(--u)),3.2vw);top:calc(20px*var(--u));font-size:max(56px,calc(56px*var(--u)));font-weight:800;font-stretch:90%;letter-spacing:-.04em;line-height:1;z-index:70;user-select:none}
+#col{position:fixed;left:50%;top:calc(50% - 24px*var(--u));width:calc(600px*var(--u));margin-left:calc(-300px*var(--u))}
+#card{background:#fff;color:var(--ink);min-height:calc(144px*var(--u));padding:calc(16px*var(--u)) calc(28px*var(--u));display:flex;align-items:center;transform:translateY(-50%);cursor:text}
+#ty{width:100%;font-size:calc(50px*var(--u));line-height:1.04;font-weight:800;font-stretch:90%;letter-spacing:-.025em;outline:0;caret-color:transparent;white-space:pre-wrap;word-break:break-word;min-height:1.04em}
+#ty::after{content:"";display:inline-block;width:.07em;height:.9em;background:var(--ink);margin-left:.05em;vertical-align:-.08em;animation:bl 1.05s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#ty::after{animation:none}}
+#ligne{position:absolute;left:0;top:calc(72px*var(--u) + 14px*var(--u));font-size:var(--f24);font-weight:700;color:var(--g);line-height:1.2;white-space:nowrap}
+#ligne.err{color:#fff}
+#demo{position:fixed;left:50%;bottom:calc(34px*var(--u));transform:translateX(-50%);background:none;border:0;color:var(--g);font:inherit;font-size:max(22px,calc(22px*var(--u)));font-weight:700;text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1px;cursor:pointer;z-index:70}
+#demo:hover{color:#fff}
+</style>
+</head>
+<body>
+<div id="brut">Brut.</div>
+<div id="col">
+  <div id="card"><div id="ty" contenteditable="true" spellcheck="false" role="textbox" aria-label="Le sujet de l'enquête" tabindex="0" autofocus></div></div>
+  <div id="ligne" role="status" aria-live="polite"></div>
+</div>
+<button id="demo" type="button">Ouvrir l'enquête de démonstration</button>
+<canvas id="gs" width="256" height="256" style="display:none"></canvas>
+<div id="grain"></div>
+<script type="module">
+import { surFrappe, lancer, configurer } from "./interface/branchement.js";
+
+const $ = (s) => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const D = (params.get("d") || "http://127.0.0.1:8795").replace(/\/+$/, "");
+const BASE = (params.get("base") || location.origin).replace(/\/+$/, "");
+// Cette page n'a besoin que de la lecture locale de la frappe (gratuite) : la lecture profonde, payante, n'est pas demandée ici.
+configurer({ base: BASE, delaiProfond: 6e5 });
+
+let u = 1;
+function taille() {
+  u = Math.max(.85, Math.min(innerWidth / 1440, innerHeight / 900, 2.4));
+  document.documentElement.style.setProperty("--u", u);
+}
+taille(); addEventListener("resize", taille);
+
+(() => {
+  const c = $("#gs"), x = c.getContext("2d"), d = x.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255 | 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  x.putImageData(d, 0, 0);
+  const g = $("#grain"); g.style.backgroundImage = "url(" + c.toDataURL() + ")";
+  if (!matchMedia("(prefers-reduced-motion:reduce)").matches)
+    setInterval(() => { g.style.backgroundPosition = (Math.random() * 256 | 0) + "px " + (Math.random() * 256 | 0) + "px"; }, 110);
+})();
+
+const ty = $("#ty"), ligne = $("#ligne");
+let texte = "", lien = null, graine = null, occupe = false;
+
+function dire(msg, erreur) { ligne.textContent = msg || ""; ligne.classList.toggle("err", !!erreur); }
+
+function dateEnMots(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const f = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const g = (k) => f.find((p) => p.type === k).value;
+  return `le ${g("day")} ${g("month").replace(".", "")}. vers ${g("hour")} h ${g("minute")}`;
+}
+const PLATEFORMES = { tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube" };
+function phraseGraine(g) {
+  const nom = PLATEFORMES[g.plateforme] || "une plateforme";
+  const qui = g.pseudo ? " de @" + g.pseudo.replace(/^@/, "") : "";
+  const quand = g.date ? ", publiée " + dateEnMots(g.date) : "";
+  return `Vidéo ${nom}${qui}${quand}`;
+}
+
+function lire() {
+  graine = null;
+  surFrappe(texte, lien, (r) => {
+    if (occupe) return;
+    if (r.graine) { graine = r.graine; dire(phraseGraine(r.graine)); }
+    else if (lien && !r.enCours && !r.erreur) {
+      // lien non reconnu : il redevient du texte
+      texte = (texte + " " + lien).trim(); lien = null; ty.textContent = texte; dire("");
+    }
+  });
+}
+
+function saisie() {
+  let v = ty.textContent.replace(/ /g, " ").replace(/\n+/g, " ");
+  const m = /https?:\/\/\S+/.exec(v);
+  if (m) { lien = m[0]; v = v.replace(m[0], "").trim(); ty.textContent = v; placerCurseur(); }
+  texte = v;
+  dire("");
+  lire();
+}
+function placerCurseur() {
+  const r = document.createRange(); r.selectNodeContents(ty); r.collapse(false);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+ty.addEventListener("input", saisie);
+ty.addEventListener("paste", (e) => {
+  e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData("text").trim();
+  if (/^https?:\/\/\S+$/.test(t)) { lien = t; } else { texte = (ty.textContent + t).slice(0, 160); ty.textContent = texte; placerCurseur(); }
+  dire(""); lire();
+});
+addEventListener("click", (e) => { if (!e.target.closest("#demo")) ty.focus(); });
+
+async function entrer() {
+  if (occupe) return;
+  const question = texte.trim();
+  if (!question) { dire("Écris d'abord le sujet de l'enquête.", true); return; }
+  occupe = true; dire("");
+  try {
+    const id = await lancer({ question, graine: lien || undefined });
+    if (!id) throw new Error("sans identifiant");
+    location.href = D + "/?flux&enquete=" + id + "&mode=direct&base=" + BASE + "&entree=1#dedans";
+  } catch (e) {
+    occupe = false;
+    dire("Le lancement n'a pas abouti. Vérifie que l'outil tourne, puis relance.", true);
+  }
+}
+addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); entrer(); }
+});
+$("#demo").addEventListener("click", () => {
+  location.href = D + "/?flux&enquete=stylos-minceur&mode=rejeu&base=" + BASE + "#dedans";
+});
+
+// Ancres de capture : #frappe et #graine montrent directement l'état.
+const h = location.hash.replace("#", "");
+if (h === "frappe") { texte = "Stylos minceur : qui est derr"; ty.textContent = texte; }
+if (h === "graine") {
+  texte = "Stylos minceur : qui est derrière ?"; ty.textContent = texte;
+  lien = "https://www.tiktok.com/@nora.fit/video/7696581397153024512"; lire();
+}
+ty.focus();
+</script>
+</body>
+</html>
