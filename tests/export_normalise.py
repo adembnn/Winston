@@ -10,6 +10,8 @@ from __future__ import annotations
 from typing import Any
 
 CLES_RETIREES = {"date_ajout", "date_collecte", "version"}
+# Ajoutées après la référence « avant le flux » : les images des pièces ne changent pas la structure.
+CLES_AJOUTEES_DEPUIS = {"image", "images_cles"}
 
 
 def normaliser(export: dict[str, Any]) -> dict[str, Any]:
@@ -22,7 +24,7 @@ def normaliser(export: dict[str, Any]) -> dict[str, Any]:
 
     def aller(valeur: Any) -> Any:
         if isinstance(valeur, dict):
-            retirees = CLES_RETIREES | ({"date"} if "type_lien" in valeur else set())
+            retirees = CLES_RETIREES | CLES_AJOUTEES_DEPUIS | ({"date"} if "type_lien" in valeur else set())
             return {k: aller(v) for k, v in valeur.items() if k not in retirees}
         if isinstance(valeur, list):
             return [aller(v) for v in valeur]

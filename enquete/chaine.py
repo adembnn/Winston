@@ -109,6 +109,8 @@ class Video:
     titre_son: str | None
     phrases: list[tuple[str, str, float | None, float | None]] = field(default_factory=list)
     # phrases : (phrase normalisée, extrait exact, début, fin)
+    image: str | None = None  # vignette publiée par la plateforme, telle qu'Oriane la sert
+    images_cles: list[dict[str, Any]] = field(default_factory=list)  # [{url, seconde}], dans l'ordre
 
 
 @dataclass
@@ -306,6 +308,25 @@ def _type_publication(plateforme: str, type_oriane: str | None) -> str:
     return "short" if type_oriane == "short" else "video"
 
 
+MAX_IMAGES_CLES = 4  # assez pour montrer la vidéo à l'écran, sans alourdir le journal
+
+
+def _images_cles(resultat: dict[str, Any]) -> list[dict[str, Any]]:
+    """Les images clés de la vidéo (`frames` de la projection `full`), chacune avec sa seconde."""
+    images = []
+    for media in resultat.get("media") or []:
+        for image in media.get("frames") or []:
+            if not image.get("url"):
+                continue
+            try:
+                seconde = float(image["timestampSeconds"]) if image.get("timestampSeconds") is not None else None
+            except (TypeError, ValueError):
+                seconde = None
+            images.append({"url": image["url"], "seconde": seconde})
+    images.sort(key=lambda i: (i["seconde"] is None, i["seconde"] or 0.0))
+    return images[:MAX_IMAGES_CLES]
+
+
 def _phrases(resultat: dict[str, Any]) -> list[tuple[str, str, float | None, float | None]]:
     """Phrases assez longues pour compter : morceaux de parole horodatés, puis légende."""
     vues: set[str] = set()
@@ -360,6 +381,8 @@ def video_depuis_resultat(resultat: dict[str, Any]) -> Video | None:
         id_son=str(resultat["audioPlatformId"]) if resultat.get("audioPlatformId") else None,
         titre_son=resultat.get("audioTitle"),
         phrases=_phrases(resultat),
+        image=resultat.get("thumbnailMediaUrl") or None,
+        images_cles=_images_cles(resultat),
     )
 
 
@@ -517,6 +540,9 @@ def poser_noeuds_a_classer(reseau: ReseauEnquete, videos: list[Video]) -> Noeuds
                 "vues": video.vues, "hashtags": video.hashtags,
                 # « Première du lot » n'est pas « première tout court » : voir la question d'origine.
                 "premiere_de_sa_grappe": False,
+                # La vraie capture de la pièce (vignette, puis images clés à la seconde), jamais une illustration.
+                "image": video.image or (video.images_cles[0]["url"] if video.images_cles else None),
+                "images_cles": video.images_cles,
             },
             SOLIDITE_VIDEO,
         ))
