@@ -19,6 +19,10 @@ POST /api/enquetes   {question, graine?}            lance l'enquête, rend {id}
 POST /api/questions  {enquete, texte}               question du journaliste -> {id}
 GET  /api/enquetes                                  liste des enquêtes (ajout hors contrat)
 GET  /api/sante                                     {ok: true}
+GET  /api/comprendre?q=<texte>[&graine=<lien>][&profond=1]   lecture de la frappe (voir enquete.comprendre)
+GET  /api/resume?enquete=<id>&piece=<id>            résumé de 25 mots d'une pièce
+GET  /                                              `index.html` du dossier de l'interface (404 s'il manque)
+GET  /interface/<chemin>                            fichiers de ce dossier, jamais au-dessus
 
 Mode : `export.mode` vaut « direct » si l'enquête tourne en ce moment, « demo »
 sinon (journal enregistré, rejouable).
@@ -40,6 +44,9 @@ exactement où l'on s'est arrêté (l'en-tête `Last-Event-ID` aussi).
                                     extrait, même seconde) n'est pas répétée.
   genre « question » -> `question`  donnees = la question (`QuestionOuverte.vers_dict`)
                                     + origine : « agent » ou « journaliste »
+  genre « zone »     -> `zone`      donnees = la zone d'ombre (`ZoneOmbre.vers_dict`, au contrat
+                                    {id, titre, pourquoi, tente, autour, pistes, role_manquant,
+                                    version}) + motif ; une nouvelle version = un nouvel événement
   après chaque ligne -> `compteur`  donnees = {pieces, liens, preuves, zones_d_ombre,
                                     par_role: {role: nombre de pièces}}
   fin du flux        -> `fin`       donnees = {ok, erreur?, evenements, compteurs, ...}
@@ -65,6 +72,7 @@ import re
 import sqlite3
 import threading
 import time
+import mimetypes
 import unicodedata
 import uuid
 from dataclasses import dataclass, field
@@ -72,7 +80,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from enquete.recherche import Index, documents_depuis_export
 from enquete.reseau import Lien, Noeud, ReseauEnquete, Role, Solidite
@@ -83,6 +91,15 @@ _RE_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 _RE_ORIGINE = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
 _NOMS_JOURNAL = ("reseau.sqlite", "journal.sqlite")
 _TAILLE_MAX_CORPS = 64 * 1024
+# Le dossier de l'écran : `interface/` à la racine du dépôt (à côté du paquet `enquete`).
+DOSSIER_INTERFACE = Path(__file__).resolve().parent.parent / "interface"
+_TYPES_MIME = {
+    ".html": "text/html", ".htm": "text/html", ".js": "text/javascript", ".mjs": "text/javascript",
+    ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".txt": "text/plain",
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+    ".gif": "image/gif", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff",
+    ".ttf": "font/ttf", ".otf": "font/otf", ".mp4": "video/mp4", ".webm": "video/webm",
+}
 _BATTEMENT_S = 15.0  # un commentaire SSE tous les 15 s garde la connexion ouverte
 
 
@@ -91,6 +108,19 @@ class ErreurHttp(Exception):
         super().__init__(message)
         self.statut = statut
         self.message = message
+
+
+
+
+def _module_comprendre() -> Any:
+    """Le module qui lit la question (variantes, graine, Claude) ; 503 tant qu'il n'est pas installé."""
+    import importlib
+
+    try:
+        # `import_module` passe par `sys.modules` : un test peut y mettre un faux module.
+        return importlib.import_module("enquete.comprendre")
+    except ImportError:
+        raise ErreurHttp(503, "la compréhension de la question n'est pas installée (enquete.comprendre)") from None
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +156,7 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
     liens: set[str] = set()
     preuves: set[tuple] = set()
     questions_ouvertes: dict[str, bool] = {}
+    videos_lues: set[str] = set()  # vidéos distinctes reçues par les recherches
 
     def pousser(horodatage: str, type_: str, donnees: dict[str, Any]) -> None:
         evenements.append({
@@ -138,6 +169,8 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
         if genre == "affaire":
             pousser(date, "question", {
                 "id": objet_id, "texte": d["question"], "centrale": True, "reformulee": version > 1,
+                # « fictif » pour un cas de démonstration : l'écran le dit dès la première seconde.
+                **({"cas": d["cas"]} if d.get("cas") else {}),
             })
         elif genre == "noeud":
             libelles[d["id"]] = d["libelle"]
@@ -157,6 +190,17 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
             pousser(date, "question", {
                 **d, "origine": "journaliste" if objet_id in du_journaliste else "agent", "motif": motif,
             })
+        elif genre == "zone":
+            pousser(date, "zone", {**d, "motif": motif})
+        elif genre == "recherche":
+            # Le travail en cours : une recherche lancée, ce qu'elle a rapporté.
+            videos_lues.update(str(i) for i in d.get("ids") or [])
+            pousser(date, "recherche", {**d, "motif": motif})
+        elif genre == "etape":
+            pousser(date, "etape", {**d, "motif": motif})
+        elif genre == "fin":
+            # La fin écrite au journal par la chaîne ; la fin du flux, elle, reste celle du serveur.
+            pousser(date, "etape", {"nom": "enquete", "etat": "fin", **d, "motif": motif})
         else:
             continue
         par_role: dict[str, int] = {}
@@ -165,6 +209,7 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
         pousser(date, "compteur", {
             "pieces": len(libelles), "liens": len(liens), "preuves": len(preuves),
             "zones_d_ombre": sum(questions_ouvertes.values()), "par_role": par_role,
+            "videos_lues": len(videos_lues),
         })
     return evenements
 
@@ -284,8 +329,10 @@ class Serveur:
         sur_question: Callable[[str, str, str], None] | None = None,
         pas_sondage: float = 0.25,
         autoriser_fichiers: bool = True,
+        dossier_interface: str | Path | None = None,
     ) -> None:
         self.racine = Path(racine)
+        self.dossier_interface = Path(dossier_interface) if dossier_interface is not None else DOSSIER_INTERFACE
         self.enqueteur = enqueteur or enqueteur_par_defaut
         self.sur_question = sur_question  # (enquete_id, question_id, texte) : les agents s'y branchent
         self.pas_sondage = pas_sondage
@@ -325,6 +372,31 @@ class Serveur:
 
     def __exit__(self, *_: object) -> None:
         self.arreter()
+
+    # -- l'écran ------------------------------------------------------------
+
+    def fichier_interface(self, relatif: str) -> tuple[Path, str]:
+        """Le fichier de l'interface demandé et son type MIME ; 404 s'il manque ou sort du dossier."""
+        base = self.dossier_interface.resolve()
+        if chr(0) in relatif:
+            raise ErreurHttp(404, "fichier introuvable")
+        try:
+            chemin = (base / relatif).resolve() if relatif else base
+        except (OSError, ValueError):
+            raise ErreurHttp(404, "fichier introuvable") from None
+        if chemin.is_dir():
+            chemin = chemin / "index.html"
+        if not chemin.is_relative_to(base) or not chemin.is_file():
+            if not relatif and not base.is_dir():
+                raise ErreurHttp(404, f"pas d'interface : le dossier {self.dossier_interface} n'existe pas")
+            if not relatif or chemin.name == "index.html" and chemin.parent == base:
+                raise ErreurHttp(404, f"pas d'interface : {self.dossier_interface / 'index.html'} n'existe pas")
+            raise ErreurHttp(404, "fichier introuvable")
+        suffixe = chemin.suffix.lower()
+        mime = _TYPES_MIME.get(suffixe) or mimetypes.guess_type(chemin.name)[0] or "application/octet-stream"
+        if mime.startswith("text/") or mime in ("application/json", "image/svg+xml"):
+            mime += "; charset=utf-8"
+        return chemin, mime
 
     # -- enquêtes -----------------------------------------------------------
 
@@ -429,6 +501,32 @@ class Serveur:
         threading.Thread(target=courir, name=f"enquete-{identifiant}", daemon=True).start()
         return identifiant
 
+    def comprendre(self, question: str, graine: str | None = None, profond: bool = False) -> dict[str, Any]:
+        """Ce que l'outil a compris de la frappe : variantes locales (instantanées), graine datée
+        par son identifiant, et, sur demande, la lecture de Claude (plusieurs secondes)."""
+        question = (question or "").strip()
+        if not question and not graine:
+            raise ErreurHttp(400, "« q » ou « graine » est obligatoire")
+        module = _module_comprendre()
+        reponse: dict[str, Any] = {"question": question}
+        if question:
+            reponse["locales"] = module.variantes_locales(question)
+        if graine:
+            reponse["graine"] = module.lire_graine(graine)
+        if profond and question:
+            reponse["profond"] = module.comprendre(question, graine=graine)
+        return reponse
+
+    def resumer(self, identifiant: str, piece_id: str) -> dict[str, Any]:
+        """Le résumé de 25 mots d'une pièce du dossier, écrit à partir de ses seuls champs."""
+        module = _module_comprendre()
+        export = self.exporter(identifiant)
+        for dossier in export["dossiers"]:
+            for piece in dossier["pieces"]:
+                if piece["id"] == piece_id:
+                    return {"piece": piece_id, "resume": module.resumer_piece(piece, export["question"])}
+        raise ErreurHttp(404, f"pièce inconnue : {piece_id}")
+
     def poser_question(self, identifiant: str, texte: str) -> str:
         texte = (texte or "").strip()
         if not texte:
@@ -510,6 +608,17 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
             self.end_headers()
             self.wfile.write(corps)
 
+        def _fichier(self, relatif: str) -> None:
+            chemin, mime = serveur.fichier_interface(relatif)
+            corps = chemin.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(corps)))
+            self.send_header("Cache-Control", "no-store")
+            self._entetes_cors()
+            self.end_headers()
+            self.wfile.write(corps)
+
         def _ouvrir_flux(self) -> None:
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -546,7 +655,11 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                 url = urlparse(self.path)
                 params = {k: v[0] for k, v in parse_qs(url.query).items()}
                 route = (methode, url.path.rstrip("/"))
-                if route == ("GET", "/api/sante"):
+                if methode == "GET" and url.path == "/":
+                    self._fichier("")
+                elif methode == "GET" and url.path.startswith("/interface/"):
+                    self._fichier(unquote(url.path[len("/interface/"):]))
+                elif route == ("GET", "/api/sante"):
                     self._json(200, {"ok": True})
                 elif route == ("GET", "/api/enquetes"):
                     self._json(200, {"enquetes": serveur.lister()})
@@ -560,6 +673,12 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                     self._flux_direct(serveur.valider_id(params.get("enquete")), self._depuis(params))
                 elif route == ("GET", "/api/rejouer"):
                     self._flux_rejeu(serveur.valider_id(params.get("enquete")), params)
+                elif route == ("GET", "/api/comprendre"):
+                    self._json(200, serveur.comprendre(
+                        params.get("q", ""), params.get("graine"), params.get("profond") == "1"))
+                elif route == ("GET", "/api/resume"):
+                    identifiant = serveur.valider_id(params.get("enquete"))
+                    self._json(200, serveur.resumer(identifiant, params.get("piece", "")))
                 elif route == ("POST", "/api/enquetes"):
                     corps = self._corps()
                     self._json(201, {"id": serveur.lancer(corps.get("question"), corps.get("graine"))})
@@ -578,6 +697,13 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
 
         def _repondre_erreur(self, statut: int, message: str) -> None:
             try:
+                # Un corps refusé avant lecture (403, 415) est lu quand même : sous Windows, répondre
+                # sans l'avoir lu fait couper la connexion côté client avant qu'il voie la réponse.
+                if not getattr(self, "_corps_lu", False):
+                    reste = int(self.headers.get("Content-Length") or 0)
+                    if 0 < reste <= _TAILLE_MAX_CORPS:
+                        self.rfile.read(reste)
+                    self._corps_lu = True
                 self._json(statut, {"erreur": message})
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
                 pass
@@ -607,7 +733,9 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
             if taille > _TAILLE_MAX_CORPS:
                 raise ErreurHttp(413, "corps trop gros")
             try:
-                corps = json.loads(self.rfile.read(taille) or b"{}")
+                brut = self.rfile.read(taille)
+                self._corps_lu = True
+                corps = json.loads(brut or b"{}")
             except json.JSONDecodeError:
                 raise ErreurHttp(400, "JSON invalide") from None
             if not isinstance(corps, dict):
@@ -715,10 +843,11 @@ def main(argv: list[str] | None = None) -> int:
 
     analyseur = argparse.ArgumentParser(prog="python -m enquete.serveur", description=__doc__.split("\n")[0])
     analyseur.add_argument("--racine", default="donnees", help="dossier des enquêtes (un sous-dossier par enquête)")
-    analyseur.add_argument("--port", type=int, default=PORT)
+    analyseur.add_argument("--port", type=int, default=PORT, help="0 = un port libre (affiché au démarrage)")
+    analyseur.add_argument("--interface", default=None, help="dossier de l'écran (défaut : interface/ du dépôt)")
     args = analyseur.parse_args(argv)
-    with Serveur(args.racine, port=args.port) as serveur:
-        print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}")
+    with Serveur(args.racine, port=args.port, dossier_interface=args.interface) as serveur:
+        print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}", flush=True)
         try:
             while True:
                 time.sleep(3600)

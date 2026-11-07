@@ -104,7 +104,8 @@ def test_export(serveur):
     assert export["question"] == QUESTION
     assert export["mode"] == "demo"
     assert export["compteurs"]["pieces"] == 2 and export["compteurs"]["liens"] == 1
-    assert export["compteurs"]["zones_d_ombre"] == 1
+    assert export["compteurs"]["zones"] == 0  # les zones ; zones_d_ombre garde son sens historique (questions ouvertes)
+    assert len(export["questions_ouvertes"]) == 1
 
 
 def test_erreurs(serveur):
@@ -203,7 +204,7 @@ def test_question_du_journaliste_dans_le_flux_et_la_recherche(serveur):
     posee = [e for e in evenements if e["type"] == "question" and e["donnees"].get("id") == corps["id"]]
     assert len(posee) == 1 and posee[0]["donnees"]["origine"] == "journaliste"
     export = get_json(serveur, "/api/export?enquete=affaire")
-    assert export["compteurs"]["zones_d_ombre"] == 2
+    assert len([q for q in export["questions_ouvertes"] if q["statut"] == "ouverte"]) == 2
     assert next(q for q in export["questions_ouvertes"] if q["id"] == corps["id"])["origine"] == "journaliste"
     # L'index est refait quand le journal change.
     assert get_json(serveur, "/api/recherche?enquete=affaire&q=finance")["resultats"]
@@ -274,3 +275,157 @@ def test_export_json_importe_en_journal(tmp_path):
     with Serveur(tmp_path, port=0, pas_sondage=0.02) as s:
         assert get_json(s, "/api/export?enquete=ancienne")["compteurs"] == export["compteurs"]
     assert lire_evenements(tmp_path / "ancienne" / "reseau.sqlite")[0]["type"] == "question"
+
+
+def test_travail_en_cours_traduit_et_videos_lues(tmp_path):
+    """Les lignes de travail de la chaîne (recherche, étape, fin) passent dans le flux,
+    et le compteur dit combien de vidéos distinctes les recherches ont rapportées."""
+    chemin = tmp_path / "reseau.sqlite"
+    ReseauEnquete(QUESTION, str(chemin)).fermer()
+    travail = [
+        ("etape", "e1", {"nom": "recherche", "etat": "debut", "detail": "2 mots × 3 champs"}),
+        ("recherche", "r1", {"source": "oriane", "champ": "transcript", "mot": "séisme",
+                             "total": 165, "recus": 3, "ids": ["a", "b", "c"], "credits": 10}),
+        ("recherche", "r2", {"source": "oriane", "champ": "caption", "mot": "séisme",
+                             "total": 196, "recus": 2, "ids": ["c", "d"], "credits": 10}),
+        ("fin", "f1", {"cas": "reel", "duree_reelle_s": 4.2}),
+    ]
+    bd = sqlite3.connect(chemin)
+    for genre, objet_id, donnees in travail:
+        bd.execute("INSERT INTO evenements (date, genre, objet_id, version, motif, donnees)"
+                   " VALUES (?, ?, ?, 1, '', ?)",
+                   (COLLECTE.isoformat(), genre, objet_id, json.dumps(donnees, ensure_ascii=False)))
+    bd.commit()
+    bd.close()
+
+    evenements = lire_evenements(chemin)
+    types = [e["type"] for e in evenements if e["type"] != "compteur"]
+    assert types == ["question", "etape", "recherche", "recherche", "etape"]
+    assert evenements[-1]["type"] == "compteur" and evenements[-1]["donnees"]["videos_lues"] == 4
+    fin = [e for e in evenements if e["type"] == "etape"][-1]["donnees"]
+    assert fin["nom"] == "enquete" and fin["etat"] == "fin" and fin["cas"] == "reel"
+
+
+class _FauxComprendre:
+    """Remplace `enquete.comprendre` le temps d'un test (aucun appel à Claude)."""
+
+    @staticmethod
+    def variantes_locales(question):
+        return {"mots": [{"mot": "séisme", "variantes": ["seisme", "séismes"], "champs": ["transcript"]}]}
+
+    @staticmethod
+    def lire_graine(texte):
+        return {"plateforme": "tiktok", "pseudo": "the911onabc"} if "tiktok" in texte else None
+
+    @staticmethod
+    def comprendre(question, graine=None):
+        return {"reformulation": f"Lecture de : {question}", "mots": []}
+
+    @staticmethod
+    def resumer_piece(piece, question):
+        return f"Résumé de {piece['libelle']}"
+
+
+def test_comprendre_et_resume(serveur, monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules, "enquete.comprendre", _FauxComprendre)
+    rapide = get_json(serveur, "/api/comprendre?q=s%C3%A9isme&graine=" + TIKTOK)
+    assert rapide["locales"]["mots"][0]["mot"] == "séisme"
+    assert rapide["graine"]["plateforme"] == "tiktok" and "profond" not in rapide
+    profond = get_json(serveur, "/api/comprendre?q=s%C3%A9isme&profond=1")
+    assert profond["profond"]["reformulation"].startswith("Lecture de")
+    resume = get_json(serveur, "/api/resume?enquete=affaire&piece=v1")
+    assert resume == {"piece": "v1", "resume": "Résumé de Vidéo tiktok"}
+
+
+def test_comprendre_absent_renvoie_503(serveur, monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules, "enquete.comprendre", None)
+    with pytest.raises(urllib.error.HTTPError) as erreur:
+        get(serveur, "/api/comprendre?q=test")
+    assert erreur.value.code == 503
+
+
+# -- l'écran servi par le serveur ------------------------------------------------
+
+@pytest.fixture
+def ecran(tmp_path):
+    dossier = tmp_path / "ecran"
+    (dossier / "sous").mkdir(parents=True)
+    (dossier / "index.html").write_text("<h1>Brut</h1>", encoding="utf-8")
+    (dossier / "app.js").write_text("export const a = 1;", encoding="utf-8")
+    (dossier / "sous" / "style.css").write_text("body{}", encoding="utf-8")
+    (dossier / "sous" / "index.html").write_text("<p>sous</p>", encoding="utf-8")
+    (tmp_path / "secret.txt").write_text("hors du dossier", encoding="utf-8")
+    return dossier
+
+
+def statut_de(serveur, chemin):
+    try:
+        return get(serveur, chemin)[0]
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
+def test_ecran_index_et_fichiers(racine, ecran):
+    with Serveur(racine, port=0, dossier_interface=ecran) as s:
+        statut, entetes, corps = get(s, "/")
+        assert statut == 200 and corps == b"<h1>Brut</h1>" and entetes["Content-Type"].startswith("text/html")
+        _, entetes, corps = get(s, "/interface/app.js")
+        assert entetes["Content-Type"].startswith("text/javascript") and corps == b"export const a = 1;"
+        assert get(s, "/interface/sous/style.css")[1]["Content-Type"].startswith("text/css")
+        assert get(s, "/interface/index.html")[2] == b"<h1>Brut</h1>"
+        assert get(s, "/interface/sous/")[2] == b"<p>sous</p>"
+        assert get_json(s, "/api/sante") == {"ok": True}
+
+
+def test_ecran_sans_sortie_du_dossier(racine, ecran):
+    with Serveur(racine, port=0, dossier_interface=ecran) as s:
+        for chemin in ("/interface/../secret.txt", "/interface/%2e%2e/secret.txt", "/interface/..%2fsecret.txt",
+                       "/interface/sous/../../secret.txt", "/interface/..%5csecret.txt",
+                       "/interface/%2e%2e%2f%2e%2e%2fsecret.txt", "/interface/C:/Windows/win.ini",
+                       "/interface//etc/passwd", "/interface/inconnu.js"):
+            assert statut_de(s, chemin) == 404, chemin
+
+
+def test_ecran_absent_donne_une_404_claire(racine, tmp_path):
+    with Serveur(racine, port=0, dossier_interface=tmp_path / "rien") as s:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            get(s, "/")
+        assert e.value.code == 404 and "interface" in json.loads(e.value.read())["erreur"]
+    vide = tmp_path / "vide"
+    vide.mkdir()
+    with Serveur(racine, port=0, dossier_interface=vide) as s:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            get(s, "/")
+        assert e.value.code == 404 and "index.html" in json.loads(e.value.read())["erreur"]
+
+
+def test_ecran_dossier_par_defaut_est_celui_du_depot(racine):
+    from enquete.serveur import DOSSIER_INTERFACE
+    with Serveur(racine, port=0) as s:
+        assert s.dossier_interface == DOSSIER_INTERFACE
+        assert DOSSIER_INTERFACE.name == "interface"
+        assert DOSSIER_INTERFACE.parent == Path(__file__).resolve().parent.parent
+
+
+def test_zone_dans_le_flux(tmp_path):
+    dossier = tmp_path / "zones"
+    dossier.mkdir()
+    with ReseauEnquete(QUESTION, str(dossier / "reseau.sqlite")) as r:
+        remplir(r)
+        zone = r.poser_zone(
+            "Qui dirige vraiment la société ?", "Registre étranger.", ["Recherche web datée"],
+            [{"geste": "Interroger le registre", "ou": "Registre", "comment": "Extrait", "difficulte": "facile"}],
+            autour=["c1"], role_manquant=Role.MIS_EN_CAUSE)
+        r.corriger_zone(zone.id, "piste précisée", tente=["Recherche web datée", "registres"])
+    evenements = lire_evenements(dossier / "reseau.sqlite")
+    zones = [e for e in evenements if e["type"] == "zone"]
+    assert [z["donnees"]["version"] for z in zones] == [1, 2]
+    d = zones[0]["donnees"]
+    assert d["id"] == zone.id and d["motif"] == "zone posée" and d["role_manquant"] == "mis_en_cause"
+    assert d["autour"] == ["c1"] and d["pistes"][0]["difficulte"] == "facile"
+    assert zones[1]["donnees"]["motif"] == "piste précisée"
+    n = evenements.index(zones[0])
+    assert evenements[n + 1]["type"] == "compteur"  # chaque ligne est suivie de son compteur
+    assert evenements[-1]["donnees"]["zones_d_ombre"] == 1  # le compteur du flux ne change pas : questions ouvertes
