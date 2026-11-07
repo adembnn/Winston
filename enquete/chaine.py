@@ -685,6 +685,24 @@ def ajouter_preuves_d_archive(
     return corriges
 
 
+def construire_reseau(
+    question: str, videos: list[Video], grappes: list[Grappe], archives: dict[str, PieceArchivee],
+    collecte: datetime, chemin: str = ":memory:",
+) -> ReseauEnquete:
+    """Tout le réseau d'un coup, pour qui a déjà ses vidéos et ses grappes (tests, modules voisins).
+
+    Mêmes étapes que la chaîne en direct, dans le même ordre : pièces à classer, classement,
+    grappes et liens, preuves d'archive, questions de base.
+    """
+    reseau = ReseauEnquete(question, chemin)
+    noeuds = poser_noeuds_a_classer(reseau, videos)
+    classer_noeuds(reseau, noeuds, grappes)
+    reconstructeurs = poser_grappes_et_liens(reseau, videos, grappes, noeuds, collecte)
+    ajouter_preuves_d_archive(reseau, reconstructeurs, archives)
+    _poser_questions_de_base(reseau, grappes, [v for v in videos if v.url])
+    return reseau
+
+
 def _poser_questions_de_base(reseau: ReseauEnquete, grappes: list[Grappe], videos: list[Video]) -> None:
     """Les trois zones d'ombre que la chaîne ne sait pas combler seule."""
     if videos:
