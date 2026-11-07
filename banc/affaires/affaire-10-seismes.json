@@ -1,0 +1,172 @@
+{
+  "id": "affaire-10-seismes",
+  "question": "Ces vidéos de séismes et d'éruptions d'août-septembre 2026 sont-elles réelles, et d'où viennent-elles ?",
+  "gel_donnees": "2026-11-07",
+  "reserve": false,
+  "faits": [
+    {
+      "id": "F1",
+      "phrase": "Après le séisme de magnitude 7,7 en Indonésie du 15 août, une vidéo d'un bâtiment penché, publiée sur Facebook avec une légende en hindi, est en réalité celle du séisme de Taïwan d'avril 2024.",
+      "type": "origine",
+      "poids": 3,
+      "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
+      "correspondance": {
+        "mots_cles": ["séisme", "indonésie", "7,7", "bâtiment", "penché", "taïwan", "2024", "hindi", "facebook"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F2",
+      "phrase": "Le clip du bâtiment penché du séisme de Taïwan avait déjà été détourné pour d'autres séismes.",
+      "type": "reprise",
+      "poids": 2,
+      "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
+      "correspondance": {
+        "mots_cles": ["clip", "bâtiment", "penché", "taïwan", "détourné", "autres", "séismes"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F3",
+      "phrase": "Une vidéo de fissures générée par intelligence artificielle, liée au séisme de 7,7 en Indonésie, est répliquée sur Facebook, Instagram, Threads, X et TikTok.",
+      "type": "reprise",
+      "poids": 2,
+      "source": "https://factual.afp.com/doc.afp.com.C4YB8WE",
+      "correspondance": {
+        "mots_cles": ["fissures", "générée", "intelligence artificielle", "indonésie", "facebook", "instagram", "threads", "tiktok"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F4",
+      "phrase": "Après le séisme de magnitude 7,4 en Colombie du 10 août, une vidéo d'effondrement générée par intelligence artificielle circule.",
+      "type": "origine",
+      "poids": 2,
+      "source": "https://factual.afp.com/doc.afp.com.C4PF89H",
+      "correspondance": {
+        "mots_cles": ["colombie", "7,4", "10 août", "effondrement", "générée", "intelligence artificielle"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F5",
+      "phrase": "Une vidéo tournée au Venezuela en juin 2026 circule à propos du séisme colombien du 10 août.",
+      "type": "origine",
+      "poids": 2,
+      "source": "https://factcheck.afp.com/doc.afp.com.C4U73NR",
+      "correspondance": {
+        "mots_cles": ["vidéo", "venezuela", "juin 2026", "séisme", "colombie", "10 août"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F6",
+      "phrase": "Après le séisme de magnitude 6,7 au Pérou du 20 août, une vidéo tournée à Pereira, en Colombie, circule.",
+      "type": "origine",
+      "poids": 2,
+      "source": "https://factcheck.afp.com/doc.afp.com.C67J8KE",
+      "correspondance": {
+        "mots_cles": ["pérou", "6,7", "20 août", "pereira", "colombie", "vidéo"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F7",
+      "phrase": "En septembre, une vidéo d'éruption volcanique générée par intelligence artificielle est partagée sur TikTok.",
+      "type": "origine",
+      "poids": 2,
+      "source": "https://factcheck.afp.com/doc.afp.com.C7LU7CQ",
+      "correspondance": {
+        "mots_cles": ["septembre", "éruption", "volcan", "générée", "intelligence artificielle", "tiktok"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F8",
+      "phrase": "Un clip de novembre 2025, retouché, est présenté comme une éruption volcanique de septembre.",
+      "type": "origine",
+      "poids": 2,
+      "source": "https://factcheck.afp.com/doc.afp.com.C88L4NQ",
+      "correspondance": {
+        "mots_cles": ["clip", "novembre 2025", "retouché", "éruption", "septembre"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F9",
+      "phrase": "Pour chaque séisme, la première occurrence de la fausse vidéo date du jour du séisme ou du lendemain.",
+      "type": "chronologie",
+      "poids": 2,
+      "correspondance": {
+        "mots_cles": ["première", "occurrence", "jour", "séisme", "lendemain"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F10",
+      "phrase": "Les vidéos sont lancées par des pages et de petits comptes d'engagement, puis relayées par des comptes multilingues.",
+      "type": "acteur",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["pages", "petits comptes", "engagement", "relayées", "comptes", "multilingues"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F11",
+      "phrase": "Les équipes locales de l'AFP ont vérifié ces vidéos et publié des démentis.",
+      "type": "interlocuteur",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["afp", "équipes locales", "vérifié", "démentis", "vidéos"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F12",
+      "phrase": "Les vidéos d'origine, quand elles existent, sont antérieures à la fenêtre d'étude et n'apparaissent pas dans les données.",
+      "type": "zone_ombre",
+      "poids": 1,
+      "correspondance": {
+        "mots_cles": ["vidéos", "origine", "antérieures", "fenêtre", "données"],
+        "seuil": 0.6
+      }
+    }
+  ],
+  "non_etabli": [
+    {
+      "id": "N1",
+      "phrase": "L'intention de ceux qui publient ces vidéos : chercher de l'engagement ou désinformer.",
+      "correspondance": {
+        "mots_cles": ["intention", "engagement", "désinformer", "publient", "vidéos"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "N2",
+      "phrase": "L'ampleur de la diffusion de ces vidéos sur chaque plateforme.",
+      "correspondance": {
+        "mots_cles": ["ampleur", "diffusion", "vidéos", "plateforme"],
+        "seuil": 0.75
+      }
+    }
+  ],
+  "pieges": [
+    {
+      "id": "P1",
+      "phrase": "Affirmer que toutes les vidéos de ces séismes sont fausses : les séismes réels ont aussi de vraies vidéos.",
+      "correspondance": {
+        "mots_cles": ["toutes", "vidéos", "séismes", "fausses"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "P2",
+      "phrase": "Affirmer que ces vidéos ont été produites ou diffusées en Europe : l'affaire ne contient pas de contenu européen.",
+      "correspondance": {
+        "mots_cles": ["vidéos", "produites", "diffusées", "europe"],
+        "seuil": 0.75
+      }
+    }
+  ]
+}

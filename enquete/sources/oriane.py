@@ -72,12 +72,15 @@ def _lire_cle_dans_env(chemin: Path) -> str | None:
     return None
 
 
-def _trouver_cle(cle: str | None) -> str | None:
-    """Ordre de priorité : argument, variable d'environnement, fichier .env à la racine."""
+def _trouver_cle(cle: str | None, fichier_env: str | Path | None = None) -> str | None:
+    """Ordre de priorité : argument, variable d'environnement, fichier .env indiqué,
+    puis fichier .env à la racine du dépôt."""
     if cle:
         return cle
     if os.environ.get(VARIABLE_CLE):
         return os.environ[VARIABLE_CLE]
+    if fichier_env:
+        return _lire_cle_dans_env(Path(fichier_env))
     racine = Path(__file__).resolve().parents[2]
     return _lire_cle_dans_env(racine / ".env")
 
@@ -93,8 +96,9 @@ class OrianeClient:
         transport: httpx.BaseTransport | None = None,
         attente_base: float = 1.0,
         dormir: Callable[[float], None] = time.sleep,
+        fichier_env: str | Path | None = None,
     ):
-        self._cle = _trouver_cle(cle)
+        self._cle = _trouver_cle(cle, fichier_env)
         self._base_url = base_url.rstrip("/")
         self._dossier_cache = Path(dossier_cache)
         self._http = httpx.Client(base_url=self._base_url, transport=transport, timeout=60.0)
