@@ -172,7 +172,10 @@ const dedans = () => document.body.classList.contains('dedans');
 // la touche part du body du réseau, comme une vraie frappe (un envoi sur window ferait sauter la construction)
 const versReseau = key => { try { ifr.contentDocument.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })); } catch (_) {} };
 const lancerReseau = () => { if (!EN_FLUX) versReseau('ArrowRight'); };   // jet-d : passe au niveau 1, ce qui lance la construction
-const etatReseau = () => { try { return ifr.contentWindow.location.hash.replace('#', '') || 'niveau0'; } catch (_) { return ''; } };
+// niveau du réseau : jet-d le dit par son ancre ; reseau.html par la classe n2 (un rôle ou les zones d'ombre ouverts)
+const etatReseau = () => { try {
+  if (EN_FLUX) return ifr.contentDocument.body.classList.contains('n2') ? 'n2' : 'niveau0';
+  return ifr.contentWindow.location.hash.replace('#', '') || 'niveau0'; } catch (_) { return ''; } };
 function entrer() {
   if (dedans()) return;
   location.hash = 'dedans';
@@ -186,8 +189,12 @@ addEventListener('keydown', e => {
   if (['ArrowRight', 'ArrowLeft', 'Escape'].includes(e.key)) { e.preventDefault(); versReseau(e.key); }
 });
 // Échap depuis l'intérieur du réseau, une fois revenu à la question seule : on ressort dans la salle
+// Échap ne ressort dans la salle que si le réseau était déjà à son premier niveau AVANT la touche
+// (lu en phase de capture, avant que le réseau ne remonte lui-même d'un niveau)
 ifr.addEventListener('load', () => { try { ifr.contentWindow.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && etatReseau() === 'niveau0') setTimeout(() => { location.hash = ''; focus(); }, 0); }); } catch (_) {} });
+  if (e.key !== 'Escape') return;
+  const avant = etatReseau();
+  if (avant === 'niveau0') setTimeout(() => { location.hash = ''; focus(); }, 0); }, true); } catch (_) {} });
 scene.style.transition = 'none'; etat(); requestAnimationFrame(() => requestAnimationFrame(() => scene.style.transition = ''));
 </script>
 </body>

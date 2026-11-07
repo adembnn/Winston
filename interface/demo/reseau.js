@@ -99,7 +99,7 @@ const nbPreuves = (p) => (p.preuves && p.preuves.length) || (p.compteurs && p.co
 const sansNumero = (t) => String(t || "").replace(/^\s*\d+\s*[.)]\s*/, "");
 function zonesDe(zonesOmbre, questions) {
   const zo = (zonesOmbre || []).filter((z) => z && (z.titre || z.texte));
-  if (zo.length) return { genre: "zone", liste: zo.map((z) => ({ id: z.id, titre: sansNumero(z.titre || z.texte), pourquoi: z.pourquoi || "", mots: z.pourquoi_en_mots || z.mots || "", tente: Array.isArray(z.tente) ? z.tente : [], pistes: Array.isArray(z.pistes) ? z.pistes : [] })) };
+  if (zo.length) return { genre: "zone", liste: zo.map((z) => ({ id: z.id, titre: sansNumero(z.titre || z.texte), pourquoi: z.pourquoi || "", mots: z.pourquoi_en_mots || z.mots || "", tente: Array.isArray(z.tente) ? z.tente : [], autour: Array.isArray(z.autour) ? z.autour : [], pistes: Array.isArray(z.pistes) ? z.pistes : [] })) };
   const qo = (questions || []).filter((q) => q && (!q.statut || q.statut === "ouverte"));
   return { genre: "question", liste: qo.map((q) => ({ id: q.id, titre: sansNumero(q.texte || q.titre) })) };
 }
@@ -549,6 +549,10 @@ function niveau1(m, aTop, aBot, f20) {
 
 // La page des zones d'ombre (clic sur le petit cadre) : la zone choisie en grand, ce qu'on a tenté, les pistes
 let zSel = 0;
+function trouverPiece(id) {
+  for (const r of ROLES) { const p = piecesDe(r).find((x) => x.id === id); if (p) return { p, r }; }
+  return null;
+}
 function sousTitreZones() {
   const z = M.zones[zSel] || {};
   const n = (z.pistes || []).length;
@@ -580,14 +584,16 @@ function niveauZones(m, aTop, aBot, f20) {
   const top = m + rh + Math.round(18 * K);
   const Wb = W - 2 * m;
   const tente = (z.tente || []).slice(0, 3), pistes = (z.pistes || []).slice(0, 3);
+  const autour = (z.autour || []).map(trouverPiece).filter(Boolean).slice(0, 4);
   const bx = nd("zbox", "zbox");
-  bx.classList.toggle("deux", tente.length > 0);
+  bx.classList.toggle("deux", tente.length > 0 || autour.length > 0);
   const maxH = Math.floor((aBot - top) * (pistes.length ? 0.44 : 0.5));
   const build = (f) => {
     bx.style.fontSize = f20 + "px";
     bx.innerHTML = `<div class="zl1"><h2 style="font-size:${f}px">${esc(z.titre)}</h2>` +
       (z.pourquoi || z.mots ? `<p>${z.pourquoi ? `<span class="tag">${esc(z.pourquoi)}</span> ` : ""}${esc(z.mots || "")}</p>` : "") + "</div>" +
-      (tente.length ? `<div class="zr1"><div class="lbl">Déjà tenté</div>${tente.map((t) => `<div>${esc(t)}</div>`).join("")}</div>` : "");
+      (tente.length || autour.length ? `<div class="zr1">${tente.length ? `<div class="lbl">Déjà tenté</div>${tente.map((t) => `<div>${esc(t)}</div>`).join("")}` : ""}` +
+      (autour.length ? `<div class="lbl" style="margin-top:${Math.round(10 * K)}px">Autour</div><div class="aut">${autour.map(({ p, r }) => `<div class="au" data-au="${esc(p.id)}" data-aur="${r}" data-info="${esc(p.libelle || p.id)}"><div class="th" style="width:${Math.round(64 * K)}px;height:${Math.round(64 * K)}px">${imageDe(p) ? imgHtml([imageDe(p)], p.type) : picto(p.type)}</div><div class="nm">${esc(sourceDe(p))}</div></div>`).join("")}</div>` : "") + "</div>" : "");
     bx.style.width = Wb + "px"; bx.style.height = "auto";
     return bx.offsetHeight;
   };
@@ -757,7 +763,32 @@ function niveau2(m, aTop, aBot, f20, lh) {
 const vis_ = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && parseFloat(cs.opacity) >= 0.05; };
 const coupe = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
+function montrerTitre(t) {
+  const texte = t.getAttribute("data-info");
+  if (!texte) return cacher();
+  Object.assign($info.style, { display: "-webkit-box", webkitBoxOrient: "vertical", webkitLineClamp: "3", overflow: "hidden", maxHeight: "none" });
+  $info.style.fontSize = Math.round(20 * K) + "px";
+  $info.textContent = texte;
+  const tr = t.getBoundingClientRect();
+  $info.style.left = "0px"; $info.style.top = "0px"; $info.style.maxWidth = Math.round(tr.width) + "px"; $info.style.width = Math.round(tr.width) + "px";
+  const h = $info.offsetHeight, w = $info.offsetWidth;
+  const autres = [...document.querySelectorAll("[data-v]")].filter((e) => e !== $info && e !== t && vis_(e)).map((e) => e.getBoundingClientRect());
+  const fils = [...document.querySelectorAll("#traits polyline")].map((l) => l.getAttribute("points").split(" ").map((q) => q.split(",").map(Number)));
+  const x = clamp(tr.left + (tr.width - w) / 2, 6, W - 6 - w);
+  for (const y of [tr.bottom + 10, tr.top - 10 - h]) {
+    if (y < 6 || y + h > H - 6) continue;
+    const r = { left: x, top: y, right: x + w, bottom: y + h };
+    if (autres.some((o) => coupe(r, o))) continue;
+    const b = { x: x - 3, y: y - 3, w: w + 6, h: h + 6 };
+    if (fils.some((p) => p.some((_, i) => i + 1 < p.length && (() => { const q = intervalle(p[i], p[i + 1], b); return q && q[1] > 0 && q[0] < 1; })()))) continue;
+    $info.style.left = Math.round(x) + "px"; $info.style.top = Math.round(y) + "px";
+    return;
+  }
+  cacher();   // pas d'espace libre : la question complète reste dans le résumé
+}
 function montrer(t) {
+  if (t.dataset.v === "titre") return montrerTitre(t);
+  Object.assign($info.style, { webkitLineClamp: "", webkitBoxOrient: "", width: "" });
   const texte = t.getAttribute("data-info");
   if (!texte) return cacher();
   $info.style.display = "block";
@@ -799,14 +830,20 @@ function montrer(t) {
 function cacher() { $info.style.display = "none"; }
 window.__reseau = { montrer, cacher };
 
+let minuteTitre = 0;
 document.addEventListener("pointerover", (ev) => {
   const t = ev.target.closest && ev.target.closest("[data-info]");
-  if (t) montrer(t); else cacher();
+  clearTimeout(minuteTitre);
+  if (t && t.dataset.v === "titre") { cacher(); minuteTitre = setTimeout(() => montrerTitre(t), 600); }
+  else if (t) montrer(t);
+  else cacher();
 });
 document.addEventListener("pointerleave", cacher);
 function activer(cible) {
   if (!cible || !cible.closest) return;
   if (cible.closest("a")) return;
+  const au = cible.closest("[data-au]");
+  if (au && niveau === "__zones") { niveau = au.dataset.aur; selId = au.dataset.au; cacher(); planifier(); return; }
   const piece = cible.closest(".piece");
   if (piece) { selId = piece.dataset.piece; planifier(); return; }
   if (cible.closest("#titre2,.retour")) { remonter(); return; }
