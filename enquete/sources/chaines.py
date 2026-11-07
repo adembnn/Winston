@@ -192,6 +192,18 @@ def normaliser_chaine(chaine: str) -> str:
     return cle
 
 
+# Sous-types de portefeuille que produit `pivots.py` -> chaîne lue ici. Une adresse EVM est la même
+# sur toutes les chaînes EVM : seule Ethereum est lue, les autres ne sont pas interrogées (le nœud le
+# dit). Litecoin et Dogecoin n'ont pas de source gratuite ici.
+CHAINE_DU_PIVOT = {"evm": "eth", "bitcoin": "btc", "tron": "tron", "solana": "sol"}
+
+
+def chaine_du_pivot(sous_type: str | None) -> str | None:
+    """La chaîne à interroger pour le sous-type d'un pivot portefeuille ; None si elle n'est pas prise en charge
+    (litecoin, dogecoin, inconnue). `normaliser_chaine("evm")` lèverait une erreur : on passe par ici."""
+    return CHAINE_DU_PIVOT.get((sous_type or "").strip().lower())
+
+
 def verifier_adresse(chaine: str, adresse: str) -> str:
     """Rend l'adresse nettoyée, ou lève ChainesAdresseInvalideError."""
     chaine = normaliser_chaine(chaine)

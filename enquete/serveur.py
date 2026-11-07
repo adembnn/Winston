@@ -66,10 +66,12 @@ Stockage : `<racine>/<id>/reseau.sqlite`. Un dossier qui ne contient que
 
 from __future__ import annotations
 
+import importlib
 import inspect
 import json
 import re
 import sqlite3
+import sys
 import threading
 import time
 import mimetypes
@@ -267,11 +269,156 @@ def importer_export(export: dict[str, Any], chemin: Path) -> None:
     temporaire.replace(chemin)
 
 
+def fusionner_images(export: dict[str, Any], chemin: Path) -> dict[str, Any]:
+    """Ajoute à l'export l'image de chaque pièce et de chaque dossier, quand `images.json` existe.
+
+    La chaîne écrit les images à la fin du passage, dans `images.json` ; le serveur réexporte depuis le
+    journal, qui n'en porte pas : sans cette fusion une image ajoutée au seul `reseau.json` n'atteindrait
+    jamais l'écran. Fichier absent ou illisible : l'export reste tel quel.
+    """
+    try:
+        images = json.loads(chemin.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return export
+    if not isinstance(images, dict):
+        return export
+    pieces = images.get("pieces") or {}
+    dossiers = images.get("dossiers") or {}
+    for dossier in export.get("dossiers", []):
+        infos = dossiers.get(dossier["role"])
+        if isinstance(infos, dict):
+            dossier.update({k: infos[k] for k in ("image", "image_piece_id", "silhouette") if k in infos})
+        for piece in dossier["pieces"]:
+            if piece["id"] in pieces:
+                piece["image"] = pieces[piece["id"]]
+    export["qr_trouves"] = images.get("qr_trouves") or []
+    export["images_echecs"] = images.get("images_echecs") or []
+    return export
+
+
 # ---------------------------------------------------------------------------
 # Enquêtes en cours
 # ---------------------------------------------------------------------------
 
 Enqueteur = Callable[[str, list[str], Path, Path, str], None]
+Cadreur = Callable[[str], "list[str] | None"]
+
+
+# ---------------------------------------------------------------------------
+# Les mots à chercher : tirés de la question, sans modèle
+# ---------------------------------------------------------------------------
+
+MAX_MOTS = 8
+DELAI_CADRAGE_S = 90
+
+_MOTS_VIDES = (
+    "le la les un une des du de d l au aux et ou ni mais donc or car que qu qui quoi dont où ce cet cette ces "
+    "se sa son ses sur sous dans par pour avec sans chez vers entre contre depuis pendant avant apres selon "
+    "est sont etait etre ete suis es sommes etes fait font faire a ont avoir avait aurait y en ne pas plus "
+    "tout tous toute toutes aussi comme tres bien mon ma mes ton ta tes notre nos votre vos leur leurs il elle "
+    "ils elles on nous vous je tu me te lui eux "
+    "the a an of to in on at by for with from and or but not is are was were be been being this that these "
+    "those it its as who what which where when how why do does did has have had will would can could should"
+).split()
+_MOTS_DE_QUESTION = (
+    "comment pourquoi quand combien quel quels quelle quelles lequel laquelle lesquels est-ce peut peuvent "
+    "faut veut voudrait cherche chercher trouver trouve savoir sait connait expliquer"
+).split()
+_MOTS_GENERIQUES = (
+    "video videos tiktok instagram youtube reel reels short shorts post posts compte comptes contenu contenus "
+    "affaire enquete derriere vraiment exactement reseau reseaux social sociaux sujet propos autour"
+).split()
+
+
+def _sans_accent(texte: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", texte.lower()) if not unicodedata.combining(c))
+
+
+_ECARTES = {_sans_accent(m) for m in (*_MOTS_VIDES, *_MOTS_DE_QUESTION, *_MOTS_GENERIQUES)}
+_RE_GUILLEMETS = re.compile(r"«\s*(.+?)\s*»|\"\s*(.+?)\s*\"|“\s*(.+?)\s*”")
+_RE_MOT = re.compile(r"\w[\w-]*")
+_RE_INVERSION = re.compile(r"(?i)-(?:t-)?(?:il|ils|elle|elles|on|ce|je|tu|nous|vous)$")
+
+
+def mots_de_la_question(question: str) -> list[str]:
+    """Les mots à chercher dans la vidéo, tirés de la question seule (aucun modèle, aucun réseau).
+
+    Dans l'ordre : les expressions entre guillemets, gardées entières ; les suites de noms propres
+    (« Panama Papers ») ; les sigles et mots à chiffres (« GLP-1 ») ; puis les mots significatifs
+    (sans mots vides, mots de question ni mots génériques comme « vidéos »). Sans doublon après
+    normalisation, 8 au plus. Si rien ne reste, la question entière.
+    """
+    question = (question or "").strip()
+    gardes: list[str] = []
+    vus: set[str] = set()
+    couverts: set[str] = set()
+
+    def garder(mot: str) -> None:
+        cle = " ".join(_RE_MOT.findall(_sans_accent(mot)))
+        if cle and cle not in vus and len(gardes) < MAX_MOTS:
+            vus.add(cle)
+            gardes.append(mot.strip())
+            couverts.update(cle.split())
+
+    reste = question
+    for m in _RE_GUILLEMETS.finditer(question):
+        garder(next(g for g in m.groups() if g))
+    reste = _RE_GUILLEMETS.sub(" ", question)
+
+    jetons = _RE_MOT.findall(reste)
+    suite: list[str] = []
+    for jeton in [*jetons, ""]:
+        if jeton[:1].isupper() and not (len(jeton) > 1 and jeton.isupper()):
+            suite.append(jeton)
+            continue
+        while suite and _sans_accent(suite[0]) in _ECARTES:
+            suite.pop(0)  # « Comment Brut Scan » : le mot de question tombe, le nom propre reste
+        if len(suite) >= 2:
+            garder(" ".join(suite))
+        suite = []
+    for jeton in jetons:
+        sans = _sans_accent(jeton)
+        sigle = len(jeton) >= 2 and jeton.isupper() and sans not in _ECARTES
+        chiffre = any(c.isdigit() for c in jeton) and len(jeton) >= 3
+        if sigle or chiffre:
+            garder(jeton)
+    for jeton in jetons:
+        jeton = _RE_INVERSION.sub("", jeton)  # « sont-ils » -> « sont », « repère-t-il » -> « repère »
+        sans = _sans_accent(jeton)
+        if len(sans) >= 3 and sans not in _ECARTES and sans not in couverts and not any(c.isdigit() for c in sans):
+            garder(jeton.lower())
+    return gardes or ([question] if question else [])
+
+
+def fusionner_mots(*listes: list[str]) -> list[str]:
+    """Les listes mises bout à bout, sans doublon après normalisation (la première occurrence gagne)."""
+    vus: set[str] = set()
+    sortie: list[str] = []
+    for liste in listes:
+        for mot in liste or []:
+            cle = " ".join(_RE_MOT.findall(_sans_accent(str(mot))))
+            if cle and cle not in vus:
+                vus.add(cle)
+                sortie.append(str(mot).strip())
+    return sortie
+
+
+def cadrage_du_tour_1(question: str, delai_s: int = DELAI_CADRAGE_S) -> list[str] | None:
+    """Le cadrage du raisonnement du tour 1 : les mots à chercher, proposés par un agent à partir de la seule question.
+
+    Les modules du tour 1 (`prompts`, `appel_claude`) sont importés ICI, à l'appel : tant qu'ils manquent
+    (ils ne sont pas encore fusionnés), ou s'ils lèvent, ou au-delà de `delai_s`, la réponse est None et
+    le serveur s'en tient aux mots de la question.
+    """
+    try:
+        prompts = importlib.import_module("enquete.prompts")
+        appel = importlib.import_module("enquete.appel_claude")
+        claude = appel.Claude(Path("cache/claude"), appel.ExecuteurCLI(delai_s=delai_s))
+        reponse = claude.demander("cadrage", prompts.cadrage(question, None), appel.MODELE_AGENT)
+    except Exception:  # noqa: BLE001 - module absent, agent en panne, délai dépassé : on s'en passe
+        return None
+    mots = [m.strip() for m in (reponse or {}).get("mots", []) if isinstance(m, str) and m.strip()]
+    return mots[:14] or None
 
 
 def enqueteur_par_defaut(question: str, mots: list[str], dossier: Path, journal: Path, affaire_id: str) -> None:
@@ -280,17 +427,20 @@ def enqueteur_par_defaut(question: str, mots: list[str], dossier: Path, journal:
     Si `enqueter` accepte un paramètre `chemin_journal` (ou `chemin_reseau`,
     `chemin`), le journal s'écrit au fil de la collecte et le flux est vivant.
     Sinon la chaîne construit le réseau en mémoire : on importe `reseau.json`
-    à la fin et les événements arrivent d'un bloc.
+    à la fin et les événements arrivent d'un bloc. Si elle sait lire les pivots
+    (`pivots`), ils sont activés.
     """
     from enquete import chaine
     from enquete.sources.oriane import OrianeClient
 
     parametres = inspect.signature(chaine.enqueter).parameters
-    supplement = {}
+    supplement: dict[str, Any] = {}
     for nom in ("chemin_journal", "chemin_reseau", "chemin"):
         if nom in parametres:
             supplement[nom] = str(journal)
             break
+    if "pivots" in parametres:
+        supplement["pivots"] = True
     with OrianeClient(dossier_cache="cache/oriane") as client:
         chaine.enqueter(question, mots, client, dossier, affaire_id, **supplement)
     if not supplement and (dossier / "reseau.json").exists():
@@ -330,10 +480,13 @@ class Serveur:
         pas_sondage: float = 0.25,
         autoriser_fichiers: bool = True,
         dossier_interface: str | Path | None = None,
+        cadreur: Cadreur | None = None,
     ) -> None:
         self.racine = Path(racine)
         self.dossier_interface = Path(dossier_interface) if dossier_interface is not None else DOSSIER_INTERFACE
         self.enqueteur = enqueteur or enqueteur_par_defaut
+        # Sans graine, le fil de l'enquête lui demande d'abord les mots ; None : seulement ceux de la question.
+        self.cadreur = cadreur
         self.sur_question = sur_question  # (enquete_id, question_id, texte) : les agents s'y branchent
         self.pas_sondage = pas_sondage
         self.autoriser_fichiers = autoriser_fichiers
@@ -446,6 +599,7 @@ class Serveur:
         origines = self._questions_du_journaliste(chemin)
         for q in export["questions_ouvertes"]:
             q["origine"] = "journaliste" if q["id"] in origines else "agent"
+        export = fusionner_images(export, chemin.parent / "images.json")
         return {**export, "mode": self.mode(identifiant), "enquete": identifiant}
 
     @staticmethod
@@ -480,7 +634,6 @@ class Serveur:
             mots = [str(m).strip() for m in graine if str(m).strip()]
         else:
             mots = []
-        mots = mots or [question]
         identifiant = f"{_slug(question)}-{uuid.uuid4().hex[:6]}"
         dossier = self.racine / identifiant
         dossier.mkdir(parents=True, exist_ok=True)
@@ -492,7 +645,14 @@ class Serveur:
 
         def courir() -> None:
             try:
-                self.enqueteur(question, mots, dossier, journal, identifiant)
+                # Avec une graine rien ne change. Sans graine, c'est ici, dans le fil de l'enquête, que les mots
+                # se décident : la requête POST a déjà répondu avec l'identifiant.
+                if mots:
+                    choisis, origines = mots, {m: "graine" for m in mots}
+                else:
+                    choisis, origines = self._mots_sans_graine(question)
+                self._ecrire_cadrage(dossier, choisis, origines)
+                self.enqueteur(question, choisis, dossier, journal, identifiant)
                 travail.etat = "terminee"
             except Exception as erreur:  # le flux doit pouvoir dire que ça s'est mal passé
                 travail.erreur = f"{type(erreur).__name__} : {erreur}"
@@ -526,6 +686,29 @@ class Serveur:
                 if piece["id"] == piece_id:
                     return {"piece": piece_id, "resume": module.resumer_piece(piece, export["question"])}
         raise ErreurHttp(404, f"pièce inconnue : {piece_id}")
+
+    def _mots_sans_graine(self, question: str) -> tuple[list[str], dict[str, str]]:
+        """Les mots du cadreur s'il y en a un (et s'il répond), puis ceux de la question, sans doublon."""
+        cadres: list[str] = []
+        if self.cadreur is not None:
+            try:
+                cadres = list(self.cadreur(question) or [])
+            except Exception:  # noqa: BLE001 - un cadreur en panne ne doit pas empêcher l'enquête
+                cadres = []
+        tires = mots_de_la_question(question)
+        mots = fusionner_mots(cadres, tires)
+        cles_cadre = {_sans_accent(m) for m in cadres}
+        return mots, {m: ("cadrage du tour 1" if _sans_accent(m) in cles_cadre else "question") for m in mots}
+
+    @staticmethod
+    def _ecrire_cadrage(dossier: Path, mots: list[str], origines: dict[str, str]) -> None:
+        """`cadrage.json` : les mots cherchés et d'où chacun vient (graine, question, cadrage du tour 1)."""
+        try:
+            (dossier / "cadrage.json").write_text(
+                json.dumps({"mots": [{"mot": m, "origine": origines.get(m, "question")} for m in mots]},
+                           ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            pass
 
     def poser_question(self, identifiant: str, texte: str) -> str:
         texte = (texte or "").strip()
@@ -838,15 +1021,32 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
     return Gestionnaire
 
 
+def _console_utf8() -> None:
+    """Console en UTF-8 (sous Windows elle est en cp1252). Sans effet si le flux ne se reconfigure pas."""
+    for flux in (sys.stdout, sys.stderr):
+        try:
+            flux.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    analyseur = argparse.ArgumentParser(prog="python -m enquete.serveur", description=__doc__.split("\n")[0])
+    _console_utf8()
+    analyseur = argparse.ArgumentParser(
+        prog="python -m enquete.serveur",
+        description="Enquête en direct : le serveur local qui fait vivre l'interface, le réseau se construit "
+                    "sous les yeux du journaliste.",
+    )
     analyseur.add_argument("--racine", default="donnees", help="dossier des enquêtes (un sous-dossier par enquête)")
     analyseur.add_argument("--port", type=int, default=PORT, help="0 = un port libre (affiché au démarrage)")
     analyseur.add_argument("--interface", default=None, help="dossier de l'écran (défaut : interface/ du dépôt)")
+    analyseur.add_argument("--sans-cadrage", action="store_true",
+                           help="ne pas demander au cadrage du tour 1 les mots à chercher (la question seule)")
     args = analyseur.parse_args(argv)
-    with Serveur(args.racine, port=args.port, dossier_interface=args.interface) as serveur:
+    cadreur = None if args.sans_cadrage else cadrage_du_tour_1
+    with Serveur(args.racine, port=args.port, dossier_interface=args.interface, cadreur=cadreur) as serveur:
         print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}", flush=True)
         try:
             while True:

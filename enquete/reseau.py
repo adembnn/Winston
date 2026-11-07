@@ -11,9 +11,8 @@ Trois règles tiennent tout le module :
   3. la solidité d'une pièce se dit en deux notes séparées (fiabilité de la
      source, crédibilité de l'information), toujours traduites en mots.
 
-Références : kickoff/3-methode.md §3.2 (liens, rareté, échelle verbale),
-§3.5 (échelle de conclusion), §3.6 (mémoire partagée) ; kickoff/da-bible.md
-(dossiers = rôles dans l'affaire, hiérarchie des sources).
+Références : docs/methode.md §4 (liens, rareté, échelle de lecture), §8 (échelle de conclusion),
+§12 (le réseau, neuf familles de liens) ; §2 et §6 (rôles dans l'affaire, hiérarchie des sources).
 """
 
 from __future__ import annotations
@@ -53,6 +52,12 @@ class TypeNoeud(str, Enum):
     AFFIRMATION = "affirmation"
     QUESTION_OUVERTE = "question_ouverte"
     GRAPPE = "grappe"
+    # Pivots de l'argent : l'adresse d'un portefeuille, un code promo ou d'affiliation, un
+    # identifiant de paiement (cagnotte, lien de don). Le domaine, la page de liens et la boutique
+    # sont des SITE ; le SIREN et le SIRET, une SOCIETE ; un canal Telegram, un COMPTE.
+    PORTEFEUILLE = "portefeuille"
+    CODE_PROMO = "code_promo"
+    PAIEMENT = "paiement"
 
 
 class Role(str, Enum):
@@ -70,7 +75,7 @@ class Role(str, Enum):
     INCONNU = "inconnu"
 
 
-# Intitulés affichés pour chaque dossier (da-bible.md, « Les dossiers sont des rôles »).
+# Intitulés affichés pour chaque dossier : les dossiers sont des rôles (docs/methode.md §2 et §6).
 LIBELLES_ROLES: dict[Role, str] = {
     Role.ORIGINE: "À l'origine",
     Role.AMPLIFICATEUR: "Amplificateurs",
@@ -86,7 +91,7 @@ LIBELLES_ROLES: dict[Role, str] = {
 
 
 class FamilleLien(str, Enum):
-    """Les 9 familles de liens du catalogue (3-methode.md §3.2, point 5)."""
+    """Les 9 familles de liens du catalogue (docs/methode.md §12)."""
 
     IDENTITE = "identite"
     CONTENU_DIT = "contenu_dit"
@@ -100,7 +105,9 @@ class FamilleLien(str, Enum):
 
 
 class StatutLien(str, Enum):
-    """Ce qu'on peut dire d'un lien (3-methode.md §3.5, « les quatre statuts »)."""
+    """Ce qu'on peut dire d'un lien, en quatre statuts : prouvé (le code a retrouvé l'extrait dans la source),
+    indice (un point commun qui ne suffit pas à conclure), contredit (un contre-indice pèse plus que l'appui),
+    proposé (une piste pas encore contrôlée). Les contrôles qui font passer de l'un à l'autre : docs/methode.md §7."""
 
     PROUVE = "prouve"
     INDICE = "indice"
@@ -114,7 +121,7 @@ class StatutQuestion(str, Enum):
 
 
 class EchelleVerbale(str, Enum):
-    """Échelle de force d'appui, une marche par facteur 10 (§3.2, point 7).
+    """Échelle de force d'appui, une marche par facteur 10 (docs/methode.md §4).
 
     Elle parle de force des indices, jamais de probabilité que le lien soit vrai.
     """

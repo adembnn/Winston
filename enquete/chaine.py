@@ -19,17 +19,21 @@ Usage : python -m enquete.chaine "question" --mots "mot un, mot deux" --plafond-
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
+import math
 import re
 import sys
 import unicodedata
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
-from enquete.archive import PieceArchivee, archiver_video
+from enquete import pivots as piv
+from enquete.archive import PieceArchivee, archiver_piece
 from enquete.liens import url_origine
 from enquete.reseau import (
     ExplicationEcartee,
@@ -45,11 +49,14 @@ from enquete.reseau import (
 )
 from enquete.sources.oriane import (
     CREDITS_CONTENUS,
+    CREDITS_PROFILS,
     OrianeAuthError,
     OrianeClient,
     OrianeCreditsError,
     OrianeError,
 )
+from enquete.sources import chaines as sources_chaines
+from enquete.sources.infra import Indice, Infra
 from enquete.temps import date_depuis_identifiant
 
 # Champs interrogés pour chaque mot-clé : ce qui est dit, ce qui est écrit à l'écran, la légende.
@@ -176,13 +183,12 @@ class Budget:
         self.plafond = plafond
         self.compteur = Compteur()
 
-    def chercher(self, projection: str, **parametres: Any) -> dict[str, Any]:
-        tarif = CREDITS_CONTENUS[projection]
+    def _payer(self, tarif: int, appel: Any, parametres: dict[str, Any]) -> dict[str, Any]:
         if self.client.credits_estimes + tarif > self.plafond:
             self.compteur.plafond_atteint = True
             raise PlafondAtteint(f"plafond de {self.plafond} crédits atteint")
         avant = self.client.credits_estimes
-        reponse = self.client.chercher_contenus(projection=projection, **parametres)
+        reponse = appel(**parametres)
         depense = self.client.credits_estimes - avant
         if depense:
             self.compteur.appels += 1
@@ -190,6 +196,17 @@ class Budget:
         else:
             self.compteur.appels_en_cache += 1
         return reponse
+
+    def chercher(self, projection: str, **parametres: Any) -> dict[str, Any]:
+        return self._payer(
+            CREDITS_CONTENUS[projection], self.client.chercher_contenus, {"projection": projection, **parametres}
+        )
+
+    def chercher_profils(self, projection: str, **parametres: Any) -> dict[str, Any]:
+        """Même enveloppe pour `/rest/profiles/search` (tarif des profils, même plafond)."""
+        return self._payer(
+            CREDITS_PROFILS[projection], self.client.chercher_profils, {"projection": projection, **parametres}
+        )
 
 
 def _filtres(champ: str, mot: str, depuis: str | None) -> dict[str, Any]:
@@ -404,19 +421,79 @@ def choisir_a_archiver(videos: list[Video], grappes: list[Grappe], maximum: int)
     return choisies[:maximum]
 
 
+def archiver_video(url: str, dossier: Path) -> PieceArchivee:
+    """Archive une pièce par toutes les voies sans compte (`archive.archiver_piece`) : vidéo yt-dlp,
+    capture de page, oEmbed et vignette, Wayback, horodatage RFC 3161. Le nom reste celui de
+    l'ancienne fonction : les tests la remplacent par un faux, pour qu'aucun test ne télécharge."""
+    return archiver_piece(url, dossier=dossier)
+
+
 def archiver(videos: list[Video], dossier: Path) -> dict[str, PieceArchivee]:
-    """Archive chaque vidéo (yt-dlp réel, basse définition, Wayback). Une erreur n'arrête pas le reste."""
+    """Archive chaque vidéo. Une erreur d'une pièce, quelle qu'elle soit, n'arrête pas le reste."""
     pieces: dict[str, PieceArchivee] = {}
     for video in videos:
         assert video.url  # garanti par `choisir_a_archiver`
         try:
             pieces[video.id_oriane] = archiver_video(video.url, dossier=dossier)
-        except (ValueError, OSError) as erreur:
+        except Exception as erreur:  # noqa: BLE001 - l'archivage ne doit jamais arrêter l'enquête
             piece = PieceArchivee(url=video.url, type="video", date_collecte=datetime.now(UTC).isoformat())
             piece.statuts["telechargement"] = "echec"
-            piece.noter(f"archivage impossible : {erreur}")
+            piece.noter(f"archivage impossible : {type(erreur).__name__} : {erreur}")
             pieces[video.id_oriane] = piece
     return pieces
+
+
+def empreinte_de_la_piece(piece: PieceArchivee) -> str | None:
+    """L'empreinte que portent les preuves : celle de la vidéo si elle est téléchargée, sinon celle de la
+    liste d'empreintes (qui recense la capture de page, l'oEmbed et la vignette, et qui est horodatée)."""
+    if piece.empreinte_sha256:
+        return piece.empreinte_sha256
+    for fichier in piece.fichiers:
+        if fichier.get("role") == "liste_des_empreintes" and fichier.get("sha256"):
+            return fichier["sha256"]
+    return None
+
+
+def resume_de_l_archive(piece: PieceArchivee) -> dict[str, Any]:
+    """Ce que le nœud vidéo garde de l'archivage : statut de chaque voie, Wayback, jetons, gestes manuels."""
+    return {
+        "statuts": dict(piece.statuts),
+        "url_wayback": piece.url_wayback,
+        "jetons_horodatage": [
+            {"autorite": j.get("autorite"), "heure_attestee": j.get("heure_attestee")}
+            for j in piece.horodatages if j.get("statut") == "ok"
+        ],
+        "mur_de_connexion": piece.mur_connexion,
+        "video_non_telechargee": piece.video_non_telechargee,
+        "empreinte_sha256": empreinte_de_la_piece(piece),
+        "geste_manuel": piece.geste_manuel,
+    }
+
+
+def poser_archives(reseau: ReseauEnquete, archives: dict[str, PieceArchivee]) -> None:
+    """Ajoute au réseau déjà écrit ce que l'archivage a livré : une version du nœud vidéo, et une version
+    de chaque lien dont une preuve cite la vidéo, avec l'empreinte. L'ancienne version reste lisible."""
+    if not archives:
+        return
+    noeuds_video = {n.attributs.get("url"): n for n in reseau.noeuds() if n.type is TypeNoeud.VIDEO}
+    for piece in archives.values():
+        noeud = noeuds_video.get(piece.url)
+        if noeud is not None:
+            reseau.corriger_noeud(
+                noeud.id, "archive : voies, Wayback et horodatage",
+                attributs={**noeud.attributs, "archive": resume_de_l_archive(piece)},
+            )
+        empreinte = empreinte_de_la_piece(piece)
+        if not empreinte:
+            continue
+        for lien in reseau.liens():
+            if any(p.url == piece.url and p.empreinte_sha256 != empreinte for p in lien.preuves):
+                reseau.corriger_lien(
+                    lien.id, "archive : empreinte SHA-256",
+                    preuves=tuple(
+                        replace(p, empreinte_sha256=empreinte) if p.url == piece.url else p for p in lien.preuves
+                    ),
+                )
 
 
 # --------------------------------------------------------------------------- réseau
@@ -436,10 +513,10 @@ def _preuve(video: Video, extrait: str, debut: float | None, fin: float | None,
     piece = archives.get(video.id_oriane)
     return Preuve(
         url=video.url or "",
-        extrait=extrait,
+        extrait=piv.masquer(extrait) or extrait,
         source_donnee=SOURCE,
         date_collecte=collecte,
-        empreinte_sha256=piece.empreinte_sha256 if piece else None,
+        empreinte_sha256=empreinte_de_la_piece(piece) if piece else None,
         debut_s=debut,
         fin_s=fin,
     )
@@ -447,10 +524,14 @@ def _preuve(video: Video, extrait: str, debut: float | None, fin: float | None,
 
 def construire_reseau(
     question: str, videos: list[Video], grappes: list[Grappe], archives: dict[str, PieceArchivee],
-    collecte: datetime, chemin: str = ":memory:",
+    collecte: datetime, chemin: str = ":memory:", *, reseau: ReseauEnquete | None = None,
 ) -> ReseauEnquete:
-    """Pose nœuds, liens prouvés et questions ouvertes. Une vidéo sans URL n'entre pas : pas d'URL, pas de preuve."""
-    reseau = ReseauEnquete(question, chemin)
+    """Pose nœuds, liens prouvés et questions ouvertes. Une vidéo sans URL n'entre pas : pas d'URL, pas de preuve.
+
+    `reseau` : un réseau déjà ouvert (le journal d'un passage en direct) où écrire ; sinon un réseau neuf
+    est ouvert sur `chemin`. Dans les deux cas c'est à l'appelant de le fermer.
+    """
+    reseau = reseau if reseau is not None else ReseauEnquete(question, chemin)
     citables = [v for v in videos if v.url]
 
     # Seules les vidéos qui ont une adresse peuvent être citées ; la grappe se lit sur celles-là.
@@ -473,7 +554,7 @@ def construire_reseau(
             )
             noeuds_compte[cle] = reseau.ajouter_noeud(Noeud(
                 TypeNoeud.COMPTE, f"@{video.pseudo} ({video.plateforme})", role,
-                {"plateforme": video.plateforme, "abonnes": video.abonnes}, SOLIDITE_VIDEO,
+                {"plateforme": video.plateforme, "pseudo": video.pseudo, "abonnes": video.abonnes}, SOLIDITE_VIDEO,
             ))
         role_video = (
             Role.ORIGINE if video.id_oriane in origines
@@ -583,6 +664,480 @@ def _poser_questions_de_base(reseau: ReseauEnquete, grappes: list[Grappe], video
     reseau.poser_question("Qui a démenti ou vérifié ces vidéos, et à quelle date ?")
 
 
+# --------------------------------------------------------------------------- pivots, infrastructure, argent
+
+PROJECTION_PROFILS = "full"  # bio et lien en bio ; l'e-mail public du profil n'est jamais recopié
+LOT_PROFILS = 100
+MAX_ENRICHIS = 15  # pivots enrichis au plus par les sources ouvertes (RDAP, crt.sh, entreprises, Wayback)
+MAX_PORTEFEUILLES = 15  # portefeuilles lus au plus sur les explorateurs
+MAX_PREUVES_PAR_LIEN = 3
+AGENT_PIVOTS = "chaine.py (pivots)"
+AGENT_INFRA = "chaine.py (infrastructure)"
+AGENT_ARGENT = "chaine.py (argent)"
+SOLIDITE_PIVOT = Solidite("B", 2)  # lu mot pour mot dans une bio ou une vidéo d'une plateforme
+SOLIDITE_REGISTRE = Solidite("A", 2)  # registre officiel (RDAP, Recherche d'entreprises)
+SOLIDITE_SOURCE_OUVERTE = Solidite("B", 2)  # Wayback, journaux de certificats
+SOLIDITE_EXPLORATEUR = Solidite("B", 2)  # explorateur public d'une chaîne
+SOLIDITE_PAR_SOURCE = {
+    "rdap": SOLIDITE_REGISTRE, "recherche-entreprises": SOLIDITE_REGISTRE,
+    "wayback": SOLIDITE_SOURCE_OUVERTE, "crt.sh": SOLIDITE_SOURCE_OUVERTE,
+}
+TYPES_ENRICHIS = (piv.DOMAINE, piv.SIREN, piv.SIRET)
+
+
+def lire_profils(budget: Budget, comptes: Any) -> list[dict[str, Any]]:
+    """Profils (bio, lien en bio) des comptes retenus : une requête par plateforme et par lot de 100 pseudos
+    triés, donc une clé de cache stable. Un profil n'est gardé que si son pseudo est celui demandé.
+
+    Si Oriane refuse le filtre, l'erreur est notée et l'extraction se fera sur les seules bios des contenus.
+    """
+    par_plateforme: dict[str, dict[str, str]] = defaultdict(dict)
+    for plateforme, pseudo in comptes:
+        if plateforme and pseudo:
+            par_plateforme[plateforme.lower()].setdefault(pseudo.lower(), pseudo)
+    profils: list[dict[str, Any]] = []
+    for plateforme in sorted(par_plateforme):
+        pseudos = sorted(par_plateforme[plateforme].values())
+        for debut in range(0, len(pseudos), LOT_PROFILS):
+            lot = pseudos[debut: debut + LOT_PROFILS]
+            filtres = {
+                "platform": {"includes": [plateforme]},
+                "handle": {"exactMatch": {"values": lot, "operator": "or"}},
+            }
+            try:
+                reponse = budget.chercher_profils(PROJECTION_PROFILS, filtres=filtres, limite=LOT_PROFILS)
+            except PlafondAtteint:
+                return profils
+            except OrianeAuthError:
+                raise
+            except OrianeCreditsError as erreur:
+                budget.compteur.erreurs.append(f"profils {plateforme} : {erreur}")
+                budget.compteur.plafond_atteint = True
+                return profils
+            except OrianeError as erreur:
+                budget.compteur.erreurs.append(f"profils {plateforme} : {erreur}")
+                continue
+            voulus = {p.lower() for p in lot}
+            for profil in _resultats(reponse):
+                if (str(profil.get("platform") or "").lower() == plateforme
+                        and str(profil.get("handle") or "").lower() in voulus):
+                    profils.append(profil)
+    return profils
+
+
+def _comptes_du_reseau(reseau: ReseauEnquete) -> dict[str, Noeud]:
+    """Les nœuds compte du réseau, par clé « plateforme:pseudo » en minuscules (celle de `pivots.py`)."""
+    return {
+        f"{n.attributs['plateforme']}:{n.attributs['pseudo'].lower()}": n
+        for n in reseau.noeuds()
+        if n.type is TypeNoeud.COMPTE and n.attributs.get("pseudo") and n.attributs.get("plateforme")
+    }
+
+
+def _nom_du_compte(cle: str) -> str:
+    plateforme, _, pseudo = cle.partition(":")
+    return f"@{pseudo} ({plateforme})"
+
+
+def _pivot_entre_au_reseau(p: piv.Pivot) -> bool:
+    """Un pivot non banal d'infrastructure ou d'argent. Un domaine ou une URL d'un seul compte n'entre que
+    s'il est dans sa bio ou son lien en bio : cité n'est pas possédé."""
+    if p.banal or p.type not in (*piv.PIVOTS_INFRASTRUCTURE, *piv.PIVOTS_ARGENT):
+        return False
+    if p.type in (piv.DOMAINE, piv.URL) and p.n_comptes < 2:
+        return any(pr.champ in piv.CHAMPS_DE_PROPRIETE for pr in p.preuves)
+    return True
+
+
+def _libelle_pivot(p: piv.Pivot) -> str:
+    if p.type == piv.PORTEFEUILLE:
+        return f"Portefeuille {p.sous_type or ''} {p.valeur}".replace("  ", " ")
+    if p.type == piv.PAIEMENT:
+        return f"Paiement {p.sous_type or ''} {p.valeur}".replace("  ", " ")[:120]
+    if p.type == piv.TELEGRAM:
+        return f"Canal Telegram {p.valeur}"
+    return f"{piv.LIBELLE_PIVOT[p.type]} {p.valeur}"[:120]
+
+
+def _preuves_du_compte(p: piv.Pivot, compte: str, collecte: datetime, filtre_url: Any) -> tuple[Preuve, ...]:
+    """Les preuves d'un compte pour un pivot : URL d'origine, extrait exact (e-mails et numéros masqués),
+    seconde. Une preuve sans URL d'origine est écartée, comme celle que `filtre_url` refuse."""
+    sortie: list[Preuve] = []
+    for pr in p.preuves:
+        if pr.compte != compte or not pr.url or (filtre_url is not None and not filtre_url(pr.url)):
+            continue
+        try:
+            sortie.append(replace(pr.vers_preuve(collecte), extrait=piv.masquer(pr.extrait)))
+        except ValueError:
+            continue
+        if len(sortie) >= MAX_PREUVES_PAR_LIEN:
+            break
+    return tuple(sortie)
+
+
+def _url_du_pivot(p: piv.Pivot) -> str | None:
+    if p.type in (piv.DOMAINE, piv.URL, piv.PAGE_DE_LIENS, piv.TELEGRAM, piv.BOUTIQUE):
+        return "https://" + p.valeur
+    return None
+
+
+@dataclass
+class PivotsPoses:
+    """Ce que `poser_pivots` a mis au réseau : le nœud de chaque pivot, et les pivots eux-mêmes."""
+
+    noeuds: dict[tuple[str, str, str | None], Noeud] = field(default_factory=dict)
+    pivots: dict[tuple[str, str, str | None], piv.Pivot] = field(default_factory=dict)
+    partages: int = 0
+    questions: int = 0
+    extraits: int = 0
+
+
+def _cle_pivot(p: piv.Pivot) -> tuple[str, str, str | None]:
+    return (p.type, p.valeur, p.sous_type)
+
+
+def poser_pivots(
+    reseau: ReseauEnquete, pivots: list[piv.Pivot], collecte: datetime,
+    date_gel: Any = None, filtre_url: Any = None,
+) -> PivotsPoses:
+    """Pose au réseau les pivots non banals : infrastructure au rôle Infrastructure, argent au rôle Bénéficiaires.
+
+    Chaque compte porteur y est relié par un lien typé, prouvé (le texte du compte contient la valeur
+    mot pour mot). Que deux comptes affichent le même point commun est un fait ; qu'ils aient le même
+    propriétaire reste une question ouverte, avec l'explication innocente à écarter.
+
+    `date_gel` : les pivots viennent de textes déjà bornés par la date de publication ; le gel ne sert
+    qu'aux sources externes (`enrichir_pivots`, `suivre_l_argent`). `filtre_url` écarte les preuves refusées.
+    """
+    resultat = PivotsPoses(extraits=len(pivots))
+    comptes = _comptes_du_reseau(reseau)
+    entrants = [p for p in pivots if _pivot_entre_au_reseau(p)]
+    entrants.sort(key=lambda p: (p.n_comptes < 2, -p.poids_rarete, piv._PRIORITE_TYPE.get(p.type, 9), p.valeur))
+    for p in entrants:
+        liens_prevus = []
+        for compte in p.comptes:
+            noeud_compte = comptes.get(compte)
+            preuves = _preuves_du_compte(p, compte, collecte, filtre_url) if noeud_compte else ()
+            if preuves:
+                liens_prevus.append((compte, noeud_compte, preuves))
+        if not liens_prevus:
+            continue  # pas d'URL d'origine, pas de preuve, pas de pièce
+        attributs = {
+            "pivot": p.type, "sous_type": p.sous_type, "valeur": p.valeur,
+            "comptes": [_nom_du_compte(c) for c, _, _ in liens_prevus], "nb_comptes": len(liens_prevus),
+            "poids_rarete": p.poids_rarete, "partage": len(liens_prevus) >= 2,
+            "explication_innocente": piv.EXPLICATION_INNOCENTE.get(p.type),
+        }
+        if _url_du_pivot(p):
+            attributs["url"] = _url_du_pivot(p)
+        if p.type == piv.PAGE_DE_LIENS:
+            attributs["liens_sortants_lus"] = not p.a_deplier
+        noeud = reseau.ajouter_noeud(Noeud(
+            piv.TYPE_NOEUD_PIVOT[p.type], _libelle_pivot(p), piv.ROLE_PIVOT[p.type], attributs, SOLIDITE_PIVOT,
+        ))
+        resultat.noeuds[_cle_pivot(p)] = noeud
+        resultat.pivots[_cle_pivot(p)] = p
+        force = max(1.0, round(p.poids_rarete / math.log(10), 2))
+        for compte, noeud_compte, preuves in liens_prevus:
+            reseau.ajouter_lien(Lien(
+                type_lien=piv.TYPE_LIEN_RESEAU[p.type], famille=piv.FAMILLE_PIVOT[p.type],
+                source_id=noeud_compte.id, cible_id=noeud.id, preuves=preuves,
+                explication=f"Le texte de {_nom_du_compte(compte)} contient {piv.LIBELLE_PIVOT[p.type].lower()} "
+                            f"{p.valeur}, mot pour mot.",
+                methode="pivot extrait du texte du compte par motif (bio, légende, parole, texte à l'écran)",
+                agent=AGENT_PIVOTS, statut=StatutLien.PROUVE, oriente=True, force_points=force,
+            ))
+    resultat.partages = sum(1 for p in resultat.pivots.values() if p.n_comptes >= 2)
+    # Les questions suivent les trois questions de base : portefeuilles et paiements d'abord (ordre de relier_par_pivots).
+    for lien in piv.relier_par_pivots(resultat.pivots.values(), inclure_banals=False):
+        noms = ", ".join(_nom_du_compte(c) for c in lien.comptes)
+        reseau.poser_question(
+            f"Même propriétaire ? {noms} affichent le même {piv.LIBELLE_PIVOT[lien.pivot_type].lower()} : "
+            f"{lien.valeur}. Ce point commun est prouvé, pas l'identité de celui qui est derrière. "
+            f"À écarter d'abord : {lien.explication_innocente}"
+        )
+        resultat.questions += 1
+    return resultat
+
+
+def _masquer_entrepreneur(indice: Indice) -> tuple[str, str]:
+    """Extrait et résumé d'un indice du registre, sans le nom d'un entrepreneur individuel (une personne)."""
+    extrait, resume = indice.extrait, indice.resume
+    donnees = indice.donnees or {}
+    if indice.source == "recherche-entreprises" and str(donnees.get("nature_juridique")) == "1000" and donnees.get("nom"):
+        for texte in (str(donnees["nom"]),):
+            extrait = extrait.replace(texte, "[entrepreneur individuel]")
+            resume = resume.replace(texte, "[entrepreneur individuel]")
+    return piv.masquer(extrait), resume
+
+
+def _poser_indice(
+    reseau: ReseauEnquete, noeud_pivot: Noeud, indice: Indice, type_pivot: str,
+) -> Noeud:
+    extrait, resume = _masquer_entrepreneur(indice)
+    donnees = indice.donnees
+    if indice.source == "recherche-entreprises" and str(donnees.get("nature_juridique")) == "1000":
+        donnees = {**donnees, "nom": "[entrepreneur individuel]"}
+    document = reseau.ajouter_noeud(Noeud(
+        TypeNoeud.DOCUMENT, f"{indice.source} : {resume}"[:140], noeud_pivot.role,
+        {"url": indice.url, "source": indice.source, "sujet": indice.sujet, "resume": resume,
+         "date_lecture": indice.date_lecture.isoformat(), "donnees": donnees},
+        SOLIDITE_PAR_SOURCE.get(indice.source, SOLIDITE_SOURCE_OUVERTE),
+    ))
+    preuve = replace(indice.vers_preuve(), extrait=extrait or resume)
+    reseau.ajouter_lien(Lien(
+        type_lien="documente", famille=piv.FAMILLE_PIVOT[type_pivot],
+        source_id=document.id, cible_id=noeud_pivot.id, preuves=(preuve,),
+        explication=f"{indice.source} répond sur {indice.sujet} : {resume}"[:300],
+        methode=f"lecture publique de {indice.source} (sans clé)", agent=AGENT_INFRA,
+        statut=StatutLien.PROUVE, oriente=True, force_points=1.0,
+    ))
+    return document
+
+
+def enrichir_pivots(
+    reseau: ReseauEnquete, infra: Infra, posees: PivotsPoses, date_gel: Any = None, filtre_url: Any = None,
+    maximum: int = MAX_ENRICHIS,
+) -> dict[str, int]:
+    """Enrichit au plus `maximum` pivots du réseau (domaines, SIREN, SIRET) : partagés d'abord, puis par poids de
+    rareté. Un pivot à la fois, pour que le direct les voie arriver. Chaque indice devient un nœud document relié
+    au pivot ; un domaine frère par certificat qui est aussi un domaine du dossier donne un lien `meme_certificat`
+    (indice) et une question « même propriétaire ? ».
+    """
+    candidats = [(c, p) for c, p in posees.pivots.items() if p.type in TYPES_ENRICHIS]
+    candidats.sort(key=lambda cp: (cp[1].n_comptes < 2, -cp[1].poids_rarete, cp[1].valeur))
+    domaines = {p.valeur.lower(): posees.noeuds[c] for c, p in posees.pivots.items() if p.type == piv.DOMAINE}
+    par_registrable = {}
+    for valeur, noeud in domaines.items():
+        par_registrable.setdefault(piv._registrable(valeur), noeud)
+    paires: set[frozenset[str]] = set()
+    stats = {"enrichis": 0, "indices": 0, "documents": 0, "meme_certificat": 0, "erreurs": 0}
+    for cle, p in candidats[:maximum]:
+        try:
+            enrichi = infra.enrichir([p], filtre_url=filtre_url, date_gel=date_gel)[0]
+        except Exception:  # noqa: BLE001 - une source ouverte en panne n'arrête pas l'enquête
+            stats["erreurs"] += 1
+            continue
+        stats["enrichis"] += 1
+        noeud = posees.noeuds[cle]
+        for indice in enrichi.indices:
+            stats["indices"] += 1
+            _poser_indice(reseau, noeud, indice, p.type)
+            stats["documents"] += 1
+            if indice.source != "crt.sh" or p.type != piv.DOMAINE:
+                continue
+            for frere in (indice.donnees or {}).get("freres") or []:
+                autre = domaines.get(frere.lower()) or par_registrable.get(piv._registrable(frere.lower()))
+                if autre is None or autre.id == noeud.id or frozenset((noeud.id, autre.id)) in paires:
+                    continue
+                paires.add(frozenset((noeud.id, autre.id)))
+                reseau.ajouter_lien(Lien(
+                    type_lien="meme_certificat", famille=FamilleLien.INFRASTRUCTURE,
+                    source_id=noeud.id, cible_id=autre.id, preuves=(replace(
+                        indice.vers_preuve(), extrait=piv.masquer(indice.extrait) or indice.resume),),
+                    explication=f"{p.valeur} et {frere} figurent sur un même certificat TLS (journal crt.sh).",
+                    methode="noms portés par les certificats du domaine (crt.sh)", agent=AGENT_INFRA,
+                    statut=StatutLien.INDICE, force_points=1.0,
+                ))
+                reseau.poser_question(
+                    f"Même propriétaire ? {p.valeur} et {frere} figurent sur un même certificat TLS (crt.sh). "
+                    "À écarter d'abord : un hébergeur ou un service de protection qui regroupe des clients "
+                    "sans lien sur un même certificat."
+                )
+                posees.questions += 1
+                stats["meme_certificat"] += 1
+    return stats
+
+
+# --------------------------------------------------------------------------- argent qui bouge
+
+
+def _hote(url: str) -> str:
+    return urlsplit(url).hostname or url
+
+
+def _lire_instant(texte: Any, defaut: datetime) -> datetime:
+    try:
+        return datetime.fromisoformat(str(texte).replace("Z", "+00:00")).astimezone(UTC)
+    except ValueError:
+        return defaut
+
+
+def _sanction_sans_noms(sanction: dict[str, Any]) -> dict[str, Any]:
+    """Le contrôle OFAC sans le nom des désignés : le portefeuille reste sans nom de personne."""
+    entrees = sanction.get("entrees") or []
+    return {
+        "statut": sanction.get("statut"), "liste_du": sanction.get("liste_du"), "source": sanction.get("source"),
+        "programmes": sorted({e.get("programme") for e in entrees if e.get("programme")}),
+        "references": [e["url"] for e in entrees if e.get("url")],
+    }
+
+
+def _profil_pour_le_noeud(profil: dict[str, Any]) -> dict[str, Any]:
+    d = profil["donnees"]
+    return {
+        "chaine": d.get("chaine"), "premiere_activite": d.get("premiere_activite"),
+        "derniere_activite": d.get("derniere_activite"), "nb_transactions": d.get("nb_transactions"),
+        "totaux": d.get("totaux"),
+        # Un nom ENS est choisi par le propriétaire : il n'établit pas l'identité, on ne le recopie pas.
+        "etiquettes": [e for e in d.get("etiquettes") or [] if e.get("categorie") != "ens"],
+        "plateforme_echange": d.get("plateforme_echange"), "doit_repondre": d.get("doit_repondre"),
+        "sanction_ofac": _sanction_sans_noms(d.get("sanction_ofac") or {}),
+        "avertissements": d.get("avertissements"), "partiel": d.get("partiel"),
+        "attribution": d.get("attribution") or sources_chaines.MENTION_ATTRIBUTION,
+    }
+
+
+def _liens_de_flux(
+    reseau: ReseauEnquete, chaine: str, adresse_a: str, noeud_a: Noeud, contrepartie: dict[str, Any],
+    adresse_b: str, noeud_b: Noeud, collecte: datetime,
+) -> int:
+    """Un lien `flux_d_argent` par sens, orienté de l'envoyeur vers le receveur, une preuve par transaction (3 au plus)."""
+    par_sens: dict[str, list[dict[str, Any]]] = {"envoye": [], "recu": []}
+    for tx in contrepartie["donnees"].get("transactions") or []:
+        if tx.get("sens") in par_sens and tx.get("url"):
+            par_sens[tx["sens"]].append(tx)
+    crees = 0
+    for sens, transactions in par_sens.items():
+        if not transactions:
+            continue
+        source, cible = (noeud_a, noeud_b) if sens == "envoye" else (noeud_b, noeud_a)
+        de, vers = (adresse_a, adresse_b) if sens == "envoye" else (adresse_b, adresse_a)
+        preuves = tuple(
+            Preuve(
+                url=tx["url"], source_donnee=f"explorateur public ({_hote(tx['url'])})",
+                extrait=f"{tx['montant']} {tx['actif']}{' (montant approché)' if tx.get('approx') else ''}"
+                        f" · {str(tx.get('date') or 'date inconnue')[:10]} · {de} vers {vers}",
+                date_collecte=_lire_instant(contrepartie.get("date_lecture"), collecte),
+            )
+            for tx in transactions[:MAX_PREUVES_PAR_LIEN]
+        )
+        reseau.ajouter_lien(Lien(
+            type_lien="flux_d_argent", famille=FamilleLien.ARGENT, source_id=source.id, cible_id=cible.id,
+            preuves=preuves,
+            explication=f"{len(transactions)} transaction(s) publique(s) de {de} vers {vers} sur {chaine}.",
+            methode="lecture de l'explorateur public de la chaîne (identifiant de transaction officiel)",
+            agent=AGENT_ARGENT, statut=StatutLien.PROUVE, oriente=True, force_points=2.0,
+            identifiant_officiel=True,
+        ))
+        crees += 1
+    return crees
+
+
+def suivre_l_argent(
+    reseau: ReseauEnquete, posees: PivotsPoses, collecte: datetime, client: Any = None,
+    date_gel: Any = None, filtre_url: Any = None, maximum: int = MAX_PORTEFEUILLES,
+) -> dict[str, Any]:
+    """Pour chaque portefeuille non banal du réseau (15 au plus) : profil, contreparties, flux entre portefeuilles
+    du dossier, plateformes d'échange (« doit répondre »), sanctions OFAC. Un portefeuille n'est jamais attribué
+    à une personne. Une erreur de source est notée et la chaîne continue : un portefeuille que l'explorateur ne
+    connaît pas (jamais utilisé) reste dans le dossier et peut recevoir un flux."""
+    stats: dict[str, Any] = {"portefeuilles": 0, "lus": 0, "flux": 0, "plateformes": 0, "sanctions": 0, "erreurs": []}
+    portefeuilles = [(c, p) for c, p in posees.pivots.items() if p.type == piv.PORTEFEUILLE and not p.banal]
+    portefeuilles.sort(key=lambda cp: (cp[1].n_comptes < 2, -cp[1].poids_rarete, cp[1].valeur))
+    stats["portefeuilles"] = len(portefeuilles[:maximum])
+    # clé de comparaison de l'adresse -> (chaîne, adresse, nœud), pour tous les portefeuilles lisibles du dossier
+    dossier_des_portefeuilles: dict[str, tuple[str, str, Noeud]] = {}
+    lus: dict[str, tuple[Noeud, list[dict[str, Any]]]] = {}
+    for cle, p in portefeuilles[:maximum]:
+        noeud = posees.noeuds[cle]
+        chaine = sources_chaines.chaine_du_pivot(p.sous_type)
+        if chaine is None:
+            stats["erreurs"].append(f"portefeuille {p.sous_type} {p.valeur} : chaîne non prise en charge")
+            reseau.corriger_noeud(
+                noeud.id, "chaîne non prise en charge : portefeuille non lu",
+                attributs={**noeud.attributs, "profil": {"chaine_non_prise_en_charge": p.sous_type}},
+            )
+            continue
+        cle_adresse = sources_chaines._cle(chaine, p.valeur)
+        dossier_des_portefeuilles[cle_adresse] = (chaine, p.valeur, noeud)
+        profil = None
+        contreparties: list[dict[str, Any]] = []
+        try:
+            profil = sources_chaines.profil_portefeuille(chaine, p.valeur, date_gel, client=client, filtre_url=filtre_url)
+            if profil:
+                contreparties = sources_chaines.contreparties(
+                    chaine, p.valeur, 50, date_gel, client=client, filtre_url=filtre_url)
+        except Exception as erreur:  # noqa: BLE001 - ChainesError (bloquée, limitée, introuvable) et réseau
+            stats["erreurs"].append(f"portefeuille {p.valeur} ({chaine}) : {type(erreur).__name__} : {erreur}")
+            profil = None
+        if profil is not None:
+            stats["lus"] += 1
+            resume = _profil_pour_le_noeud(profil)
+            sanction = profil["donnees"].get("sanction_ofac") or {}
+        else:
+            # Pas de page d'adresse lisible : le contrôle des sanctions (autre source) se fait quand même.
+            try:
+                sanction = sources_chaines._client(client).controle_sanction(p.valeur)
+            except Exception:  # noqa: BLE001
+                sanction = {}
+            resume = {"chaine": chaine, "lu_sur_l_explorateur": False,
+                      "sanction_ofac": _sanction_sans_noms(sanction),
+                      "attribution": sources_chaines.MENTION_ATTRIBUTION}
+        if p.sous_type == "evm":
+            resume["autres_chaines_evm"] = "non lues : seule Ethereum est interrogée"
+        noeud = reseau.corriger_noeud(
+            noeud.id, "profil public du portefeuille (explorateur)", attributs={**noeud.attributs, "profil": resume},
+        )
+        dossier_des_portefeuilles[cle_adresse] = (chaine, p.valeur, noeud)
+        if profil is not None:
+            # Une preuve de plus sur les liens qui montrent ce portefeuille : sa page d'adresse sur l'explorateur.
+            page = Preuve(
+                url=profil["url_source"], extrait=piv.masquer(profil["extrait"]),
+                source_donnee=f"explorateur public ({_hote(profil['url_source'])})",
+                date_collecte=_lire_instant(profil.get("date_lecture"), collecte),
+            )
+            for lien in reseau.liens():
+                if lien.cible_id == noeud.id and page not in lien.preuves:
+                    reseau.corriger_lien(lien.id, "page d'adresse sur l'explorateur", preuves=(*lien.preuves, page))
+            lus[cle_adresse] = (noeud, contreparties)
+        if sanction.get("statut") == "oui":
+            stats["sanctions"] += 1
+            reseau.poser_question(
+                f"Le portefeuille {p.valeur} ({chaine}) figure sur la liste de sanctions OFAC (SDN), publique. "
+                "Seul un tiers qui tient le registre du titulaire (plateforme d'échange, justice) peut dire à qui "
+                "il appartient : qui le contrôle, et depuis quand ?"
+            )
+            posees.questions += 1
+
+    plateformes: dict[str, Noeud] = {}
+    paires: set[frozenset[str]] = set()
+    for cle_a, (noeud_a, contreparties) in lus.items():
+        chaine, adresse_a, _ = dossier_des_portefeuilles[cle_a]
+        for c in contreparties:
+            d = c["donnees"]
+            adresse_b = d["adresse"]
+            cle_b = sources_chaines._cle(chaine, adresse_b)
+            if cle_b in dossier_des_portefeuilles and cle_b != cle_a:
+                paire = frozenset((cle_a, cle_b))
+                if paire in paires:
+                    continue
+                paires.add(paire)
+                noeud_b = dossier_des_portefeuilles[cle_b][2]
+                stats["flux"] += _liens_de_flux(reseau, chaine, adresse_a, noeud_a, c, adresse_b, noeud_b, collecte)
+            elif d.get("doit_repondre"):
+                noeud_b = plateformes.get(cle_b)
+                etiquettes = [e for e in d.get("etiquettes") or [] if e.get("nom") and e.get("categorie") != "ens"]
+                nom = etiquettes[0]["nom"] if etiquettes else adresse_b
+                if noeud_b is None:
+                    noeud_b = reseau.ajouter_noeud(Noeud(
+                        TypeNoeud.PORTEFEUILLE, f"Plateforme d'échange : {nom}"[:120], Role.INFRASTRUCTURE,
+                        {"chaine": chaine, "adresse": adresse_b, "doit_repondre": True,
+                         "mention": sources_chaines.TEXTE_DOIT_REPONDRE, "etiquettes": etiquettes,
+                         "attribution": sources_chaines.MENTION_ATTRIBUTION},
+                        SOLIDITE_EXPLORATEUR,
+                    ))
+                    plateformes[cle_b] = noeud_b
+                    stats["plateformes"] += 1
+                    reseau.poser_question(
+                        f"Qui détient le compte {nom} ({adresse_b}) qui échange de l'argent avec {adresse_a} ? "
+                        "La plateforme d'échange peut l'identifier sur réquisition judiciaire : à elle de répondre."
+                    )
+                    posees.questions += 1
+                stats["flux"] += _liens_de_flux(reseau, chaine, adresse_a, noeud_a, c, adresse_b, noeud_b, collecte)
+    return stats
+
+
 # --------------------------------------------------------------------------- rendu pour le banc
 
 
@@ -632,6 +1187,56 @@ def rendu_pour_banc(export: dict[str, Any], affaire_id: str) -> dict[str, Any]:
 # --------------------------------------------------------------------------- orchestration
 
 
+def _captures_png(archives: dict[str, PieceArchivee], dossier: Path) -> dict[str, str]:
+    """URL de la pièce -> chemin de sa capture de page PNG, quand l'archivage en a pris une."""
+    captures: dict[str, str] = {}
+    for piece in archives.values():
+        for fichier in piece.fichiers:
+            if fichier.get("role") == "page_png" and fichier.get("nom"):
+                chemin = dossier / fichier["nom"]
+                if chemin.is_file():
+                    captures[piece.url] = str(chemin)
+    return captures
+
+
+def _importer_images() -> Any:
+    """Le module d'images, importé à l'appel et jamais au chargement : s'il manque, la chaîne s'en passe."""
+    return importlib.import_module("enquete.images")
+
+
+def illustrer(
+    export: dict[str, Any], resultats: dict[str, dict[str, Any]], archives: dict[str, PieceArchivee], dossier: Path,
+) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any]]:
+    """Une image par pièce et par dossier, si `enquete.images` est importable (import à l'appel).
+
+    Rend (export à écrire, contenu d'images.json ou None, bilan pour le rapport). Toute erreur, `ImageInvalide`
+    comprise, garde l'export d'origine et s'inscrit au bilan : la chaîne ne s'arrête jamais pour une image.
+    """
+    try:
+        module = _importer_images()
+    except ImportError:
+        return export, None, {}
+    try:
+        enrichi = module.illustrer_export(
+            export, resultats, _captures_png(archives, dossier / "archives"), dossier / "archives" / "images",
+        )
+    except Exception as erreur:  # noqa: BLE001
+        return export, None, {"erreur": f"{type(erreur).__name__} : {erreur}"}
+    images = {
+        "pieces": {p["id"]: p.get("image") for d in enrichi["dossiers"] for p in d["pieces"]},
+        "dossiers": {
+            d["role"]: {k: d.get(k) for k in ("image", "image_piece_id", "silhouette")} for d in enrichi["dossiers"]
+        },
+        "qr_trouves": enrichi.get("qr_trouves") or [],
+        "images_echecs": enrichi.get("images_echecs") or [],
+    }
+    bilan = {
+        "pieces_illustrees": sum(1 for image in images["pieces"].values() if image),
+        "qr_trouves": len(images["qr_trouves"]), "echecs": len(images["images_echecs"]),
+    }
+    return enrichi, images, bilan
+
+
 def enqueter(
     question: str,
     mots: list[str],
@@ -643,30 +1248,82 @@ def enqueter(
     limite: int = 50,
     retenues: int = 60,
     nb_archives: int = 2,
+    *,
+    chemin_journal: str | Path | None = None,
+    pivots: bool = False,
+    infra: Infra | None = None,
+    chaines: Any = None,
+    date_gel: Any = None,
+    filtre_url: Any = None,
 ) -> dict[str, Any]:
-    """Fait tourner toute la chaîne et écrit ses sorties dans `dossier`. Renvoie le rapport de passage."""
+    """Fait tourner toute la chaîne et écrit ses sorties dans `dossier`. Renvoie le rapport de passage.
+
+    `chemin_journal` : journal SQLite écrit AU FIL de l'enquête, à l'heure réelle de chaque étape (question
+    centrale tout de suite, pièces et liens dès la relecture `full`, pivots un à un, archives en dernier) ;
+    le serveur le lit pour le direct et pour le rejeu. Sans lui, le réseau vit en mémoire comme avant.
+
+    `pivots` : lit les profils des comptes, extrait les pivots (domaines, codes promo, portefeuilles...),
+    les pose au réseau, enrichit 15 pivots au plus par des sources ouvertes (`infra`) et suit les portefeuilles
+    sur les explorateurs (`chaines`). Désactivé par défaut : la chaîne de base ne change pas.
+    """
     debut = datetime.now(UTC)
     dossier.mkdir(parents=True, exist_ok=True)
     budget = Budget(client, plafond_credits)
+    reseau = ReseauEnquete(question, str(chemin_journal) if chemin_journal else ":memory:")
+    infra_ouverte = infra is None and pivots
+    stats_pivots: dict[str, Any] = {}
+    bilan_images: dict[str, Any] = {}
+    images_json: dict[str, Any] | None = None
+    try:
+        candidats = chercher_candidats(budget, mots, depuis, limite)
+        ids = retenir(candidats, retenues)
+        completes = relire_en_full(budget, ids)
+        videos = []
+        bruts: dict[str, dict[str, Any]] = {}
+        for identifiant in ids:
+            # Sans relecture `full`, on garde la version `basic` : pas de phrases, mais légende et date.
+            resultat = completes.get(identifiant) or candidats[identifiant]["resultat"]
+            video = video_depuis_resultat(resultat)
+            if video:
+                videos.append(video)
+                bruts[identifiant] = resultat
+        grappes = regrouper(videos)
 
-    candidats = chercher_candidats(budget, mots, depuis, limite)
-    ids = retenir(candidats, retenues)
-    completes = relire_en_full(budget, ids)
-    videos = []
-    for identifiant in ids:
-        # Sans relecture `full`, on garde la version `basic` : pas de phrases, mais légende et date.
-        resultat = completes.get(identifiant) or candidats[identifiant]["resultat"]
-        video = video_depuis_resultat(resultat)
-        if video:
-            videos.append(video)
-    grappes = regrouper(videos)
+        # Rôles et extraits exacts sont connus : tout le réseau de base entre au journal d'un coup, sans
+        # nœud à corriger ensuite. L'archivage (long) passe après, pour ne pas bloquer le direct.
+        profils = lire_profils(budget, ((v.plateforme, v.pseudo) for v in videos)) if pivots else []
+        construire_reseau(question, videos, grappes, {}, debut, reseau=reseau)
 
-    a_archiver = choisir_a_archiver(videos, grappes, nb_archives)
-    archives = archiver(a_archiver, dossier / "archives") if a_archiver else {}
+        if pivots:
+            extraits = piv.extraire_pivots(list(bruts.values()), profils)
+            posees = poser_pivots(reseau, extraits, debut, date_gel, filtre_url)
+            stats_pivots = {
+                "profils_lus": len(profils), "pivots_extraits": len(extraits), "pivots_au_reseau": len(posees.noeuds),
+                "pivots_partages": posees.partages, "questions_meme_proprietaire": posees.questions,
+            }
+            if posees.noeuds:
+                infra = infra or Infra()
+                try:
+                    stats_pivots["infra"] = enrichir_pivots(reseau, infra, posees, date_gel, filtre_url)
+                    stats_pivots["pivots_enrichis"] = stats_pivots["infra"]["enrichis"]
+                    stats_pivots["appels_infra"] = infra.appels_reseau
+                    stats_pivots["rejets_infra"] = len(infra.journal)
+                finally:
+                    if infra_ouverte:
+                        infra.close()
+                stats_pivots["argent"] = suivre_l_argent(reseau, posees, debut, chaines, date_gel, filtre_url)
+                erreurs_argent = stats_pivots["argent"].pop("erreurs")
+                stats_pivots["argent"]["erreurs"] = len(erreurs_argent)
+                budget.compteur.erreurs.extend(erreurs_argent)
 
-    reseau = construire_reseau(question, videos, grappes, archives, debut)
-    export = reseau.exporter_pour_interface()
-    reseau.fermer()
+        a_archiver = choisir_a_archiver(videos, grappes, nb_archives)
+        archives = archiver(a_archiver, dossier / "archives") if a_archiver else {}
+        poser_archives(reseau, archives)
+
+        export = reseau.exporter_pour_interface()
+        export, images_json, bilan_images = illustrer(export, bruts, archives, dossier)
+    finally:
+        reseau.fermer()
 
     rendu = rendu_pour_banc(export, affaire_id)
     rapport = {
@@ -693,11 +1350,22 @@ def enqueter(
         "questions_ouvertes": export["compteurs"]["zones_d_ombre"],
         "archives": [
             {"url": p.url, "reussie": p.complete, "statuts": p.statuts,
-             "empreinte_sha256": p.empreinte_sha256, "url_wayback": p.url_wayback}
+             "empreinte_sha256": p.empreinte_sha256, "url_wayback": p.url_wayback,
+             "voies": {nom: voie.get("statut") for nom, voie in p.voies.items()},
+             "horodatages": sum(1 for j in p.horodatages if j.get("statut") == "ok")}
             for p in archives.values()
         ],
     }
-    for nom, contenu in (("reseau.json", export), ("rendu-banc.json", rendu), ("passage.json", rapport)):
+    if chemin_journal:
+        rapport["journal"] = str(chemin_journal)
+    if pivots:
+        rapport["pivots"] = stats_pivots
+    if bilan_images:
+        rapport["images"] = bilan_images
+    sorties = [("reseau.json", export), ("rendu-banc.json", rendu), ("passage.json", rapport)]
+    if images_json is not None:
+        sorties.append(("images.json", images_json))
+    for nom, contenu in sorties:
         (dossier / nom).write_text(json.dumps(contenu, ensure_ascii=False, indent=2), encoding="utf-8")
     return rapport
 
@@ -706,7 +1374,28 @@ def _separer_mots(brut: str) -> list[str]:
     return [m.strip() for m in re.split(r"[,;]", brut) if m.strip()]
 
 
+def _console_utf8() -> None:
+    """Console en UTF-8 : sous Windows elle est en cp1252 et « Enquête » ou « réseau » s'afficheraient de travers.
+    Sans effet si le flux ne se reconfigure pas (capture de pytest, flux remplacé)."""
+    for flux in (sys.stdout, sys.stderr):
+        try:
+            flux.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
+def _ranger_l_ancien_journal(journal: Path) -> Path | None:
+    """Un journal d'un passage précédent est renommé `reseau-AAAAMMJJTHHMMSS.sqlite`, jamais effacé."""
+    if not journal.exists():
+        return None
+    date = datetime.fromtimestamp(journal.stat().st_mtime)
+    range_ = journal.with_name(f"{journal.stem}-{date:%Y%m%dT%H%M%S}{journal.suffix}")
+    journal.replace(range_)
+    return range_
+
+
 def main(argv: list[str] | None = None) -> int:
+    _console_utf8()
     analyseur = argparse.ArgumentParser(
         prog="python -m enquete.chaine",
         description="Enquête de bout en bout : recherche Oriane, grappes, archives, réseau prouvé.",
@@ -722,17 +1411,25 @@ def main(argv: list[str] | None = None) -> int:
     analyseur.add_argument("--limite", type=int, default=50, help="résultats demandés par recherche")
     analyseur.add_argument("--retenues", type=int, default=60, help="vidéos relues en projection full")
     analyseur.add_argument("--archives", type=int, default=2, help="vidéos archivées au plus (0 : aucune)")
+    analyseur.add_argument("--sans-pivots", action="store_true",
+                           help="ne lit ni les profils ni les pivots (domaines, codes promo, portefeuilles)")
     args = analyseur.parse_args(argv)
 
     mots = _separer_mots(args.mots)
     if not mots:
         analyseur.error("--mots ne contient aucun mot")
     nom = args.nom or _nom_dossier(args.question)
+    dossier = Path(args.sortie) / nom
+    dossier.mkdir(parents=True, exist_ok=True)
+    # Le journal du passage : le serveur le rejoue avec ses vrais temps (`/api/rejouer`).
+    journal = dossier / "reseau.sqlite"
+    _ranger_l_ancien_journal(journal)
     try:
         with OrianeClient(dossier_cache=args.cache, fichier_env=args.env) as client:
             rapport = enqueter(
-                args.question, mots, client, Path(args.sortie) / nom, nom,
+                args.question, mots, client, dossier, nom,
                 args.plafond_credits, args.depuis, args.limite, args.retenues, args.archives,
+                chemin_journal=journal, pivots=not args.sans_pivots,
             )
     except OrianeError as erreur:
         print(f"Erreur Oriane : {erreur}", file=sys.stderr)

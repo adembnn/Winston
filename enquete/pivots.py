@@ -17,6 +17,7 @@ Règles :
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import re
 from collections.abc import Callable, Iterable, Iterator
@@ -26,7 +27,7 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from enquete.liens import url_origine
-from enquete.reseau import Preuve
+from enquete.reseau import FamilleLien, Preuve, Role, TypeNoeud
 from enquete.sources.infra import Indice
 
 # ---------------------------------------------------------------------------
@@ -231,6 +232,11 @@ def _masquer(texte: str) -> str:
     for motif in _PISTES_OFF:
         texte = motif.sub("[masqué]", texte)
     return texte
+
+
+def masquer(texte: str) -> str:
+    """Version publique : e-mails, téléphones, IBAN et liens WhatsApp deviennent « [masqué] »."""
+    return _masquer(texte)
 
 
 # ---------------------------------------------------------------------------
@@ -1120,3 +1126,70 @@ def pivots_pour_agents(
     if limite is not None:
         sortie = sortie[:limite]
     return [p.vers_dict() for p in sortie]
+
+
+# ---------------------------------------------------------------------------
+# Du pivot au réseau : tables de correspondance et résumé pour les agents
+# ---------------------------------------------------------------------------
+
+# Les pivots qui entrent dans le réseau d'enquête. Hashtags, sons et pseudos restent dehors : les
+# grappes couvrent déjà le même son, et un pseudo cité n'est pas une pièce du dossier.
+PIVOTS_INFRASTRUCTURE = (DOMAINE, URL, PAGE_DE_LIENS, TELEGRAM)
+PIVOTS_ARGENT = (CODE_PROMO, BOUTIQUE, PAIEMENT, PORTEFEUILLE, AFFILIATION, SIREN, SIRET)
+
+TYPE_NOEUD_PIVOT = {
+    DOMAINE: TypeNoeud.SITE, URL: TypeNoeud.SITE, PAGE_DE_LIENS: TypeNoeud.SITE, BOUTIQUE: TypeNoeud.SITE,
+    PORTEFEUILLE: TypeNoeud.PORTEFEUILLE, CODE_PROMO: TypeNoeud.CODE_PROMO, AFFILIATION: TypeNoeud.CODE_PROMO,
+    PAIEMENT: TypeNoeud.PAIEMENT, SIREN: TypeNoeud.SOCIETE, SIRET: TypeNoeud.SOCIETE, TELEGRAM: TypeNoeud.COMPTE,
+}
+# Le rôle suit TYPE_LIEN : « même infrastructure » -> Infrastructure, « même argent » -> Bénéficiaires.
+ROLE_PIVOT = {
+    t: Role.INFRASTRUCTURE if TYPE_LIEN[t] == "même infrastructure" else Role.BENEFICIAIRE
+    for t in (*PIVOTS_INFRASTRUCTURE, *PIVOTS_ARGENT)
+}
+FAMILLE_PIVOT = {
+    t: FamilleLien.INFRASTRUCTURE if TYPE_LIEN[t] == "même infrastructure" else FamilleLien.ARGENT
+    for t in (*PIVOTS_INFRASTRUCTURE, *PIVOTS_ARGENT)
+}
+LIBELLE_PIVOT = {
+    DOMAINE: "Site", URL: "Page", PAGE_DE_LIENS: "Page de liens", TELEGRAM: "Telegram",
+    CODE_PROMO: "Code promo", AFFILIATION: "Identifiant d'affiliation", BOUTIQUE: "Boutique",
+    PAIEMENT: "Paiement", PORTEFEUILLE: "Portefeuille", SIREN: "SIREN", SIRET: "SIRET",
+}
+# Ce que fait le compte avec le pivot : c'est le type du lien compte -> pièce.
+TYPE_LIEN_RESEAU = {
+    DOMAINE: "renvoie_vers", URL: "renvoie_vers", PAGE_DE_LIENS: "renvoie_vers", TELEGRAM: "renvoie_vers",
+    CODE_PROMO: "cite_le_code", AFFILIATION: "cite_le_code", BOUTIQUE: "collecte_via", PAIEMENT: "collecte_via",
+    PORTEFEUILLE: "affiche_le_portefeuille", SIREN: "cite_la_societe", SIRET: "cite_la_societe",
+}
+# Un domaine ou une URL cité dans une vidéo n'est pas possédé par le compte : seul compte, la bio fait foi.
+CHAMPS_DE_PROPRIETE = ("bio", "bioLink", "profileBio")
+
+MAX_PIVOTS_AGENTS = 40
+MAX_CARACTERES_AGENTS = 5000
+
+
+def pivots_depuis_resultats(resultats: Iterable[dict]) -> list[dict[str, Any]]:
+    """Les pivots d'un lot de résultats Oriane, en dicts compacts pour les agents du tour 1.
+
+    Non banals, infrastructure et argent seulement, partagés d'abord puis les plus rares, 40 au plus,
+    et le JSON tient en moins de 5 000 caractères (le plus rare est gardé, la queue est coupée).
+    Entrée vide, sortie vide.
+    """
+    lot = [r for r in resultats if isinstance(r, dict)]
+    if not lot:
+        return []
+    utiles = [p for p in extraire_pivots(lot)
+              if not p.banal and p.type in (*PIVOTS_INFRASTRUCTURE, *PIVOTS_ARGENT)]
+    utiles.sort(key=lambda p: (p.n_comptes < 2, -p.poids_rarete, _PRIORITE_TYPE.get(p.type, 9), p.valeur))
+    sortie: list[dict[str, Any]] = []
+    for p in utiles[:MAX_PIVOTS_AGENTS]:
+        premiere = p.preuves[0] if p.preuves else None
+        sortie.append({
+            "type": p.type, "valeur": p.valeur, "sous_type": p.sous_type,
+            "n_comptes": p.n_comptes, "comptes": list(p.comptes[:5]), "poids_rarete": p.poids_rarete,
+            "extrait": (premiere.extrait[:100] if premiere else ""), "url": (premiere.url if premiere else None),
+        })
+    while sortie and len(json.dumps(sortie)) >= MAX_CARACTERES_AGENTS:
+        sortie.pop()
+    return sortie
