@@ -106,6 +106,9 @@ _TYPES_MIME = {
     ".ttf": "font/ttf", ".otf": "font/otf", ".mp4": "video/mp4", ".webm": "video/webm",
 }
 _BATTEMENT_S = 15.0  # un commentaire SSE tous les 15 s garde la connexion ouverte
+_SEUIL_SALVE = 12  # au-delà, des événements arrivés ensemble sont étalés à l'envoi (direct)
+_PAUSE_MAX_S = 0.08  # écart maximal entre deux événements d'une salve
+LISSAGE_MAX_S = 6.0  # durée maximale d'étalement d'une salve
 
 
 class ErreurHttp(Exception):
@@ -424,6 +427,96 @@ def cadrage_du_tour_1(question: str, delai_s: int = DELAI_CADRAGE_S) -> list[str
     return mots[:14] or None
 
 
+# ---------------------------------------------------------------------------
+# Le travail en cours, écrit au journal pendant la chaîne (vu en direct à l'écran)
+# ---------------------------------------------------------------------------
+# La chaîne écrit les pièces ; le serveur, lui, note au même journal chaque recherche Oriane et
+# chaque grande étape au moment où elles ont lieu, sans toucher à `chaine.py` : les fonctions de
+# la chaîne sont enveloppées une fois, et n'écrivent que pour l'enquête du fil d'exécution courant.
+
+_fil_courant = threading.local()
+_ETAPES_SUIVIES = {
+    "chercher_candidats": "recherche", "relire_en_full": "relecture",
+    "regrouper": "regroupement", "lire_profils": "profils", "archiver": "archivage",
+}
+
+
+class _TemoinDuTravail:
+    """Écrit les événements `recherche` et `etape` d'une enquête dans son journal."""
+
+    def __init__(self, question: str, journal: Path):
+        self._reseau = ReseauEnquete(question, str(journal))
+        self._n = 0
+
+    def noter(self, genre: str, donnees: dict[str, Any]) -> None:
+        try:
+            self._reseau.noter(genre, donnees)
+        except Exception:  # noqa: BLE001 - le témoin ne doit jamais faire tomber l'enquête
+            pass
+
+    def recherche(self, projection: str, parametres: dict[str, Any], reponse: Any, credits: int) -> None:
+        self._n += 1
+        reponse = reponse if isinstance(reponse, dict) else {}
+        resultats = (reponse.get("data") or {}).get("results") or []
+        pagination = (reponse.get("metadata") or {}).get("pagination") or {}
+        filtres = parametres.get("filtres") or {}
+        champ = next((c for c in filtres if c not in ("publishedAt", "id")), "id" if "id" in filtres else "")
+        valeurs = ((filtres.get(champ) or {}).get("includesFuzzy") or {}).get("values") or [] if champ != "id" else []
+        self.noter("recherche", {
+            "source": "oriane", "champ": champ, "mot": valeurs[0] if valeurs else None,
+            "plateforme": "+".join(sorted({r["platform"] for r in resultats if r.get("platform")})),
+            "total": pagination.get("totalCount", len(resultats)), "recus": len(resultats),
+            "ids": [r["id"] for r in resultats if isinstance(r, dict) and "id" in r],
+            "credits": credits, "cache": credits == 0, "palier": projection, "numero": self._n,
+        })
+
+    def fermer(self) -> None:
+        self._reseau.fermer()
+
+
+def _taille(valeur: Any) -> str:
+    try:
+        return str(len(valeur))
+    except TypeError:
+        return ""
+
+
+def _envelopper_la_chaine(chaine: Any) -> None:
+    """Une seule fois par processus : la chaîne prévient le témoin du fil courant, s'il y en a un."""
+    if getattr(chaine, "_temoin_serveur", False):
+        return
+    chaine._temoin_serveur = True
+    budget = getattr(chaine, "Budget", None)
+    if budget is not None and hasattr(budget, "chercher"):
+        chercher_d_origine = budget.chercher
+
+        def chercher(self, projection, **parametres):
+            temoin = getattr(_fil_courant, "temoin", None)
+            avant = getattr(getattr(self, "client", None), "credits_estimes", 0) or 0
+            reponse = chercher_d_origine(self, projection, **parametres)
+            if temoin is not None:
+                apres = getattr(getattr(self, "client", None), "credits_estimes", 0) or 0
+                temoin.recherche(projection, parametres, reponse, apres - avant)
+            return reponse
+
+        budget.chercher = chercher
+    for nom_fonction, nom_etape in _ETAPES_SUIVIES.items():
+        fonction = getattr(chaine, nom_fonction, None)
+        if fonction is None:
+            continue
+
+        def etape(*args, _f=fonction, _nom=nom_etape, **kwargs):
+            temoin = getattr(_fil_courant, "temoin", None)
+            if temoin is not None:
+                temoin.noter("etape", {"nom": _nom, "etat": "debut", "detail": ""})
+            resultat = _f(*args, **kwargs)
+            if temoin is not None:
+                temoin.noter("etape", {"nom": _nom, "etat": "fin", "detail": _taille(resultat)})
+            return resultat
+
+        setattr(chaine, nom_fonction, etape)
+
+
 def enqueteur_par_defaut(question: str, mots: list[str], dossier: Path, journal: Path, affaire_id: str) -> None:
     """Lance `chaine.enqueter` avec un vrai client Oriane.
 
@@ -444,8 +537,16 @@ def enqueteur_par_defaut(question: str, mots: list[str], dossier: Path, journal:
             break
     if "pivots" in parametres:
         supplement["pivots"] = True
-    with OrianeClient(dossier_cache="cache/oriane") as client:
-        chaine.enqueter(question, mots, client, dossier, affaire_id, **supplement)
+    _envelopper_la_chaine(chaine)
+    temoin = _TemoinDuTravail(question, journal) if supplement else None
+    _fil_courant.temoin = temoin
+    try:
+        with OrianeClient(dossier_cache="cache/oriane") as client:
+            chaine.enqueter(question, mots, client, dossier, affaire_id, **supplement)
+    finally:
+        _fil_courant.temoin = None
+        if temoin is not None:
+            temoin.fermer()
     if not supplement and (dossier / "reseau.json").exists():
         importer_export(json.loads((dossier / "reseau.json").read_text(encoding="utf-8")), journal)
 
@@ -481,6 +582,7 @@ class Serveur:
         enqueteur: Enqueteur | None = None,
         sur_question: Callable[[str, str, str], None] | None = None,
         pas_sondage: float = 0.25,
+        lissage_max_s: float = LISSAGE_MAX_S,
         autoriser_fichiers: bool = True,
         dossier_interface: str | Path | None = None,
         cadreur: Cadreur | None = None,
@@ -492,6 +594,7 @@ class Serveur:
         self.cadreur = cadreur
         self.sur_question = sur_question  # (enquete_id, question_id, texte) : les agents s'y branchent
         self.pas_sondage = pas_sondage
+        self.lissage_max_s = lissage_max_s
         self.autoriser_fichiers = autoriser_fichiers
         self.arret = threading.Event()
         self.travaux: dict[str, Travail] = {}
@@ -957,10 +1060,16 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                         serveur.arret.wait(serveur.pas_sondage)
                         continue
                     nouveaux = [e for e in evenements if e["n"] > dernier]
+                    # Une salve (la chaîne pose ses pièces d'un coup) est étalée sur quelques secondes,
+                    # dans l'ordre, sans rien inventer : l'écran voit le dossier se construire.
+                    pause = (min(serveur.lissage_max_s / len(nouveaux), _PAUSE_MAX_S)
+                             if len(nouveaux) > _SEUIL_SALVE and serveur.lissage_max_s > 0 else 0.0)
                     for e in nouveaux:
                         self._envoyer(e)
                         dernier = e["n"]
                         dernier_envoi = time.monotonic()
+                        if pause and serveur.arret.wait(pause):
+                            return
                     if not tournait:
                         travail = serveur.travaux.get(identifiant)
                         self._envoyer(self._fin(evenements, dernier + 1, travail))
