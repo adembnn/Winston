@@ -1,0 +1,3 @@
+captures/
+vignettes-*.json
+!vignettes-stylos-minceur.json
