@@ -1,0 +1,262 @@
+{
+  "id": "affaire-09-stylos-glp1",
+  "question": "Qui vend en ligne des stylos injectables présentés comme des médicaments GLP-1, que dit l'ANSM, et que montre l'enquête de TF1 sur les coachs en nutrition qui promettent des régimes sur les réseaux ?",
+  "gel_donnees": "2026-10-25",
+  "reserve": true,
+  "recherche": {
+    "parole": ["Wegovy", "Mounjaro", "Ozempic", "rétatrutide", "FastPen", "Azentra", "Synedica", "sans ordonnance", "coach nutrition", "perdre du poids"],
+    "texte_ecran": ["Retatrutide 40mg", "FastPen 40mg", "Tirzepatide", "Semaglutide", "stylo injecteur", "usage exclusif laboratoire", "13 à 38 kg perdus", "lien en bio"],
+    "hashtags": ["#perdredupoids", "#wegovy", "#mounjaro", "#ozempic", "#glp1", "#coachnutrition"]
+  },
+  "faits": [
+    {
+      "id": "F1",
+      "phrase": "Le 22 juillet 2026, l'ANSM publie une décision de police sanitaire du 16 juillet contre la société AZRL LTD, qui vend en ligne aux consommateurs français « Azentra Retatrutide 40mg » et « Azentra FastPen », présentés comme contenant du rétatrutide (sites azentra.bio et azentraresearchlabs.com).",
+      "type": "acteur",
+      "poids": 3,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["ANSM", "AZRL", "Azentra", "16 juillet", "22 juillet", "rétatrutide", "FastPen", "police sanitaire"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F2",
+      "phrase": "La même publication du 22 juillet 2026 porte une décision de police sanitaire du 9 juillet contre la société Synedica Laboratories, qui vend des stylos « Retatrutide 40mg », « Tirzepatide 40mg » et « Semaglutide 8mg Injection Pen Kit » (sites synedica.com.de et synedica.io).",
+      "type": "acteur",
+      "poids": 3,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["ANSM", "Synedica", "9 juillet", "rétatrutide", "tirzépatide", "sémaglutide", "stylos", "police sanitaire"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F3",
+      "phrase": "Ces deux décisions suspendent la mise sur le marché, la distribution, la détention en vue de la vente, l'importation, l'exportation, l'exploitation et la publicité des produits, et imposent un rappel en tout lieu.",
+      "type": "role",
+      "poids": 2,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["suspension", "mise sur le marché", "distribution", "importation", "publicité", "rappel", "décisions"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F4",
+      "phrase": "Une décision du 14 août 2026, publiée le 31 août, vise à nouveau AZRL LTD pour le « FastPen 40mg » vendu sur azentralabs.com et présenté comme contenant du rétatrutide : médicament par présentation et par fonction, sans AMM, vendu par une société qui n'est pas un établissement pharmaceutique, avec la mention « usage exclusif dans un environnement de laboratoire » et l'allégation « 13 à 38 kg perdus sur 3 à 5 mois ».",
+      "type": "chronologie",
+      "poids": 3,
+      "source": "https://ansm.sante.fr/actualites/lansm-prend-des-mesures-de-police-sanitaire-a-lencontre-des-sites-internet-vendant-des-aglp-1",
+      "correspondance": {
+        "mots_cles": ["14 août", "31 août", "FastPen", "AZRL", "rétatrutide", "AMM", "laboratoire", "13 à 38"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F5",
+      "phrase": "L'ANSM a pris dix décisions de ce type depuis octobre 2025, dont sept le 29 octobre 2025 contre deux sociétés, Zongest Limited et Hamjouy Limited.",
+      "type": "chronologie",
+      "poids": 2,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["dix décisions", "octobre 2025", "29 octobre", "sept", "Zongest", "Hamjouy", "ANSM"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F6",
+      "phrase": "L'ANSM a saisi le procureur de la République (article 40) et signalé les sites sur Pharos ; eBay, Cdiscount et Amazon ont supprimé des annonces à sa demande.",
+      "type": "interlocuteur",
+      "poids": 1,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["procureur", "article 40", "Pharos", "eBay", "Cdiscount", "Amazon", "annonces", "supprimé"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F7",
+      "phrase": "Des analyses de l'ANSM sur des patchs vendus en ligne comme contenant du sémaglutide n'ont retrouvé ni cette substance ni aucune autre à visée amaigrissante ; ces analyses portaient sur des patchs, pas sur les stylos visés par les décisions de 2026.",
+      "type": "zone_ombre",
+      "poids": 2,
+      "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
+      "correspondance": {
+        "mots_cles": ["patchs", "sémaglutide", "analyses", "aucune", "substance", "amaigrissante", "stylos"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F8",
+      "phrase": "L'ANSM, avec l'EMA et le réseau HMA, alerte sur la multiplication des offres et ventes illégales de médicaments présentés comme des aGLP-1 sur les plateformes en ligne et les réseaux sociaux ; ces médicaments ne s'obtiennent que sur ordonnance en pharmacie, et des logos de l'ANSM ou de l'EMA sont utilisés frauduleusement.",
+      "type": "lien",
+      "poids": 2,
+      "source": "https://ansm.sante.fr/actualites/alerte-sur-les-risques-associes-a-lachat-sur-internet-daglp-1-contrefaits",
+      "correspondance": {
+        "mots_cles": ["EMA", "ANSM", "ventes illégales", "plateformes", "réseaux sociaux", "aGLP-1", "ordonnance", "logos"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F9",
+      "phrase": "Le 2 juillet 2026, l'ANSM alerte sur les « peptides » vendus sur internet et les réseaux sociaux (rétatrutide, BPC-157, etc.), produits frauduleux, non évalués ; certaines personnes ont dû être hospitalisées après plusieurs signalements, notamment avec le rétatrutide.",
+      "type": "chronologie",
+      "poids": 2,
+      "source": "https://pharmactu.fr/articles/peptides-faux-glp1-alerte-ansm-academie-pharmacie",
+      "correspondance": {
+        "mots_cles": ["2 juillet", "peptides", "ANSM", "rétatrutide", "réseaux sociaux", "hospitalisées", "frauduleux"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F10",
+      "phrase": "Le 7 octobre 2026, l'ANSM publie son 3e rapport de pharmacovigilance sur les aGLP-1 autorisés (Ozempic, Wegovy, Mounjaro, etc.) : du 1er février 2025 au 31 janvier 2026, 2 801 cas notifiés en France dont 515 graves et 13 décès. Ces chiffres concernent les médicaments autorisés, pas les produits vendus en ligne.",
+      "type": "chronologie",
+      "poids": 1,
+      "source": "https://ansm.sante.fr/uploads/2026/10/07/20261001-resume-enquete-pv-analogues-glp-1.pdf",
+      "correspondance": {
+        "mots_cles": ["7 octobre", "rapport", "pharmacovigilance", "2801", "515", "13 décès", "aGLP-1", "autorisés"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F11",
+      "phrase": "Le 11 octobre 2026, « Sept à huit » (TF1) diffuse une enquête sur les piqûres pour maigrir : des médecins prescrivent Wegovy, Mounjaro ou Ozempic sans rencontrer les patients, et il est possible d'acheter ces produits sans ordonnance via les réseaux sociaux.",
+      "type": "interlocuteur",
+      "poids": 2,
+      "source": "https://www.tf1info.fr/sante/videos/video-miracles-et-derives-des-nouveaux-medicaments-enquete-sur-les-piqures-pour-maigrir-46591-2469324.html",
+      "correspondance": {
+        "mots_cles": ["Sept à huit", "11 octobre", "Wegovy", "Mounjaro", "Ozempic", "sans ordonnance", "réseaux sociaux", "sans rencontrer"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F12",
+      "phrase": "Dans son enquête du 25 octobre 2026 sur les coachs en nutrition des réseaux, TF1 a sollicité plusieurs coachs en ligne (certains avec des millions d'abonnés) : aucun n'a voulu répondre ; l'équipe, en se présentant comme candidate à une reconversion, a pu échanger avec l'une d'entre eux.",
+      "type": "interlocuteur",
+      "poids": 2,
+      "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
+      "correspondance": {
+        "mots_cles": ["TF1", "coachs", "millions d'abonnés", "aucun", "répondre", "reconversion", "échanger", "nutrition"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F13",
+      "phrase": "Cette coach explique qu'il n'est pas besoin de formation en nutrition mais de formations sur la façon de vendre les produits (« en 3 heures de temps, c'est fait »), avec une commission de 30 % au démarrage allant jusqu'à 55 % sur la vente.",
+      "type": "role",
+      "poids": 3,
+      "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
+      "correspondance": {
+        "mots_cles": ["formation", "nutrition", "vendre", "3 heures", "commission", "30", "55", "vente"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F14",
+      "phrase": "Une ancienne cliente de ces coachs, qui a suivi leurs conseils par dizaines pour perdre quelques kilos, dit ne plus savoir ce qui est bon ou non (témoin non nommé ici).",
+      "type": "interlocuteur",
+      "poids": 1,
+      "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
+      "correspondance": {
+        "mots_cles": ["ancienne cliente", "conseils", "dizaines", "kilos", "ne savais plus", "coachs"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F15",
+      "phrase": "Un docteur en santé publique qui démonte les intox nutritionnelles sur les réseaux rappelle que n'importe qui peut se dire coach ou expert en nutrition, que seuls les diététiciens et les médecins nutritionnistes ont un diplôme reconnu par l'État, et que le nombre d'abonnés n'est pas un indicateur de fiabilité.",
+      "type": "lien",
+      "poids": 2,
+      "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
+      "correspondance": {
+        "mots_cles": ["n'importe qui", "coach", "diététiciens", "médecins nutritionnistes", "diplôme", "État", "abonnés", "fiabilité"],
+        "seuil": 0.5
+      }
+    }
+  ],
+  "non_etabli": [
+    {
+      "id": "N1",
+      "phrase": "Un lien établi entre une société visée par l'ANSM (AZRL, Synedica, Zongest, Hamjouy) et un compte, un coach ou un créateur précis sur les réseaux sociaux.",
+      "correspondance": {
+        "mots_cles": ["AZRL", "Synedica", "lien", "coach", "compte", "créateur", "vend"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "N2",
+      "phrase": "L'ampleur des ventes de ces produits en France (volumes, chiffre d'affaires, nombre d'acheteurs).",
+      "correspondance": {
+        "mots_cles": ["ventes", "France", "volumes", "acheteurs", "chiffre d'affaires", "ampleur"],
+        "seuil": 0.7
+      }
+    },
+    {
+      "id": "N3",
+      "phrase": "Quels produits les coachs filmés par TF1 vendent exactement, et qui profite des commissions.",
+      "correspondance": {
+        "mots_cles": ["coachs", "vendent", "produits", "commissions", "profite", "stylos"],
+        "seuil": 0.7
+      }
+    },
+    {
+      "id": "N4",
+      "phrase": "L'identité des coachs sollicités par TF1 et de la coach qui a répondu.",
+      "correspondance": {
+        "mots_cles": ["identité", "coach", "nom", "TF1", "répondu"],
+        "seuil": 0.75
+      }
+    }
+  ],
+  "pieges": [
+    {
+      "id": "P1",
+      "phrase": "Nommer un coach ou un créateur comme vendeur de faux GLP-1, fraudeur ou coupable : aucune décision publiée ne le désigne.",
+      "correspondance": {
+        "mots_cles": ["coach", "vend", "faux", "GLP-1", "escroc", "fraudeur", "coupable", "stylos"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P2",
+      "phrase": "Affirmer que les patchs analysés contiennent du GLP-1, ou assimiler les patchs aux stylos injectables visés par les décisions de 2026.",
+      "correspondance": {
+        "mots_cles": ["patchs", "contiennent", "sémaglutide", "GLP-1", "stylos", "identiques"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P3",
+      "phrase": "Mélanger les chiffres du 3e rapport de pharmacovigilance (2 801 cas, 515 graves, 13 décès : médicaments autorisés) avec les effets des produits vendus en ligne ou des stylos visés par l'ANSM.",
+      "correspondance": {
+        "mots_cles": ["2801", "515", "13 décès", "stylos", "faux", "ligne", "vendus"],
+        "seuil": 0.7
+      }
+    },
+    {
+      "id": "P4",
+      "phrase": "Présenter les décisions de police sanitaire comme des condamnations pénales : ce sont des mesures administratives, la société n'étant pas jugée.",
+      "correspondance": {
+        "mots_cles": ["condamné", "condamnées", "sociétés", "ANSM", "jugées", "coupables", "tribunal"],
+        "seuil": 0.7
+      }
+    },
+    {
+      "id": "P5",
+      "phrase": "Confondre les « dix décisions » avec dix sociétés, ou additionner les décisions et les signalements Pharos : les décisions portent sur plusieurs sites, dont sept décisions le 29 octobre 2025 pour deux sociétés.",
+      "correspondance": {
+        "mots_cles": ["dix", "sociétés", "ANSM", "signalements", "Pharos", "total"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P6",
+      "phrase": "Confondre les « peptides » ou produits sans aGLP-1 avec les aGLP-1 autorisés (Ozempic, Wegovy, Mounjaro), ou dire que ces médicaments sont vendus légalement en ligne.",
+      "correspondance": {
+        "mots_cles": ["peptides", "Ozempic", "Wegovy", "Mounjaro", "légalement", "en ligne", "identiques"],
+        "seuil": 0.8
+      }
+    }
+  ]
+}

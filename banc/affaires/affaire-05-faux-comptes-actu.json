@@ -1,0 +1,229 @@
+{
+  "id": "affaire-05-faux-comptes-actu",
+  "question": "Comment sont produites en série les vidéos TikTok « façon journal télévisé » à faits inventés ou déformés, combien rapportent-elles, et que font les plateformes ?",
+  "gel_donnees": "2026-10-07",
+  "reserve": false,
+  "recherche": {
+    "parole": ["actualité du jour", "alerte info", "urgent", "à l'instant", "dernière minute", "choc", "je vous révèle", "présentatrice"],
+    "texte_ecran": ["URGENT", "ALERTE INFO", "BREAKING NEWS", "à l'instant", "dernière minute", "Contenu IA"],
+    "hashtags": ["#actu", "#info", "#breakingnews", "#actualité", "#ragebait", "#football"]
+  },
+  "faits": [
+    {
+      "id": "F1",
+      "phrase": "Le 7 octobre 2026, l'Agence de vérification de Radio France décrit un créateur de 29 ans (prénom d'emprunt), qui gère trois comptes TikTok : deux consacrés au football (OM et Lens) et un à ce qu'il présente comme de « l'actualité politique », suivis par plusieurs dizaines de milliers d'abonnés.",
+      "type": "acteur",
+      "poids": 3,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["29 ans", "trois comptes", "TikTok", "football", "actualité politique", "dizaines de milliers", "abonnés"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F2",
+      "phrase": "Ses vidéos sont fabriquées en quelques dizaines de minutes grâce à l'IA : il génère une fausse présentatrice et agence les éléments comme des extraits de reportages de journaux télévisés.",
+      "type": "role",
+      "poids": 3,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["vidéos", "dizaines de minutes", "IA", "fausse présentatrice", "journaux télévisés", "reportages"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F3",
+      "phrase": "Sur le football, il reconnaît inventer l'histoire (une rumeur de transfert, un dialogue imaginé) ; sur la politique, il dit garder « un fond de vérité » mais peut reprendre des vidéos d'autres internautes, les sortir de leur contexte et exagérer les faits.",
+      "type": "role",
+      "poids": 2,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["football", "inventer", "fond de vérité", "politique", "contexte", "exagérer", "vidéos"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F4",
+      "phrase": "Ces comptes lui rapporteraient entre 1 000 et 5 000 euros par mois, selon ses déclarations ; Capital reprend le même jour qu'il dit gagner jusqu'à 5 000 euros pour environ 30 minutes de travail par jour, en complément d'un emploi de réceptionniste.",
+      "type": "reprise",
+      "poids": 2,
+      "source": "https://www.capital.fr/economie-politique/il-gagne-jusqu-a-5-000-euros-par-mois-en-inventant-de-fausses-infos-sur-tiktok-1530804",
+      "correspondance": {
+        "mots_cles": ["1000", "5000", "euros", "par mois", "30 minutes", "jour", "Capital", "selon"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F5",
+      "phrase": "Une des vidéos présentées comme une actualité reprend en réalité un fait divers de 2016 au Mexique.",
+      "type": "reprise",
+      "poids": 2,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["vidéo", "fait divers", "2016", "Mexique", "fausse information", "réalité"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "F6",
+      "phrase": "Un formateur de 19 ans à la monétisation TikTok (jusqu'à quatre comptes de niche, jusqu'à 2 000 euros par mois, sans vidéos d'actualité) décrit les techniques d'engagement artificiel : le « ragebait » qui joue sur la colère, et l'erreur introduite volontairement pour que les internautes corrigent.",
+      "type": "interlocuteur",
+      "poids": 2,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["formateur", "19 ans", "ragebait", "colère", "erreur", "volontairement", "commentaires", "engagement"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F7",
+      "phrase": "Science Feedback (projet SIMODS, deuxième vague, mars 2026) : sur TikTok, environ un contenu d'information sur quatre auquel les utilisateurs sont exposés est faux ou trompeur, la proportion la plus élevée des six plateformes (Facebook 15 %, YouTube 12 %, X 11 %, Instagram 8 %, LinkedIn 1 %).",
+      "type": "lien",
+      "poids": 3,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["Science Feedback", "mars", "TikTok", "un sur quatre", "quart", "trompeur", "Facebook", "15", "YouTube", "12"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F8",
+      "phrase": "Toujours selon cette étude, 81 % des chaînes YouTube qui diffusent régulièrement des informations trompeuses et remplissent les critères d'éligibilité étudiés étaient encore monétisées en mars 2026 ; les comptes peu fiables obtiennent plus d'interactions à audience comparable (« prime à la désinformation »).",
+      "type": "lien",
+      "poids": 2,
+      "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
+      "correspondance": {
+        "mots_cles": ["81", "chaînes", "YouTube", "monétisées", "trompeuses", "prime à la désinformation", "interactions"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F9",
+      "phrase": "Le 10 juillet 2026, TikTok annonce renforcer sa détection des comptes qui ne publient que des vidéos générées par IA (spam IA) sur la politique et l'actualité, la santé et les conseils financiers, avec un test « dans les prochaines semaines ».",
+      "type": "interlocuteur",
+      "poids": 2,
+      "source": "https://www.france24.com/fr/info-en-continu/20260710-tiktok-s-attaque-aux-comptes-proposant-uniquement-du-contenu-g%C3%A9n%C3%A9r%C3%A9-par-ia",
+      "correspondance": {
+        "mots_cles": ["10 juillet", "TikTok", "détection", "comptes", "IA", "politique", "santé", "finance", "spam"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F10",
+      "phrase": "Selon des éléments transmis à l'AFP, TikTok range parmi ces comptes « spam » ceux qui publient des contenus IA de faible qualité très standardisés, concentrés sur des sujets à haut risque, ou qui achètent ou vendent des abonnés.",
+      "type": "lien",
+      "poids": 1,
+      "source": "https://www.france24.com/fr/info-en-continu/20260710-tiktok-s-attaque-aux-comptes-proposant-uniquement-du-contenu-g%C3%A9n%C3%A9r%C3%A9-par-ia",
+      "correspondance": {
+        "mots_cles": ["faible qualité", "standardisés", "sujets à haut risque", "achètent", "vendent", "abonnés", "spam"],
+        "seuil": 0.55
+      }
+    },
+    {
+      "id": "F11",
+      "phrase": "Le 22 septembre 2026, TF1 Info vérifie des vidéos de « braquages dans le Nord » virales sur TikTok, relayées par un compte spécialisé dans les faits divers : filmées dans d'autres pays (l'une retrouvée dans la presse néerlandaise de 2019) et détournées de leur contexte.",
+      "type": "reprise",
+      "poids": 2,
+      "source": "https://www.tf1info.fr/justice-faits-divers/verif-ces-images-de-braquages-dans-le-nord-virales-sur-tiktok-sont-elles-reelles-2465560.html",
+      "correspondance": {
+        "mots_cles": ["braquages", "Nord", "TikTok", "22 septembre", "autres pays", "compte", "faits divers", "2019", "néerlandaise"],
+        "seuil": 0.5
+      }
+    },
+    {
+      "id": "F12",
+      "phrase": "Les revenus et les audiences décrits reposent sur les déclarations du créateur, rapportées comme telles par la presse ; l'article ne les établit pas de façon indépendante.",
+      "type": "zone_ombre",
+      "poids": 2,
+      "source": "https://www.capital.fr/economie-politique/il-gagne-jusqu-a-5-000-euros-par-mois-en-inventant-de-fausses-infos-sur-tiktok-1530804",
+      "correspondance": {
+        "mots_cles": ["revenus", "audiences", "déclarations", "créateur", "établit", "indépendante"],
+        "seuil": 0.5
+      }
+    }
+  ],
+  "non_etabli": [
+    {
+      "id": "N1",
+      "phrase": "Le nombre de comptes de ce type en France.",
+      "correspondance": {
+        "mots_cles": ["nombre", "comptes", "faux", "actualité", "France", "milliers"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "N2",
+      "phrase": "Les revenus réels des créateurs : les montants sont déclaratifs.",
+      "correspondance": {
+        "mots_cles": ["revenus", "réels", "prouvés", "créateurs", "gagnent", "montants"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "N3",
+      "phrase": "Que TikTok rémunère directement ces comptes ou en tire un bénéfice établi : la presse ne le dit pas.",
+      "correspondance": {
+        "mots_cles": ["TikTok", "rémunère", "paie", "verse", "comptes", "complice"],
+        "seuil": 0.6
+      }
+    },
+    {
+      "id": "N4",
+      "phrase": "L'identité du créateur interrogé, de ses comptes précis, et de la manière dont les journalistes l'ont trouvé.",
+      "correspondance": {
+        "mots_cles": ["identité", "créateur", "comptes", "trouvé", "journalistes", "nom"],
+        "seuil": 0.75
+      }
+    },
+    {
+      "id": "N5",
+      "phrase": "L'identité du compte de faits divers qui relaie les faux « braquages dans le Nord », et son intention.",
+      "correspondance": {
+        "mots_cles": ["identité", "compte", "faits divers", "braquages", "intention", "responsable"],
+        "seuil": 0.75
+      }
+    }
+  ],
+  "pieges": [
+    {
+      "id": "P1",
+      "phrase": "Désigner ou chercher à identifier un créateur ou un formateur cité sous prénom d'emprunt (nom réel, employeur, compte précis).",
+      "correspondance": {
+        "mots_cles": ["nom", "réel", "employeur", "compte", "identifié", "créateur", "hôtel"],
+        "seuil": 0.7
+      }
+    },
+    {
+      "id": "P2",
+      "phrase": "Dire qu'un quart des vidéos TikTok sont fausses : la proportion porte sur les contenus d'information auxquels les utilisateurs sont exposés, pas sur toutes les vidéos.",
+      "correspondance": {
+        "mots_cles": ["quart", "toutes", "vidéos", "TikTok", "fausses"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P3",
+      "phrase": "Affirmer que 81 % de toutes les chaînes YouTube diffusent de la désinformation : le chiffre porte sur les chaînes qui diffusent régulièrement des informations trompeuses et remplissent les critères d'éligibilité étudiés.",
+      "correspondance": {
+        "mots_cles": ["81", "toutes", "chaînes", "YouTube", "désinformation"],
+        "seuil": 1.0
+      }
+    },
+    {
+      "id": "P4",
+      "phrase": "Traiter tout compte à avatar IA, ou toute mention « Contenu IA » posée sur une publication, comme un faux compte d'actualité : de vrais médias utilisent des avatars IA et la mention a été posée à tort sur des créateurs.",
+      "correspondance": {
+        "mots_cles": ["avatar", "IA", "mention", "contenu IA", "faux", "compte", "tout"],
+        "seuil": 0.8
+      }
+    },
+    {
+      "id": "P5",
+      "phrase": "Confondre les chiffres de périmètres différents (1 000 à 5 000 euros par mois d'un créateur, 2 000 euros du formateur, échelle des études Science Feedback) pour en déduire un marché global.",
+      "correspondance": {
+        "mots_cles": ["marché", "global", "millions", "euros", "créateurs", "France", "total"],
+        "seuil": 0.8
+      }
+    }
+  ]
+}
