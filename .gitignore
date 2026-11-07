@@ -1,0 +1,8 @@
+.env
+.env.*
+node_modules/
+
+# Notes de travail, jamais sur le dépôt du jury
+reports/
+kickoff/
+CLAUDE.md
