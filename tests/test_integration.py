@@ -802,7 +802,7 @@ def test_le_cadreur_passe_d_abord_puis_les_mots_de_la_question_sans_doublon(tmp_
     assert mots[:3] == ["earthquake", "séisme", "sismo"]
     assert len({m.lower() for m in mots}) == len(mots) and "paris" in mots
     origines = {m["mot"]: m["origine"] for m in lire_json(tmp_path / identifiant / "cadrage.json")["mots"]}
-    assert origines["earthquake"] == "cadrage du tour 1" and origines["paris"] == "question"
+    assert origines["earthquake"] == "agent de cadrage" and origines["paris"] == "question"
 
 
 def test_un_cadreur_qui_leve_laisse_les_mots_de_la_question(tmp_path):

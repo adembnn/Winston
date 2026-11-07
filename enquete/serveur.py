@@ -427,6 +427,34 @@ def cadrage_du_tour_1(question: str, delai_s: int = DELAI_CADRAGE_S) -> list[str
     return mots[:14] or None
 
 
+def cadrage_par_comprendre(question: str) -> list[str] | None:
+    """Un agent lit d'abord la demande d'enquête, puis propose ce que les vidéos disent ou écrivent à
+    l'écran : mots et variantes (pluriels, synonymes, langage parlé, hashtags). Oriane ne reçoit qu'ensuite
+    ces requêtes, et non la question brute. Sans réponse de Claude (repli), None : le serveur garde les
+    mots de la question."""
+    try:
+        module = importlib.import_module("enquete.comprendre")
+        lecture = module.comprendre(question)
+    except Exception:  # noqa: BLE001 - un agent en panne ne doit pas empêcher l'enquête
+        return None
+    if lecture.get("source") not in ("claude", "cache"):
+        return None
+    mots: list[str] = []
+    for entree in lecture.get("mots") or []:
+        if isinstance(entree, str):
+            mots.append(entree)
+        elif isinstance(entree, dict):
+            mots.append(str(entree.get("mot") or ""))
+            mots.extend(str(v) for v in (entree.get("variantes") or [])[:2])
+    mots = [m.strip() for m in mots if m and m.strip()]
+    return mots[:14] or None
+
+
+def cadrage(question: str) -> list[str] | None:
+    """Le cadrage avant Oriane : l'agent du tour 1 s'il est là, sinon l'agent de lecture de la demande."""
+    return cadrage_du_tour_1(question) or cadrage_par_comprendre(question)
+
+
 # ---------------------------------------------------------------------------
 # Le travail en cours, écrit au journal pendant la chaîne (vu en direct à l'écran)
 # ---------------------------------------------------------------------------
@@ -804,11 +832,11 @@ class Serveur:
         tires = mots_de_la_question(question)
         mots = fusionner_mots(cadres, tires)
         cles_cadre = {_sans_accent(m) for m in cadres}
-        return mots, {m: ("cadrage du tour 1" if _sans_accent(m) in cles_cadre else "question") for m in mots}
+        return mots, {m: ("agent de cadrage" if _sans_accent(m) in cles_cadre else "question") for m in mots}
 
     @staticmethod
     def _ecrire_cadrage(dossier: Path, mots: list[str], origines: dict[str, str]) -> None:
-        """`cadrage.json` : les mots cherchés et d'où chacun vient (graine, question, cadrage du tour 1)."""
+        """`cadrage.json` : les mots cherchés et d'où chacun vient (graine, question, agent de cadrage)."""
         try:
             (dossier / "cadrage.json").write_text(
                 json.dumps({"mots": [{"mot": m, "origine": origines.get(m, "question")} for m in mots]},
@@ -1167,9 +1195,9 @@ def main(argv: list[str] | None = None) -> int:
     analyseur.add_argument("--port", type=int, default=PORT, help="0 = un port libre (affiché au démarrage)")
     analyseur.add_argument("--interface", default=None, help="dossier de l'écran (défaut : interface/ du dépôt)")
     analyseur.add_argument("--sans-cadrage", action="store_true",
-                           help="ne pas demander au cadrage du tour 1 les mots à chercher (la question seule)")
+                           help="ne pas demander à l'agent de cadrage les mots à chercher (la question seule)")
     args = analyseur.parse_args(argv)
-    cadreur = None if args.sans_cadrage else cadrage_du_tour_1
+    cadreur = None if args.sans_cadrage else cadrage
     with Serveur(args.racine, port=args.port, dossier_interface=args.interface, cadreur=cadreur) as serveur:
         print(f"Serveur sur {serveur.url} · enquêtes dans {serveur.racine.resolve()}", flush=True)
         try:

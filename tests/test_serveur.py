@@ -547,3 +547,29 @@ def test_une_salve_est_etalee_en_direct(racine):
     instants = [t for t, e in recus if e["type"] == "noeud"]
     assert len(instants) == 30
     assert instants[-1] - instants[0] >= 0.3, instants  # la salve s'étale au lieu d'arriver d'un bloc
+
+
+def test_cadrage_par_comprendre_tire_les_mots_et_leurs_variantes(monkeypatch):
+    """L'agent lit la demande avant Oriane : ses mots et deux variantes par mot partent en requête."""
+    import enquete.comprendre as module_comprendre
+    from enquete import serveur
+
+    lecture = {"source": "claude", "mots": [
+        {"mot": "stylo minceur", "variantes": ["stylos minceur", "piqûre minceur", "trop"]}, "glp-1", {"mot": " "}]}
+    monkeypatch.setattr(module_comprendre, "comprendre", lambda question: lecture)
+    assert serveur.cadrage_par_comprendre("q") == ["stylo minceur", "stylos minceur", "piqûre minceur", "glp-1"]
+
+
+def test_cadrage_par_comprendre_en_repli_laisse_la_question(monkeypatch):
+    """Sans réponse de Claude (repli ou panne), le serveur garde les mots de la question."""
+    import enquete.comprendre as module_comprendre
+    from enquete import serveur
+
+    monkeypatch.setattr(module_comprendre, "comprendre", lambda question: {"source": "repli", "mots": ["a"]})
+    assert serveur.cadrage_par_comprendre("q") is None
+
+    def panne(question):
+        raise RuntimeError("claude absent")
+
+    monkeypatch.setattr(module_comprendre, "comprendre", panne)
+    assert serveur.cadrage_par_comprendre("q") is None
