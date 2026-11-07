@@ -735,7 +735,7 @@ def resumer_piece(
 DELAI_RESUME_ENQUETE_S = 120.0
 ECHELLE_CERTITUDE = ("établi", "très probable", "probable", "possible", "non établi")
 PLAFOND_CERTITUDE = "probable"  # tant qu'un humain n'a pas validé
-VERSION_RESUME = 1
+VERSION_RESUME = 2  # 2 : verbes d'argent interdits (lexique)
 
 _ROLES_PRIVES = ("temoin", "expert", "victime", "mis_en_cause")
 _TYPES_NOMMABLES = ("societe", "site", "document")
@@ -756,7 +756,9 @@ _FAIT_DATE = {
     "creee_le": "Création", "cree_le": "Création", "date_creation": "Création",
 }
 _TYPES_LIEN_SERIE = ("dit_la_meme_chose", "dit_phrase")
-_MOTS_INTERDITS = ("arnaque", "escroquerie", "escroc", "coupable", "frauduleux", "fraudeur")
+_MOTS_INTERDITS = ("arnaque", "escroquerie", "escroc", "coupable", "frauduleux", "fraudeur",
+                   # lexique : aucun verbe d'argent sans pièce bancaire ou judiciaire
+                   "encaiss", "empoch", "blanchi", "detourn", "premier vu")
 _NOMBRES_EN_LETTRES = frozenset(
     "deux trois quatre cinq six sept huit neuf dix onze douze vingt trente quarante cinquante "
     "soixante cent mille million millions".split())
@@ -984,7 +986,7 @@ RÈGLES
 - CHAQUE phrase cite dans "pieces" au moins un "id" de pièce du dossier, et seulement des ids qui y figurent.
 - Les seuls nombres permis sont ceux de CHIFFRES (jamais celui qui vaut null). N'écris aucun autre nombre : ni date en chiffres, ni durée, ni montant. Les séries se disent « séries distinctes », jamais « sources indépendantes ».
 - Une pièce "indice" n'est jamais présentée comme un fait établi : au conditionnel ou avec « selon ». Une pièce "solide" est attribuée (« selon le registre »).
-- Aucun particulier n'est nommé. Pas de « arnaque » : écris « promesse commerciale ». Pas de « coupable », pas d'accusation sans pièce solide. Écris « Plus ancienne trace retrouvée », jamais « origine ».
+- Aucun particulier n'est nommé. Pas de « arnaque » : écris « promesse commerciale ». Pas de « coupable », pas d'accusation sans pièce solide. Aucun verbe d'argent (« encaisser », « empocher »…) : écris « est présentée comme l'exploitant de », d'après les mentions légales. Écris « Plus ancienne trace retrouvée », jamais « origine ».
 - N'écris pas les ids dans le texte.
 
 Réponds par UN SEUL objet JSON valide, sans texte autour ni balises :
@@ -1102,7 +1104,8 @@ def rediger_resume(
         dossier=json.dumps(dossier, ensure_ascii=False, default=str, indent=1))
     try:
         brut = extraire_json(_avec_delai(lambda: appel(prompt, delai), delai))
-        if not verifier_phrases(brut, export, chiffres):
+        defauts = verifier_phrases(brut, export, chiffres)
+        if not defauts:
             resultat = {"en_bref": " ".join(p["texte"].strip() for p in brut["en_bref"]),
                         "mecanisme": " ".join(p["texte"].strip() for p in brut["mecanisme"]),
                         "source": "claude"}
@@ -1113,9 +1116,12 @@ def rediger_resume(
                 except OSError:
                     pass
             return resultat
-    except Exception:  # noqa: BLE001 - Claude muet ou illisible : repli par code
-        pass
-    return phrases_par_code(export, chiffres)
+        raison = "réponse rejetée par le contrôle : " + " ; ".join(str(d) for d in defauts[:5])
+    except Exception as erreur:  # noqa: BLE001 - Claude muet ou illisible : repli par code
+        raison = f"{type(erreur).__name__} : {erreur}"
+    # Le repli dit pourquoi : visible dans la réponse et dans la console du serveur.
+    print(f"[résumé] repli sur les phrases par code ({raison})", file=sys.stderr, flush=True)
+    return {**phrases_par_code(export, chiffres), "raison_repli": raison}
 
 
 def resume_enquete(
