@@ -34,7 +34,7 @@ from urllib.parse import quote, urlparse
 
 import httpx
 
-AGENT_UTILISATEUR = "enquete-images/0.1 (outil d'enquete pour redaction)"
+AGENT_UTILISATEUR = "enquete-images/0.1 (https://github.com/adembnn/Hack-Oriane; outil d enquete pour redaction)"
 DELAI_HTTP_S = 20.0
 TAILLE_MAX = 15 * 1024 * 1024
 
