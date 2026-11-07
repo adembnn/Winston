@@ -27,7 +27,7 @@ from enquete.garde_fous import (
 RACINE_PASSAGE = Path(
     os.environ.get(
         "ENQUETE_PASSAGE",
-        "C:/Users/Adem/Hack Oriane/.claude/worktrees/agent-a9a477b63e00fb676",
+        ".",
     )
 )
 

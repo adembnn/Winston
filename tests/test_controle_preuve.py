@@ -24,7 +24,7 @@ from enquete.controle_preuve import (
 CACHE = Path(
     os.environ.get(
         "ENQUETE_CACHE_ORIANE",
-        "C:/Users/Adem/Hack Oriane/.claude/worktrees/agent-a9a477b63e00fb676/cache/oriane",
+        "cache/oriane",
     )
 )
 

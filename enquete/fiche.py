@@ -216,5 +216,5 @@ if __name__ == "__main__":  # python -m enquete.fiche LIEN [--oriane]
     from enquete.sources.oriane import OrianeClient
 
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    cli = OrianeClient(fichier_env=r"C:/Users/Adem/Hack Oriane/.env") if "--oriane" in sys.argv else None
+    cli = OrianeClient() if "--oriane" in sys.argv else None
     print(fiche_texte(fiche(args[0], oriane=cli)))
