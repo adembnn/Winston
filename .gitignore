@@ -6,3 +6,15 @@ node_modules/
 reports/
 kickoff/
 CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Données générées (jamais commitées)
+donnees/
+cache/
+archives/

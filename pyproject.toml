@@ -1,0 +1,15 @@
+[project]
+name = "enquete"
+version = "0.1.0"
+description = "Outil d'enquête OSINT pour rédaction : vidéos sociales, sources ouvertes, liens prouvés."
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
