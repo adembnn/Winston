@@ -50,7 +50,7 @@ Chaque rubrique porte son état : **codé** (le dépôt le fait et un test le co
 | `enquete/banc.py` | banc d'essai (voir plus bas) |
 | `banc/affaires/` | les affaires de référence, résolues par la presse |
 
-Pas dans ce dépôt à ce stade : l'interface (le réseau cliquable) et les agents de raisonnement (chef d'enquête, rédaction des questions, classement des pièces).
+L'interface est dans `interface/` : l'écran d'entrée (`interface/index.html`, servi par le serveur) et la salle de démo sur un cas fictif (`interface/demo/`, voir son `LISEZMOI.md`). Pas encore dans ce dépôt : les agents de raisonnement (chef d'enquête, rédaction des questions, classement des pièces), en cours sur une branche à part.
 
 ## Comment ça marche
 
@@ -168,7 +168,7 @@ Les tests n'appellent ni Oriane ni aucun modèle de langage : les réponses d'Or
 
 **Hack Oriane** is a tool for Brut's investigative journalists, built for the "Hack the Feed" hackathon (Albert School, 7 November 2026). A reporter starting a story gets a numbered list of open questions. The tool is meant to shorten that list by attaching evidence to each question, and to stop at the questions that need a human. Evidence is organised by role around the central question.
 
-Status: this repository holds the data model (an append-only evidence network), the Oriane client, date decoding from post IDs, clustering of videos sharing a phrase, evidence archiving, pivot extraction, open-source enrichment, blockchain tracing, a local server and a benchmark. The reasoning agents, the interface, coverage mapping, independent-source counting and automatic checking of quotes against the source are planned, not built.
+Status: this repository holds the data model (an append-only evidence network), the Oriane client, date decoding from post IDs, clustering of videos sharing a phrase, evidence archiving, pivot extraction, open-source enrichment, blockchain tracing, a local server and a benchmark. The interface (entry screen and a demo room on a fictional case) is in `interface/`. Modules for independent-source counting, quote checking and safeguards exist but are not yet wired into the pipeline. The reasoning agents and coverage mapping are in progress, not in this repository yet.
 
 Video comes from the Oriane search API (TikTok, Instagram, YouTube). Everything else uses free sources: company registry, domain records, Wayback Machine, public blockchain explorers.
 
