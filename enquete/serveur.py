@@ -648,6 +648,13 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
 
         def _repondre_erreur(self, statut: int, message: str) -> None:
             try:
+                # Un corps refusé avant lecture (403, 415) est lu quand même : sous Windows, répondre
+                # sans l'avoir lu fait couper la connexion côté client avant qu'il voie la réponse.
+                if not getattr(self, "_corps_lu", False):
+                    reste = int(self.headers.get("Content-Length") or 0)
+                    if 0 < reste <= _TAILLE_MAX_CORPS:
+                        self.rfile.read(reste)
+                    self._corps_lu = True
                 self._json(statut, {"erreur": message})
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
                 pass
@@ -677,7 +684,9 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
             if taille > _TAILLE_MAX_CORPS:
                 raise ErreurHttp(413, "corps trop gros")
             try:
-                corps = json.loads(self.rfile.read(taille) or b"{}")
+                brut = self.rfile.read(taille)
+                self._corps_lu = True
+                corps = json.loads(brut or b"{}")
             except json.JSONDecodeError:
                 raise ErreurHttp(400, "JSON invalide") from None
             if not isinstance(corps, dict):
