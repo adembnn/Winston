@@ -3,12 +3,14 @@
   "question": "Ces vidéos de séismes et d'éruptions d'août-septembre 2026 sont-elles réelles, et d'où viennent-elles ?",
   "gel_donnees": "2026-11-07",
   "reserve": false,
+  "canari": "Neuf tortues archivistes de Locminé ont repeint le beffroi imaginaire avec du sirop de fenouil lunaire.",
   "faits": [
     {
       "id": "F1",
       "phrase": "Après le séisme de magnitude 7,7 en Indonésie du 15 août, une vidéo d'un bâtiment penché, publiée sur Facebook avec une légende en hindi, est en réalité celle du séisme de Taïwan d'avril 2024.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
       "correspondance": {
         "mots_cles": ["séisme", "indonésie", "7,7", "bâtiment", "penché", "taïwan", "2024", "hindi", "facebook"],
@@ -20,6 +22,7 @@
       "phrase": "Le clip du bâtiment penché du séisme de Taïwan avait déjà été détourné pour d'autres séismes.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
       "correspondance": {
         "mots_cles": ["clip", "bâtiment", "penché", "taïwan", "détourné", "autres", "séismes"],
@@ -31,6 +34,7 @@
       "phrase": "Une vidéo de fissures générée par intelligence artificielle, liée au séisme de 7,7 en Indonésie, est répliquée sur Facebook, Instagram, Threads, X et TikTok.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "source": "https://factual.afp.com/doc.afp.com.C4YB8WE",
       "correspondance": {
         "mots_cles": ["fissures", "générée", "intelligence artificielle", "indonésie", "facebook", "instagram", "threads", "tiktok"],
@@ -42,6 +46,7 @@
       "phrase": "Après le séisme de magnitude 7,4 en Colombie du 10 août, une vidéo d'effondrement générée par intelligence artificielle circule.",
       "type": "origine",
       "poids": 2,
+      "portee": "video",
       "source": "https://factual.afp.com/doc.afp.com.C4PF89H",
       "correspondance": {
         "mots_cles": ["colombie", "7,4", "10 août", "effondrement", "générée", "intelligence artificielle"],
@@ -53,6 +58,7 @@
       "phrase": "Une vidéo tournée au Venezuela en juin 2026 circule à propos du séisme colombien du 10 août.",
       "type": "origine",
       "poids": 2,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C4U73NR",
       "correspondance": {
         "mots_cles": ["vidéo", "venezuela", "juin 2026", "séisme", "colombie", "10 août"],
@@ -64,6 +70,7 @@
       "phrase": "Après le séisme de magnitude 6,7 au Pérou du 20 août, une vidéo tournée à Pereira, en Colombie, circule.",
       "type": "origine",
       "poids": 2,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C67J8KE",
       "correspondance": {
         "mots_cles": ["pérou", "6,7", "20 août", "pereira", "colombie", "vidéo"],
@@ -75,6 +82,7 @@
       "phrase": "En septembre, une vidéo d'éruption volcanique générée par intelligence artificielle est partagée sur TikTok.",
       "type": "origine",
       "poids": 2,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C7LU7CQ",
       "correspondance": {
         "mots_cles": ["septembre", "éruption", "volcan", "générée", "intelligence artificielle", "tiktok"],
@@ -86,6 +94,7 @@
       "phrase": "Un clip de novembre 2025, retouché, est présenté comme une éruption volcanique de septembre.",
       "type": "origine",
       "poids": 2,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.C88L4NQ",
       "correspondance": {
         "mots_cles": ["clip", "novembre 2025", "retouché", "éruption", "septembre"],
@@ -97,6 +106,10 @@
       "phrase": "Pour chaque séisme, la première occurrence de la fausse vidéo date du jour du séisme ou du lendemain.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "video",
+      "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
+      "autres_sources": ["https://factual.afp.com/doc.afp.com.C4YB8WE", "https://factual.afp.com/doc.afp.com.C4PF89H", "https://factcheck.afp.com/doc.afp.com.C4U73NR", "https://factcheck.afp.com/doc.afp.com.C67J8KE", "https://factcheck.afp.com/doc.afp.com.C7LU7CQ", "https://factcheck.afp.com/doc.afp.com.C88L4NQ"],
+      "source_deduite_a_relire": true,
       "correspondance": {
         "mots_cles": ["première", "occurrence", "jour", "séisme", "lendemain"],
         "seuil": 0.6
@@ -107,6 +120,10 @@
       "phrase": "Les vidéos sont lancées par des pages et de petits comptes d'engagement, puis relayées par des comptes multilingues.",
       "type": "acteur",
       "poids": 1,
+      "portee": "video",
+      "source": "https://factual.afp.com/doc.afp.com.C4YB8WE",
+      "autres_sources": ["https://factcheck.afp.com/doc.afp.com.C7LU7CQ"],
+      "source_deduite_a_relire": true,
       "correspondance": {
         "mots_cles": ["pages", "petits comptes", "engagement", "relayées", "comptes", "multilingues"],
         "seuil": 0.6
@@ -117,6 +134,10 @@
       "phrase": "Les équipes locales de l'AFP ont vérifié ces vidéos et publié des démentis.",
       "type": "interlocuteur",
       "poids": 1,
+      "portee": "web",
+      "source": "https://factcheck.afp.com/doc.afp.com.C64C7NQ",
+      "autres_sources": ["https://factcheck.afp.com/doc.afp.com.C67J8KE"],
+      "source_deduite_a_relire": true,
       "correspondance": {
         "mots_cles": ["afp", "équipes locales", "vérifié", "démentis", "vidéos"],
         "seuil": 0.6
@@ -127,6 +148,10 @@
       "phrase": "Les vidéos d'origine, quand elles existent, sont antérieures à la fenêtre d'étude et n'apparaissent pas dans les données.",
       "type": "zone_ombre",
       "poids": 1,
+      "portee": "hors_portee",
+      "source": "https://factcheck.afp.com/doc.afp.com.C88L4NQ",
+      "autres_sources": ["https://factcheck.afp.com/doc.afp.com.C7LU7CQ"],
+      "source_deduite_a_relire": true,
       "correspondance": {
         "mots_cles": ["vidéos", "origine", "antérieures", "fenêtre", "données"],
         "seuil": 0.6

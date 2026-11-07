@@ -3,6 +3,7 @@
   "question": "Qui vend en ligne des stylos injectables présentés comme des médicaments GLP-1, que dit l'ANSM, et que montre l'enquête de TF1 sur les coachs en nutrition qui promettent des régimes sur les réseaux ?",
   "gel_donnees": "2026-10-25",
   "reserve": true,
+  "canari": "La girafe notaire de Saint-Pol-de-Léon a scellé dix-neuf kazoos dans un coffre de nougat bleu.",
   "recherche": {
     "parole": ["Wegovy", "Mounjaro", "Ozempic", "rétatrutide", "FastPen", "Azentra", "Synedica", "sans ordonnance", "coach nutrition", "perdre du poids"],
     "texte_ecran": ["Retatrutide 40mg", "FastPen 40mg", "Tirzepatide", "Semaglutide", "stylo injecteur", "usage exclusif laboratoire", "13 à 38 kg perdus", "lien en bio"],
@@ -14,10 +15,11 @@
       "phrase": "Le 22 juillet 2026, l'ANSM publie une décision de police sanitaire du 16 juillet contre la société AZRL LTD, qui vend en ligne aux consommateurs français « Azentra Retatrutide 40mg » et « Azentra FastPen », présentés comme contenant du rétatrutide (sites azentra.bio et azentraresearchlabs.com).",
       "type": "acteur",
       "poids": 3,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["ANSM", "AZRL", "Azentra", "16 juillet", "22 juillet", "rétatrutide", "FastPen", "police sanitaire"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -25,10 +27,11 @@
       "phrase": "La même publication du 22 juillet 2026 porte une décision de police sanitaire du 9 juillet contre la société Synedica Laboratories, qui vend des stylos « Retatrutide 40mg », « Tirzepatide 40mg » et « Semaglutide 8mg Injection Pen Kit » (sites synedica.com.de et synedica.io).",
       "type": "acteur",
       "poids": 3,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["ANSM", "Synedica", "9 juillet", "rétatrutide", "tirzépatide", "sémaglutide", "stylos", "police sanitaire"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -36,10 +39,11 @@
       "phrase": "Ces deux décisions suspendent la mise sur le marché, la distribution, la détention en vue de la vente, l'importation, l'exportation, l'exploitation et la publicité des produits, et imposent un rappel en tout lieu.",
       "type": "role",
       "poids": 2,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["suspension", "mise sur le marché", "distribution", "importation", "publicité", "rappel", "décisions"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -47,10 +51,11 @@
       "phrase": "Une décision du 14 août 2026, publiée le 31 août, vise à nouveau AZRL LTD pour le « FastPen 40mg » vendu sur azentralabs.com et présenté comme contenant du rétatrutide : médicament par présentation et par fonction, sans AMM, vendu par une société qui n'est pas un établissement pharmaceutique, avec la mention « usage exclusif dans un environnement de laboratoire » et l'allégation « 13 à 38 kg perdus sur 3 à 5 mois ».",
       "type": "chronologie",
       "poids": 3,
+      "portee": "web",
       "source": "https://ansm.sante.fr/actualites/lansm-prend-des-mesures-de-police-sanitaire-a-lencontre-des-sites-internet-vendant-des-aglp-1",
       "correspondance": {
         "mots_cles": ["14 août", "31 août", "FastPen", "AZRL", "rétatrutide", "AMM", "laboratoire", "13 à 38"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -58,10 +63,11 @@
       "phrase": "L'ANSM a pris dix décisions de ce type depuis octobre 2025, dont sept le 29 octobre 2025 contre deux sociétés, Zongest Limited et Hamjouy Limited.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["dix décisions", "octobre 2025", "29 octobre", "sept", "Zongest", "Hamjouy", "ANSM"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -69,10 +75,11 @@
       "phrase": "L'ANSM a saisi le procureur de la République (article 40) et signalé les sites sur Pharos ; eBay, Cdiscount et Amazon ont supprimé des annonces à sa demande.",
       "type": "interlocuteur",
       "poids": 1,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["procureur", "article 40", "Pharos", "eBay", "Cdiscount", "Amazon", "annonces", "supprimé"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -80,10 +87,11 @@
       "phrase": "Des analyses de l'ANSM sur des patchs vendus en ligne comme contenant du sémaglutide n'ont retrouvé ni cette substance ni aucune autre à visée amaigrissante ; ces analyses portaient sur des patchs, pas sur les stylos visés par les décisions de 2026.",
       "type": "zone_ombre",
       "poids": 2,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/ansm-retrait-faux-glp1-police-sanitaire-azrl-synedica-2026",
       "correspondance": {
         "mots_cles": ["patchs", "sémaglutide", "analyses", "aucune", "substance", "amaigrissante", "stylos"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -91,10 +99,11 @@
       "phrase": "L'ANSM, avec l'EMA et le réseau HMA, alerte sur la multiplication des offres et ventes illégales de médicaments présentés comme des aGLP-1 sur les plateformes en ligne et les réseaux sociaux ; ces médicaments ne s'obtiennent que sur ordonnance en pharmacie, et des logos de l'ANSM ou de l'EMA sont utilisés frauduleusement.",
       "type": "lien",
       "poids": 2,
+      "portee": "web",
       "source": "https://ansm.sante.fr/actualites/alerte-sur-les-risques-associes-a-lachat-sur-internet-daglp-1-contrefaits",
       "correspondance": {
         "mots_cles": ["EMA", "ANSM", "ventes illégales", "plateformes", "réseaux sociaux", "aGLP-1", "ordonnance", "logos"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -102,10 +111,11 @@
       "phrase": "Le 2 juillet 2026, l'ANSM alerte sur les « peptides » vendus sur internet et les réseaux sociaux (rétatrutide, BPC-157, etc.), produits frauduleux, non évalués ; certaines personnes ont dû être hospitalisées après plusieurs signalements, notamment avec le rétatrutide.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "web",
       "source": "https://pharmactu.fr/articles/peptides-faux-glp1-alerte-ansm-academie-pharmacie",
       "correspondance": {
         "mots_cles": ["2 juillet", "peptides", "ANSM", "rétatrutide", "réseaux sociaux", "hospitalisées", "frauduleux"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -113,10 +123,11 @@
       "phrase": "Le 7 octobre 2026, l'ANSM publie son 3e rapport de pharmacovigilance sur les aGLP-1 autorisés (Ozempic, Wegovy, Mounjaro, etc.) : du 1er février 2025 au 31 janvier 2026, 2 801 cas notifiés en France dont 515 graves et 13 décès. Ces chiffres concernent les médicaments autorisés, pas les produits vendus en ligne.",
       "type": "chronologie",
       "poids": 1,
+      "portee": "web",
       "source": "https://ansm.sante.fr/uploads/2026/10/07/20261001-resume-enquete-pv-analogues-glp-1.pdf",
       "correspondance": {
         "mots_cles": ["7 octobre", "rapport", "pharmacovigilance", "2801", "515", "13 décès", "aGLP-1", "autorisés"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -124,10 +135,11 @@
       "phrase": "Le 11 octobre 2026, « Sept à huit » (TF1) diffuse une enquête sur les piqûres pour maigrir : des médecins prescrivent Wegovy, Mounjaro ou Ozempic sans rencontrer les patients, et il est possible d'acheter ces produits sans ordonnance via les réseaux sociaux.",
       "type": "interlocuteur",
       "poids": 2,
+      "portee": "video",
       "source": "https://www.tf1info.fr/sante/videos/video-miracles-et-derives-des-nouveaux-medicaments-enquete-sur-les-piqures-pour-maigrir-46591-2469324.html",
       "correspondance": {
         "mots_cles": ["Sept à huit", "11 octobre", "Wegovy", "Mounjaro", "Ozempic", "sans ordonnance", "réseaux sociaux", "sans rencontrer"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -135,10 +147,11 @@
       "phrase": "Dans son enquête du 25 octobre 2026 sur les coachs en nutrition des réseaux, TF1 a sollicité plusieurs coachs en ligne (certains avec des millions d'abonnés) : aucun n'a voulu répondre ; l'équipe, en se présentant comme candidate à une reconversion, a pu échanger avec l'une d'entre eux.",
       "type": "interlocuteur",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
       "correspondance": {
         "mots_cles": ["TF1", "coachs", "millions d'abonnés", "aucun", "répondre", "reconversion", "échanger", "nutrition"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -146,10 +159,11 @@
       "phrase": "Cette coach explique qu'il n'est pas besoin de formation en nutrition mais de formations sur la façon de vendre les produits (« en 3 heures de temps, c'est fait »), avec une commission de 30 % au démarrage allant jusqu'à 55 % sur la vente.",
       "type": "role",
       "poids": 3,
+      "portee": "video",
       "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
       "correspondance": {
         "mots_cles": ["formation", "nutrition", "vendre", "3 heures", "commission", "30", "55", "vente"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -157,10 +171,11 @@
       "phrase": "Une ancienne cliente de ces coachs, qui a suivi leurs conseils par dizaines pour perdre quelques kilos, dit ne plus savoir ce qui est bon ou non (témoin non nommé ici).",
       "type": "interlocuteur",
       "poids": 1,
+      "portee": "hors_portee",
       "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
       "correspondance": {
         "mots_cles": ["ancienne cliente", "conseils", "dizaines", "kilos", "ne savais plus", "coachs"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -168,10 +183,11 @@
       "phrase": "Un docteur en santé publique qui démonte les intox nutritionnelles sur les réseaux rappelle que n'importe qui peut se dire coach ou expert en nutrition, que seuls les diététiciens et les médecins nutritionnistes ont un diplôme reconnu par l'État, et que le nombre d'abonnés n'est pas un indicateur de fiabilité.",
       "type": "lien",
       "poids": 2,
+      "portee": "web",
       "source": "https://www.tf1info.fr/sante/video-c-est-un-cercle-vicieux-sur-les-reseaux-sociaux-des-regimes-miracles-qui-peuvent-nuire-gravement-a-la-sante-2471810.html",
       "correspondance": {
         "mots_cles": ["n'importe qui", "coach", "diététiciens", "médecins nutritionnistes", "diplôme", "État", "abonnés", "fiabilité"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     }
   ],

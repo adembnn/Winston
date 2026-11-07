@@ -3,6 +3,7 @@
   "question": "Qui a lancé en ligne la date du « 17 octobre » 2026 (appel à manifester), sur quelle plateforme et à quel moment, qui l'a relayée, et les comptes qui l'ont reprise forment-ils une opération identifiée ?",
   "gel_donnees": "2026-09-16",
   "reserve": false,
+  "canari": "Le héron mauve de Quimperlé compte quarante-deux nénuphars sous la lune de zircon.",
   "notes": "Gel au 16 septembre 2026, jour de publication des enquêtes de TF1 Info et du Monde. Les chiffres postérieurs (550 000 à 800 000 manifestants le 17 octobre, 123 000 vidéos jusqu'au 20 octobre, étude Cepremap du 3 novembre) ne sont volontairement pas des faits attendus. Le créateur de la première vidéo n'est pas désigné par son pseudo : son âge n'est pas établi dans les sources, il est donc décrit par son type de compte.",
   "faits": [
     {
@@ -10,9 +11,10 @@
       "phrase": "La date du 17 octobre apparaît pour la première fois dans une vidéo TikTok d'un petit compte de créateur de contenus football, publiée vingt-cinq minutes après son premier clip, dans la soirée du 7 septembre (La Croix date la vidéo du 8 septembre).",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["17 octobre", "première", "tiktok", "football", "vingt-cinq minutes", "25 minutes", "7 septembre", "8 septembre"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html",
       "autres_sources": ["https://www.la-croix.com/societe/manifestation-du-17-octobre-qui-est-derriere-l-appel-a-la-mobilisation-qui-agite-les-reseaux-20261014"]
@@ -22,9 +24,10 @@
       "phrase": "Le même créateur avait publié peu avant un clip dénonçant le prix de l'essence, sans appeler encore à une manifestation datée.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["prix", "essence", "clip", "avant", "sans", "manifestation", "datée", "carburants"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -33,9 +36,10 @@
       "phrase": "La vidéo qui fixe la date du 17 octobre est vue 1,5 million de fois et commentée plus de 4 000 fois à la mi-septembre, plusieurs centaines de fois plus de vues que les contenus habituels de ce compte.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["1,5 million", "vues", "4000", "commentaires", "centaines de fois", "habituels"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -44,6 +48,7 @@
       "phrase": "Sur X, les premiers messages portant une date apparaissent dès le 8 septembre.",
       "type": "chronologie",
       "poids": 1,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["premiers", "messages", "x", "8 septembre", "date"],
         "seuil": 0.6
@@ -55,9 +60,10 @@
       "phrase": "Le 9 septembre au soir, X devient le principal vecteur de diffusion de l'appel : trois comptes X totalisent plus de 5,8 millions de vues contre environ 800 000 pour les trois principaux relais TikTok.",
       "type": "role",
       "poids": 3,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["9 septembre", "x", "principal vecteur", "trois comptes", "5,8 millions", "800000", "tiktok", "relais"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -66,9 +72,10 @@
       "phrase": "Sur X, le message est surtout repris par des canaux d'alertes en temps réel et un « média citoyen » habitué aux fausses informations (2,7 millions de vues avec trois publications pour l'un, 650 000 vues avec quatre publications pour l'autre), pas par les figures historiques des gilets jaunes.",
       "type": "acteur",
       "poids": 1,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["x", "canaux", "alertes", "temps réel", "média citoyen", "2,7 millions", "650000", "figures historiques"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -77,9 +84,10 @@
       "phrase": "Une chanson née pendant la mobilisation de novembre 2018 revient comme « tendance » sur TikTok et devient la bande-son d'une centaine de clips publiés chaque jour.",
       "type": "lien",
       "poids": 2,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["chanson", "musique", "son", "2018", "tendance", "tiktok", "centaine", "clips", "chaque jour"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -88,9 +96,10 @@
       "phrase": "Sur TikTok, la date du 17 octobre gagne en visibilité dès les 8 au 10 septembre, avant même les premiers articles de presse sur le sujet.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["17 octobre", "visibilité", "8", "10 septembre", "avant", "premiers articles", "presse", "tiktok"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"
     },
@@ -99,9 +108,10 @@
       "phrase": "Le Monde identifie un compte TikTok créé le 9 septembre qui ne publie que des visuels générés par IA, et une douzaine d'autres comptes aux noms et visuels évoquant les gilets jaunes, tous créés ou renommés le 9 septembre, qui diffusent très intensivement des appels à manifester.",
       "type": "lien",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["compte", "tiktok", "créé", "9 septembre", "ia", "douzaine", "comptes", "renommés", "gilets jaunes", "appels"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.lemonde.fr/politique/article/2026/09/16/les-gilets-jaunes-de-retour-le-17-octobre-itineraire-d-une-rumeur-nee-sur-tiktok_6775349_823448.html",
       "autres_sources": ["https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"]
@@ -111,9 +121,10 @@
       "phrase": "L'appel ne vient ni des figures historiques des gilets jaunes ni d'une organisation syndicale, et les principaux groupes Facebook de 2018 n'ont pas été réactivés.",
       "type": "acteur",
       "poids": 1,
+      "portee": "hors_portee",
       "correspondance": {
         "mots_cles": ["figures historiques", "gilets jaunes", "syndicale", "facebook", "pas réactivés", "origine"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -122,9 +133,10 @@
       "phrase": "Sur X, le référentiel des gilets jaunes est explicitement réactivé par les pseudonymes et les montages visuels, et l'analyste de données décrit une propagation authentique du mot d'ordre.",
       "type": "role",
       "poids": 1,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["x", "référentiel", "gilets jaunes", "pseudonymes", "montages", "propagation", "authentique"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     },
@@ -133,6 +145,7 @@
       "phrase": "TF1 Info a contacté le créateur de la première vidéo, qui n'a pas répondu dans l'immédiat ; ses objectifs restent flous.",
       "type": "interlocuteur",
       "poids": 1,
+      "portee": "hors_portee",
       "correspondance": {
         "mots_cles": ["contacté", "créateur", "pas répondu", "objectifs", "flous"],
         "seuil": 0.6
@@ -144,9 +157,10 @@
       "phrase": "À la mi-septembre, le service de l'État chargé de détecter les ingérences numériques étrangères (Viginum) n'a relevé que de très maigres reprises de l'appel hors de France, presque sans audience.",
       "type": "lien",
       "poids": 1,
+      "portee": "hors_portee",
       "correspondance": {
         "mots_cles": ["viginum", "maigres", "reprises", "hors de France", "sans audience", "ingérences"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.cepremap.fr/depot/2026/11/2026-21-Violences-sur-TikTok.pdf"
     },
@@ -155,9 +169,10 @@
       "phrase": "Le sujet cumule 45 millions de vues en sept jours, avec une ambiance plutôt enjouée dans les commentaires et un mélange de contenus de divertissement et de publications opportunistes.",
       "type": "reprise",
       "poids": 1,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["45 millions", "vues", "sept jours", "enjouée", "divertissement", "opportunistes"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/societe/verif-appels-a-manifester-pour-le-17-octobre-on-est-remonte-aux-origines-de-la-mobilisation-en-ligne-2464500.html"
     }

@@ -3,12 +3,15 @@
   "question": "Qui a lancé la fausse rumeur d'une fermeture de la piscine de Ville-Exemple, qui l'a relayée, et la rumeur est-elle née en ligne ?",
   "gel_donnees": "2026-11-07",
   "reserve": false,
+  "canari": "Le canari fictif de Pétaouchnok-sur-Mer a épousé un triangle équilatéral en marge du rapport.",
   "faits": [
     {
       "id": "F1",
       "phrase": "La première vidéo annonçant la fermeture de la piscine est publiée le 3 mars par un petit compte local de sport.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
+      "source": "https://exemple.invalid/piscine-f1",
       "correspondance": {
         "mots_cles": ["première", "vidéo", "fermeture", "piscine", "3 mars", "compte", "sport"],
         "seuil": 0.6
@@ -19,6 +22,8 @@
       "phrase": "Trois comptes de commerçants reprennent la vidéo dans les deux jours, avec la même légende.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
+      "source": "https://exemple.invalid/piscine-f2",
       "correspondance": {
         "mots_cles": ["trois", "comptes", "commerçants", "reprennent", "même", "légende"],
         "seuil": 0.6
@@ -29,6 +34,8 @@
       "phrase": "Le compte relais Alpha-Exemple est le plus suivi des relais et publie la vidéo en premier parmi eux.",
       "type": "acteur",
       "poids": 1,
+      "portee": "video",
+      "source": "https://exemple.invalid/piscine-f3",
       "correspondance": {
         "mots_cles": ["alpha-exemple", "relais", "plus suivi", "premier"],
         "seuil": 0.6
@@ -39,6 +46,8 @@
       "phrase": "Alpha-Exemple joue le rôle d'amplificateur : sa reprise multiplie les vues par dix.",
       "type": "role",
       "poids": 2,
+      "portee": "video",
+      "source": "https://exemple.invalid/piscine-f4",
       "correspondance": {
         "mots_cles": ["alpha-exemple", "amplificateur", "vues", "dix"],
         "seuil": 0.6
@@ -49,6 +58,8 @@
       "phrase": "Les trois reprises et la vidéo d'origine utilisent le même son et les mêmes hashtags.",
       "type": "lien",
       "poids": 2,
+      "portee": "video",
+      "source": "https://exemple.invalid/piscine-f5",
       "correspondance": {
         "mots_cles": ["reprises", "origine", "même", "son", "hashtags"],
         "seuil": 0.6
@@ -59,6 +70,8 @@
       "phrase": "La rumeur gagne la presse locale le 6 mars, trois jours après la première vidéo.",
       "type": "chronologie",
       "poids": 1,
+      "portee": "web",
+      "source": "https://exemple.invalid/piscine-f6",
       "correspondance": {
         "mots_cles": ["rumeur", "presse locale", "6 mars", "trois jours"],
         "seuil": 0.6
@@ -69,6 +82,8 @@
       "phrase": "Le service des sports de la mairie dément publiquement la fermeture le 7 mars.",
       "type": "interlocuteur",
       "poids": 1,
+      "portee": "web",
+      "source": "https://exemple.invalid/piscine-f7",
       "correspondance": {
         "mots_cles": ["service des sports", "mairie", "dément", "fermeture", "7 mars"],
         "seuil": 0.6
@@ -79,9 +94,11 @@
       "phrase": "Les vidéos antérieures au 1er janvier du petit compte local ne sont pas visibles dans les données gelées.",
       "type": "zone_ombre",
       "poids": 1,
+      "portee": "hors_portee",
+      "source": "https://exemple.invalid/piscine-f8",
       "correspondance": {
         "mots_cles": ["antérieures", "1er janvier", "pas visibles", "données"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     }
   ],
