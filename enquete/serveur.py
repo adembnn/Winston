@@ -98,11 +98,13 @@ _RE_LIEN = re.compile(r"^https?://", re.IGNORECASE)
 
 def _module_comprendre() -> Any:
     """Le module qui lit la question (variantes, graine, Claude) ; 503 tant qu'il n'est pas installé."""
+    import importlib
+
     try:
-        from enquete import comprendre
+        # `import_module` passe par `sys.modules` : un test peut y mettre un faux module.
+        return importlib.import_module("enquete.comprendre")
     except ImportError:
         raise ErreurHttp(503, "la compréhension de la question n'est pas installée (enquete.comprendre)") from None
-    return comprendre
 
 
 def _mots_locaux(question: str) -> list[str]:
