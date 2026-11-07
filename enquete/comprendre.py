@@ -962,11 +962,11 @@ def phrases_par_code(export: dict, chiffres: dict | None = None) -> dict[str, An
     benef = [p["libelle"] for p in pieces if p.get("role") == "beneficiaire" and p.get("type") == "societe"]
     mecanisme = []
     if infra:
-        mecanisme.append("Le dossier relève " + ", ".join(infra[:3]) + " côté infrastructure.")
+        mecanisme.append("Moyens techniques relevés au dossier : " + ", ".join(infra[:3]) + ".")
     if benef:
-        liaison = " ; des liens du dossier la rattachent à l'infrastructure" if _lies(
+        liaison = " ; des liens du dossier la rattachent à ces moyens techniques" if _lies(
             export, ("infrastructure",), ("beneficiaire",)) else ""
-        mecanisme.append(f"Le registre cite {', '.join(benef[:2])} côté bénéficiaire{liaison}.")
+        mecanisme.append(f"À qui ça profite : le registre cite {', '.join(benef[:2])}{liaison}.")
     if chiffres["series"]:
         mecanisme.append("Des vidéos répètent la même phrase, par séries.")
     if not mecanisme:
