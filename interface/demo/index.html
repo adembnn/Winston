@@ -93,17 +93,18 @@ function ecranFictif(FR) {
   });
 }
 function imageDe(p) {
-  const im = p.image && typeof p.image === 'object' ? p.image.src : p.image;
+  const o = p.image && typeof p.image === 'object' ? p.image : null;
+  const im = o ? (o.source_url || o.src) : p.image;   // une capture a son URL publique dans source_url
   const a = p.attributs || {};
   const k = Array.isArray(a.images_cles) ? (a.images_cles.find(x => x && /^https?:/.test(x.url)) || {}).url : null;
   return [im, a.image, k].find(u => typeof u === 'string' && /^https?:/.test(u)) || null;
 }
 // Un vrai cas : les écrans ne montrent que des images de l'enquête (images clés des vidéos, vignettes des posts,
 // captures des pages sources), jamais des phrases. Les vidéos passent d'abord ; sans aucune image, l'écran reste éteint.
-let VIGN = {};
+let VIGN = {}, EXCLUES = new Set();
 function ecranReel(pieces) {
   const img = p => imageDe(p) || VIGN[p.id] || null;
-  const avec = pieces.filter(p => img(p));
+  const avec = pieces.filter(p => img(p) && !EXCLUES.has(p.id));   // images relues sur planche : les exclues ne passent jamais
   const liste = avec.filter(p => p.type === 'video').concat(avec.filter(p => p.type !== 'video')).map(img);
   petits.forEach(([x,y,w,h], i) => {
     const e = document.createElement('div'); e.className = 'ecran lecteur';
@@ -134,8 +135,8 @@ if (VRAI_CAS) {
     const l = document.getElementById('ligne');
     if (l) { l.hidden = !tot; l.textContent = tot + ' sources lues : ' + FAM.filter(([ks]) => nb(ks)).map(([ks, pl, sg]) => nb(ks) + ' ' + (nb(ks) > 1 ? pl : sg)).join(', '); }
   }).catch(() => { if (vus < 0) { vus = 0; ecranReel([]); } const l = document.getElementById('ligne'); if (l) l.hidden = true; });
-  fetch('vignettes-' + encodeURIComponent(ENQ) + '.json').then(r => r.ok ? r.json() : {}).catch(() => ({}))
-    .then(v => { VIGN = v || {}; lire(); if (Q0.get('mode') === 'direct') setInterval(lire, 4000); });
+  Promise.all(['vignettes-', 'exclues-'].map(n => fetch(n + encodeURIComponent(ENQ) + '.json').then(r => r.ok ? r.json() : {}).catch(() => ({}))))
+    .then(([v, x]) => { VIGN = v || {}; EXCLUES = new Set((x && x.exclues) || []); lire(); if (Q0.get('mode') === 'direct') setInterval(lire, 4000); });
 } else {
   fetch('fonds/frames.json').then(r => r.json()).then(ecranFictif);
 }

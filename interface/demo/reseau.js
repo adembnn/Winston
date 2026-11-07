@@ -13,7 +13,7 @@ const ROLES = ["origine", "amplificateur", "beneficiaire", "infrastructure", "vi
 const LIBELLE = {
   origine: "Plus ancienne trace retrouvée", amplificateur: "Relais", beneficiaire: "À qui ça profite",
   infrastructure: "Moyens techniques", victime: "Personnes qui se disent lésées", temoin: "Témoins directs",
-  expert: "Experts", contradicteur: "Voix contraires", mis_en_cause: "Mis en cause", inconnu: "Zones d'ombre",
+  expert: "Experts", contradicteur: "Voix contraires", mis_en_cause: "Mis en cause", inconnu: "À classer",
 };
 const TYPE_LIBELLE = { video: "Vidéo", compte: "Compte", publication_texte: "Publication", document: "Document",
   site: "Site", societe: "Société", personne: "Personne", grappe: "Groupe de contenus" };
@@ -51,12 +51,48 @@ function imageOK(p) {
   if (p.type === "personne") return !!(p.attributs && p.attributs.profil_public_verifie === true);
   return true;
 }
+const estHttp = (u) => typeof u === "string" && /^https?:\/\//.test(u);
+// `image` d'une pièce ou d'un dossier : objet {src, provenance: "capture" | "illustration", source_url, credit, seconde…}
+// capture -> source_url (URL publique) ; illustration -> src si c'est une URL http. Sinon null.
+function urlImageObjet(o, ok) {
+  if (!o) return "";
+  if (typeof o === "string") return o;
+  if (o.provenance === "capture" && estHttp(o.source_url)) return o.source_url;
+  if (o.provenance === "illustration" && estHttp(o.src) && ok) return o.src;
+  if (!o.provenance) return estHttp(o.source_url) ? o.source_url : estHttp(o.src) ? o.src : "";
+  return "";
+}
+let EXCL = new Set();   // exclues-<enquete>.json : pièces dont l'image ne doit jamais s'afficher
+const interdite = (u) => /(^|\/)frames\//.test(u) || /brut-videos/i.test(u);
 function imageDe(p) {
-  // capture locale de la page source (captures/<piece_id>.jpg) : toujours permise, c'est la pièce elle-même
-  if (typeof VIGN[p.id] === "string" && /^captures\//.test(VIGN[p.id])) return VIGN[p.id];
-  if (!imageOK(p)) return "";
+  if (EXCL.has(p.id)) return "";
+  const u = imageBrute(p);
+  return u && !interdite(u) ? u : "";
+}
+function imageBrute(p) {
+  const o = urlImageObjet(p.image, imageOK(p));
+  if (o) return o;
+  const v = VIGN[p.id];
+  // chemin local (captures/…, images/… : illustrations ou captures choisies par l'équipe) : toujours permis
+  if (typeof v === "string" && v && !estHttp(v)) return v;
+  if (estHttp(v) && imageOK(p)) return v;
   const a = p.attributs || {};
-  return p.image || a.image || (Array.isArray(a.images_cles) && a.images_cles[0] && a.images_cles[0].url) || VIGN[p.id] || "";
+  if (imageOK(p)) {
+    if (estHttp(a.image)) return a.image;
+    const k = Array.isArray(a.images_cles) && a.images_cles[0] && a.images_cles[0].url;
+    if (estHttp(k)) return k;
+  }
+  return "";
+}
+// provenance affichée sous le panneau : « capture » ou « illustration, crédit »
+function legendeImage(p) {
+  const o = p.image && typeof p.image === "object" ? p.image : null;
+  if (o && o.provenance === "capture") return "capture";
+  if (o && o.provenance === "illustration") return "illustration" + (o.credit ? ", " + o.credit : "");
+  const v = VIGN[p.id];
+  if (typeof v === "string" && /^captures\//.test(v)) return "capture";
+  if (typeof v === "string" && v && !estHttp(v)) return "illustration";
+  return "";
 }
 const nbPreuves = (p) => (p.preuves && p.preuves.length) || (p.compteurs && p.compteurs.preuves) || 0;
 
@@ -71,13 +107,14 @@ function zonesDe(zonesOmbre, questions) {
 function depuisExport(d) {
   const roles = {};
   for (const r of ROLES) roles[r] = [];
-  for (const dos of d.dossiers || []) roles[dos.role] = (roles[dos.role] || []).concat(dos.pieces || []);
+  const roleImg = {};
+  for (const dos of d.dossiers || []) { roles[dos.role] = (roles[dos.role] || []).concat(dos.pieces || []); const u = urlImageObjet(dos.image, true); if (u && !interdite(u) && !EXCL.has(dos.image && dos.image.piece_id) && dos.role !== "inconnu") roleImg[dos.role] = u; }
   const q = d.question;
   const z = zonesDe(d.zones_d_ombre, d.questions_ouvertes);
   return {
     question: typeof q === "string" ? q : (q && (q.texte || q.question)) || "",
     cas: (q && q.cas === "fictif") || d.cas === "fictif" || ID === "stylos-minceur",
-    roles, zones: z.liste, zonesGenre: z.genre, lectures: (d.compteurs && d.compteurs.videos_lues) || null, termine: true,
+    roles, roleImg, zones: z.liste, zonesGenre: z.genre, lectures: (d.compteurs && d.compteurs.videos_lues) || null, termine: true,
   };
 }
 function depuisEtat(e) {
@@ -149,7 +186,7 @@ function typeDominant(r) {
   for (const p of piecesDe(r)) c[p.type] = (c[p.type] || 0) + 1;
   return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || "document";
 }
-const candidats = (r) => [...piecesDe(r)].sort((x, y) => rang(x) - rang(y)).map(imageDe).filter(Boolean);
+const candidats = (r) => [...(M.roleImg && M.roleImg[r] ? [M.roleImg[r]] : []), ...piecesDe(r).map((p) => p)].sort((x, y) => (typeof x === "string" ? -1 : typeof y === "string" ? 1 : rang(x) - rang(y))).map((x) => (typeof x === "string" ? x : imageDe(x))).filter(Boolean);
 const imageRole = (r) => candidats(r)[0] || "";
 
 const rang = (p) => (p.solidite && p.solidite.matiere === "solide" ? 0 : p.solidite && p.solidite.matiere === "indice" ? 1 : 2);
@@ -269,8 +306,8 @@ function carte(e, label, n, cands, type, f20, sh, faibleCadre, avecCompteur) {
   e.classList.toggle("faible", !!faibleCadre);
 }
 
-function carteRole(e, r, n, cands, type, f20, sh, h) {
-  if (cands.length) { e.classList.remove("texte"); carte(e, LIBELLE[r], n, cands, type, f20, sh, false, true); return; }
+function carteRole(e, r, n, cands, type, f20, sh, h, lab) {
+  if (true) { e.classList.remove("texte"); carte(e, lab || LIBELLE[r], n, cands, type, f20, sh, false, true); return; }
   const p = meilleure(r);
   const src = sourceDe(p), date = dateDe(p) || TYPE_LIBELLE[p.type] || "";
   const sig = ["T", LIBELLE[r], n, src, date, p.type].join("|");
@@ -394,7 +431,7 @@ function niveau1(m, aTop, aBot, f20) {
     const n = piecesDe(s.r).length;
     const lignes = LIBELLE[s.r].length * f20 * 0.5 + 56 > s.w - 16 ? 2 : 1;
     const sh = Math.round(lignes * f20 * 1.1 + 12);
-    carteRole(e, s.r, n, choisis[s.r], typeDominant(s.r), f20, sh, s.h);
+    carteRole(e, s.r, n, choisis[s.r], typeDominant(s.r), f20, sh, s.h, LIBELLE[s.r].length * f20 * 0.5 + 56 > 2 * (s.w - 16) ? COURT[s.r] : LIBELLE[s.r]);
     e.querySelector(".nom").style.webkitLineClamp = String(lignes);
     e.classList.toggle("jaune", jauneRole === s.r);
     pose(e, s.x, s.y, s.w, s.h);
@@ -568,7 +605,8 @@ function niveauZones(m, aTop, aBot, f20) {
       const lignes = Math.max(1, Math.floor((hc - 2 * 14 * K - 2 * 22 * K * 1.15 - 2 * f20 * 1.2 - (f20 * 1.2 + 8) - 36) / (f20 * 1.25)));
       html(e, `<div class="pt"><span class="num">${i + 1}</span><span class="ge" style="font-size:${Math.round(22 * K)}px">${esc(p.geste || "")}</span></div>` +
         (p.ou ? `<div class="ou">${esc(p.ou)}</div>` : "") + `<div class="co" style="-webkit-line-clamp:${lignes}">${esc(p.comment || "")}</div>` +
-        (p.difficulte ? `<div class="di">Difficulté : ${esc(p.difficulte)}</div>` : ""));
+        (p.difficulte ? `<div class="di">Difficulté : ${esc(p.difficulte)}</div>` : "") +
+        ([p.url, p.lien, p.url_origine].find(estHttp) ? `<a class="src" href="${esc([p.url, p.lien, p.url_origine].find(estHttp))}" target="_blank" rel="noopener">Ouvrir la source ↗${M.cas ? " (exemple)" : ""}</a>` : ""));
       e.style.fontSize = f20 + "px";
       pose(e, gx + i * (wc + g), y0, wc, hc);
       info(e, [p.geste, p.ou, p.comment].filter(Boolean).join(" · "));
@@ -609,14 +647,12 @@ function cartePiece(e, p, img, f24) {
   const sig = ["PP", p.id, img, src, date].join("|");
   if (e.__sig !== sig) {
     e.__sig = sig;
-    e.innerHTML = img
-      ? `<div class="img">${imgHtml([img], p.type)}</div><div class="etiq"><span class="nom"><b>${esc(src)}</b><br>${esc(date)}</span></div>`
-      : `<div class="tx"><div class="pc">${picto(p.type)}</div><div class="tn">${esc(src)}</div><div class="td">${esc(date)}</div></div>`;
+    e.innerHTML = `<div class="img">${imgHtml(img ? [img] : [], p.type)}</div><div class="etiq"><span class="nom"><b>${esc(src)}</b><br>${esc(date)}</span></div>`;
   }
-  e.classList.toggle("texte", !img);
+  e.classList.remove("texte");
   e.classList.remove("faible");
   e.style.fontSize = f24 + "px";
-  if (img) { const t = e.querySelector(".etiq"); t.style.height = Math.round(2 * f24 * 1.15 + 12) + "px"; e.querySelector(".nom").style.webkitLineClamp = "2"; }
+  { const t = e.querySelector(".etiq"); t.style.height = Math.round(2 * f24 * 1.15 + 12) + "px"; e.querySelector(".nom").style.webkitLineClamp = "2"; }
 }
 
 function niveau2(m, aTop, aBot, f20, lh) {
@@ -703,12 +739,16 @@ function niveau2(m, aTop, aBot, f20, lh) {
     const type = [TYPE_LIBELLE[sel.type] || sel.type, sourceDe(sel), date].filter(Boolean).join(" · ");
     const pr = (sel.preuves || [])[0];
     const ext = pr && pr.extrait ? (pr.extrait.length > 200 ? pr.extrait.slice(0, 197).trimEnd() + "…" : pr.extrait) : "";
-    const url = pr && /^https?:\/\//.test(pr.url || "") ? pr.url : "";
+    const aS = sel.attributs || {};
+    const imgSrc = sel.image && typeof sel.image === "object" ? sel.image.source_url : "";
+    const url = [pr && pr.url, aS.url, aS.url_origine, imgSrc].find(estHttp) || "";
+    const sec = pr && typeof pr.debut_s === "number" ? ` (à ${Math.floor(pr.debut_s / 60)}:${String(Math.round(pr.debut_s % 60)).padStart(2, "0")})` : (sel.image && sel.image.seconde != null && sel.image.provenance === "capture" ? ` (à ${Math.floor(sel.image.seconde / 60)}:${String(Math.round(sel.image.seconde % 60)).padStart(2, "0")})` : "");
     h = `<h2 style="font-size:${Math.round(28 * K)}px">${esc(sel.libelle || sel.id)}</h2>` +
       `<div class="typ">${esc(type)}</div>` +
-      (ext ? `<div class="ext" style="-webkit-line-clamp:4" title="${esc(pr.extrait)}">« ${esc(ext)} »</div>` : "") +
+      (ext ? `<div class="ext" style="-webkit-line-clamp:4" title="${esc(pr.extrait)}">« ${esc(ext)} »${esc(sec)}</div>` : "") +
       `<div class="notes">${esc(fs)} · ${esc(ci.charAt(0).toLowerCase() + ci.slice(1))}</div>` +
-      (url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la publication d'origine</a>` : "");
+      (imageDe(sel) && legendeImage(sel) ? `<div class="leg">${esc(legendeImage(sel))}</div>` : "") +
+      (url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la source ↗${M.cas ? " (exemple)" : ""}</a>` : "");
   }
   html(pn, h);
 }
@@ -764,16 +804,23 @@ document.addEventListener("pointerover", (ev) => {
   if (t) montrer(t); else cacher();
 });
 document.addEventListener("pointerleave", cacher);
-document.addEventListener("click", (ev) => {
-  const piece = ev.target.closest(".piece");
+function activer(cible) {
+  if (!cible || !cible.closest) return;
+  if (cible.closest("a")) return;
+  const piece = cible.closest(".piece");
   if (piece) { selId = piece.dataset.piece; planifier(); return; }
-  if (ev.target.closest("#titre2,.retour")) { remonter(); return; }
-  const zi = ev.target.closest("[data-zi]");
+  if (cible.closest("#titre2,.retour")) { remonter(); return; }
+  const zi = cible.closest("[data-zi]");
   if (zi && niveau === "__zones") { zSel = Number(zi.dataset.zi); cacher(); planifier(); return; }
-  if (!niveau && ev.target.closest(".zones")) { niveau = "__zones"; cacher(); planifier(); return; }
-  const r = ev.target.closest("[data-role]");
-  if (r && !niveau) { ouvrir(r.dataset.role); }
+  if (!niveau && cible.closest(".zones")) { niveau = "__zones"; cacher(); planifier(); return; }
+  const r = cible.closest("[data-role]");
+  if (r && !niveau) ouvrir(r.dataset.role);
+}
+document.addEventListener("pointerup", (ev) => {
+  if (ev.button > 0) return;
+  activer(document.elementFromPoint(ev.clientX, ev.clientY) || ev.target);
 });
+document.addEventListener("click", (ev) => activer(ev.target));
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") remonter(); });
 function ouvrir(r) { niveau = r; selId = null; cacher(); planifier(); }
 function remonter() { if (niveau) { niveau = null; cacher(); planifier(); } }
@@ -852,6 +899,10 @@ function signalerJaune(r) {
 let verifFaite = false;
 const seuils = [];
 async function chargerVignettes() {
+  try {
+    const r = await fetch(`exclues-${encodeURIComponent(ID)}.json`, { cache: "no-store" });
+    if (r.ok) { const j = await r.json(); EXCL = new Set(j.exclues || []); }
+  } catch (_) { /* pas de liste d'exclusions */ }
   try {
     const r = await fetch(`vignettes-${encodeURIComponent(ID)}.json`, { cache: "no-store" });
     if (r.ok) VIGN = await r.json();
