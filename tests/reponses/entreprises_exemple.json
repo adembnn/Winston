@@ -1,0 +1,5 @@
+{"results":[{"siren":"552100554","nom_complet":"SOCIETE EXEMPLE","nom_raison_sociale":"SOCIETE EXEMPLE","date_creation":"2025-09-01","activite_principale":"47.91B","nature_juridique":"5710","etat_administratif":"A",
+ "siege":{"adresse":"1 RUE DE L EXEMPLE 75001 PARIS","code_postal":"75001","libelle_commune":"PARIS","siret":"55210055400013"},
+ "dirigeants":[{"nom":"DUPONT-MARTIN","prenoms":"Jeanne-Marie Claire","annee_de_naissance":"1980","qualite":"Président","type_dirigeant":"personne physique"},
+               {"denomination":"HOLDING EXEMPLE","siren":"123456782","qualite":"Associé","type_dirigeant":"personne morale"}]}],
+ "total_results":1,"page":1,"per_page":5,"total_pages":1}

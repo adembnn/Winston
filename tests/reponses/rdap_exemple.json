@@ -1,0 +1,7 @@
+{"objectClassName":"domain","handle":"EXEMPLE-1","ldhName":"BOUTIQUE-EXEMPLE.FR","status":["active"],
+ "entities":[{"objectClassName":"entity","handle":"999","roles":["registrar"],"vcardArray":["vcard",[["version",{},"text","4.0"],["fn",{},"text","Registrar Exemple SAS"]]]},
+             {"objectClassName":"entity","roles":["registrant"],"vcardArray":["vcard",[["version",{},"text","4.0"],["fn",{},"text","TITULAIRE-A-NE-JAMAIS-LIRE"]]]}],
+ "events":[{"eventAction":"registration","eventDate":"2025-09-12T08:00:00Z"},
+           {"eventAction":"last changed","eventDate":"2026-10-30T10:00:00Z"},
+           {"eventAction":"expiration","eventDate":"2027-09-12T08:00:00Z"}],
+ "nameservers":[{"objectClassName":"nameserver","ldhName":"NS1.HEBERGEUR-EXEMPLE.NET"},{"objectClassName":"nameserver","ldhName":"NS2.HEBERGEUR-EXEMPLE.NET"}]}
