@@ -593,6 +593,7 @@ _CHAMPS_CORRIGEABLES_LIEN = {
     "solidite",
 }
 
+GENRES_RESEAU = frozenset({"affaire", "noeud", "lien", "question"})
 _GENRE_AFFAIRE = "affaire"
 _ID_QUESTION_CENTRALE = "question_centrale"
 
@@ -607,8 +608,9 @@ class ReseauEnquete:
 
     def __init__(self, question_centrale: str, chemin: str = ":memory:") -> None:
         _texte_requis(question_centrale, "la question centrale")
-        self._bd = sqlite3.connect(chemin)
+        self._bd = sqlite3.connect(chemin, timeout=10)
         self._bd.executescript(_SCHEMA)
+        self._derniere_date: datetime | None = None
         if self.question_centrale != question_centrale.strip():
             self._ajouter(_GENRE_AFFAIRE, _ID_QUESTION_CENTRALE,
                           {"question": question_centrale.strip()},
@@ -646,11 +648,19 @@ class ReseauEnquete:
         """Ajoute une ligne au journal (jamais de modification) ; renvoie sa version."""
         version = self._prochaine_version(genre, objet_id)
         donnees = {**donnees, "version": version} if "version" in donnees else donnees
+        # Les dates du journal ne reculent jamais, même si l'horloge de la machine recule.
+        date = maintenant()
+        if self._derniere_date is None:
+            ligne = self._bd.execute("SELECT date FROM evenements ORDER BY seq DESC LIMIT 1").fetchone()
+            self._derniere_date = datetime.fromisoformat(ligne[0]) if ligne else None
+        if self._derniere_date is not None and date < self._derniere_date:
+            date = self._derniere_date
+        self._derniere_date = date
         with self._bd:
             self._bd.execute(
                 "INSERT INTO evenements (date, genre, objet_id, version, motif, donnees)"
                 " VALUES (?, ?, ?, ?, ?, ?)",
-                (maintenant().isoformat(), genre, objet_id, version, motif,
+                (date.isoformat(), genre, objet_id, version, motif,
                  json.dumps(donnees, ensure_ascii=False)),
             )
         return version
@@ -780,6 +790,29 @@ class ReseauEnquete:
 
     def liens(self) -> list[Lien]:
         return [Lien.depuis_dict(d) for d in self._courants("lien")]
+
+    # -- événements de travail ---------------------------------------------
+
+    def noter(self, genre: str, donnees: dict[str, Any], motif: str = "") -> int:
+        """Écrit un événement de travail (`recherche`, `etape`, `fin`) dans le même fil que le réseau.
+
+        Il prend le prochain `seq` du journal, donc l'ordre est unique. Les genres du réseau
+        (`affaire`, `noeud`, `lien`, `question`) passent par leurs méthodes, jamais par ici.
+        Renvoie le `seq` écrit.
+        """
+        if genre in GENRES_RESEAU:
+            raise ValueError(f"le genre {genre!r} appartient au réseau : utiliser sa méthode dédiée")
+        _texte_requis(genre, "le genre de l'événement")
+        if genre == "etape":
+            objet_id = str(donnees.get("nom") or "etape")
+        elif genre == "fin":
+            objet_id = "fin"
+        else:
+            (n,) = self._bd.execute("SELECT COUNT(*) FROM evenements WHERE genre = ?", (genre,)).fetchone()
+            objet_id = f"{genre}-{n + 1}"
+        self._ajouter(genre, objet_id, donnees, motif)
+        (seq,) = self._bd.execute("SELECT MAX(seq) FROM evenements").fetchone()
+        return seq
 
     # -- questions ouvertes -------------------------------------------------
 

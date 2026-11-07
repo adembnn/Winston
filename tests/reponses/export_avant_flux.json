@@ -1,0 +1,1448 @@
+{
+ "question": "Qui diffuse ces vidéos minceur ?",
+ "compteurs": {
+  "dossiers": 10,
+  "pieces": 9,
+  "liens": 9,
+  "preuves": 18,
+  "zones_d_ombre": 3
+ },
+ "dossiers": [
+  {
+   "role": "origine",
+   "nom": "À l'origine",
+   "compteurs": {
+    "pieces": 2,
+    "preuves": 15,
+    "liens": 4,
+    "pieces_par_type": {
+     "compte": 1,
+     "video": 1
+    }
+   },
+   "pieces": [
+    {
+     "id": "id0",
+     "type": "compte",
+     "libelle": "@compte_a (tiktok)",
+     "role": "origine",
+     "attributs": {
+      "plateforme": "tiktok",
+      "abonnes": 12600
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 1,
+      "liens": 1
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "On était venus poser des questions, mais on a préféré vous faire goûter 🥄 Marque ! débarque chez Enseigne… Vous gardez une place pour le dessert ?",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id9"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id1",
+     "type": "video",
+     "libelle": "Vidéo tiktok de @compte_a, 19/10/2026",
+     "role": "origine",
+     "attributs": {
+      "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+      "id_plateforme": "7698316626466311456",
+      "date": "2026-10-19T10:00:15+00:00",
+      "marge_secondes": 18,
+      "methode_date": "TikTok : 32 bits de poids fort de l'identifiant = heure Unix (secondes). Méthode non documentée par TikTok ; écart habituel 5 s, 18 s au pire (la date de l'identifiant précède la date affichée).",
+      "publiee_le_selon_oriane": "2026-10-19T10:00:03.000Z",
+      "vues": 1100000,
+      "hashtags": [],
+      "premiere_de_sa_grappe": true
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 15,
+      "liens": 4
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "On était venus poser des questions, mais on a préféré vous faire goûter 🥄 Marque ! débarque chez Enseigne… Vous gardez une place pour le dessert ?",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id9"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id13",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id13",
+        "id17"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend !",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id17"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "role": "amplificateur",
+   "nom": "Amplificateurs",
+   "compteurs": {
+    "pieces": 4,
+    "preuves": 16,
+    "liens": 6,
+    "pieces_par_type": {
+     "compte": 2,
+     "video": 2
+    }
+   },
+   "pieces": [
+    {
+     "id": "id2",
+     "type": "compte",
+     "libelle": "@compte_b (tiktok)",
+     "role": "amplificateur",
+     "attributs": {
+      "plateforme": "tiktok",
+      "abonnes": 12600
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 1,
+      "liens": 1
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Légende propre à b",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id10"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id3",
+     "type": "video",
+     "libelle": "Vidéo tiktok de @compte_b, 19/10/2026",
+     "role": "amplificateur",
+     "attributs": {
+      "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+      "id_plateforme": "7698332088348577056",
+      "date": "2026-10-19T11:00:15+00:00",
+      "marge_secondes": 18,
+      "methode_date": "TikTok : 32 bits de poids fort de l'identifiant = heure Unix (secondes). Méthode non documentée par TikTok ; écart habituel 5 s, 18 s au pire (la date de l'identifiant précède la date affichée).",
+      "publiee_le_selon_oriane": "2026-10-19T11:00:15+00:00",
+      "vues": 1100000,
+      "hashtags": [],
+      "premiere_de_sa_grappe": false
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 13,
+      "liens": 3
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Légende propre à b",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id10"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend !",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id14",
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id16"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id16"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id4",
+     "type": "compte",
+     "libelle": "@compte_c (tiktok)",
+     "role": "amplificateur",
+     "attributs": {
+      "plateforme": "tiktok",
+      "abonnes": 12600
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 1,
+      "liens": 1
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+       "extrait": "Légende propre à c",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id11"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id5",
+     "type": "video",
+     "libelle": "Vidéo tiktok de @compte_c, 19/10/2026",
+     "role": "amplificateur",
+     "attributs": {
+      "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+      "id_plateforme": "7698347550230842656",
+      "date": "2026-10-19T12:00:15+00:00",
+      "marge_secondes": 18,
+      "methode_date": "TikTok : 32 bits de poids fort de l'identifiant = heure Unix (secondes). Méthode non documentée par TikTok ; écart habituel 5 s, 18 s au pire (la date de l'identifiant précède la date affichée).",
+      "publiee_le_selon_oriane": "2026-10-19T12:00:15+00:00",
+      "vues": 1100000,
+      "hashtags": [],
+      "premiere_de_sa_grappe": false
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 3,
+      "liens": 3
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+       "extrait": "Légende propre à c",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id11"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id15",
+        "id17"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id17"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "role": "beneficiaire",
+   "nom": "Bénéficiaires",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "infrastructure",
+   "nom": "Infrastructure",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "victime",
+   "nom": "Victimes et personnes concernées",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "temoin",
+   "nom": "Témoins directs",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "expert",
+   "nom": "Experts",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "contradicteur",
+   "nom": "Contradicteurs",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "mis_en_cause",
+   "nom": "Mis en cause",
+   "compteurs": {
+    "pieces": 0,
+    "preuves": 0,
+    "liens": 0,
+    "pieces_par_type": {}
+   },
+   "pieces": []
+  },
+  {
+   "role": "inconnu",
+   "nom": "Inconnus",
+   "compteurs": {
+    "pieces": 3,
+    "preuves": 15,
+    "liens": 4,
+    "pieces_par_type": {
+     "compte": 1,
+     "video": 1,
+     "grappe": 1
+    }
+   },
+   "pieces": [
+    {
+     "id": "id6",
+     "type": "compte",
+     "libelle": "@compte_d (tiktok)",
+     "role": "inconnu",
+     "attributs": {
+      "plateforme": "tiktok",
+      "abonnes": 12600
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 1,
+      "liens": 1
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_d/video/7698355281171975456",
+       "extrait": "Légende propre à d",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id12"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id7",
+     "type": "video",
+     "libelle": "Vidéo tiktok de @compte_d, 19/10/2026",
+     "role": "inconnu",
+     "attributs": {
+      "url": "https://www.tiktok.com/@compte_d/video/7698355281171975456",
+      "id_plateforme": "7698355281171975456",
+      "date": "2026-10-19T12:30:15+00:00",
+      "marge_secondes": 18,
+      "methode_date": "TikTok : 32 bits de poids fort de l'identifiant = heure Unix (secondes). Méthode non documentée par TikTok ; écart habituel 5 s, 18 s au pire (la date de l'identifiant précède la date affichée).",
+      "publiee_le_selon_oriane": "2026-10-19T12:30:15+00:00",
+      "vues": 1100000,
+      "hashtags": [],
+      "premiere_de_sa_grappe": false
+     },
+     "solidite": {
+      "fiabilite_source": "B",
+      "credibilite_information": 2,
+      "en_mots": "source habituellement fiable ; information probablement vraie",
+      "matiere": "solide"
+     },
+     "compteurs": {
+      "preuves": 1,
+      "liens": 1
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_d/video/7698355281171975456",
+       "extrait": "Légende propre à d",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": null,
+       "fin_s": null,
+       "liens": [
+        "id12"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "id8",
+     "type": "grappe",
+     "libelle": "« Plutôt entrée, entrée plus plat en général, ça dépend ! » · 3 vidéos",
+     "role": "inconnu",
+     "attributs": {
+      "bases": [
+       "phrase",
+       "son"
+      ],
+      "nb_videos": 3,
+      "plateformes": [
+       "tiktok"
+      ],
+      "premiere_date": "2026-10-19T10:00:15+00:00"
+     },
+     "solidite": {
+      "fiabilite_source": "C",
+      "credibilite_information": 3,
+      "en_mots": "source assez fiable ; information possiblement vraie",
+      "matiere": "indice"
+     },
+     "compteurs": {
+      "preuves": 14,
+      "liens": 3
+     },
+     "preuves": [
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id13"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend !",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 2.3,
+       "fin_s": 7.9,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 10.32,
+       "fin_s": 13.28,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Je ne vous ferai pas un minceur.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 17,
+       "fin_s": 17.66,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 20.66,
+       "fin_s": 23.22,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 23.62,
+       "fin_s": 26.12,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+       "extrait": "Les deux, ça marche, ça marche.",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+       "debut_s": 27.24,
+       "fin_s": 29.66,
+       "liens": [
+        "id14"
+       ]
+      },
+      {
+       "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+       "extrait": "son original - Compte A",
+       "source_donnee": "Oriane",
+       "empreinte_sha256": null,
+       "debut_s": 0.0,
+       "fin_s": null,
+       "liens": [
+        "id15"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "liens": [
+  {
+   "id": "id9",
+   "type_lien": "publie",
+   "famille": "identite",
+   "source_id": "id0",
+   "cible_id": "id1",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "On était venus poser des questions, mais on a préféré vous faire goûter 🥄 Marque ! débarque chez Enseigne… Vous gardez une place pour le dessert ?",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": null,
+     "fin_s": null
+    }
+   ],
+   "explication": "Le compte @compte_a figure comme auteur de la vidéo dans l'adresse reconstruite depuis l'identifiant de la plateforme.",
+   "explications_ecartees": [],
+   "methode": "adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 3.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": true,
+   "echelle": "lien fort",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "@compte_a (tiktok)",
+   "cible_libelle": "Vidéo tiktok de @compte_a, 19/10/2026"
+  },
+  {
+   "id": "id10",
+   "type_lien": "publie",
+   "famille": "identite",
+   "source_id": "id2",
+   "cible_id": "id3",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Légende propre à b",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": null,
+     "fin_s": null
+    }
+   ],
+   "explication": "Le compte @compte_b figure comme auteur de la vidéo dans l'adresse reconstruite depuis l'identifiant de la plateforme.",
+   "explications_ecartees": [],
+   "methode": "adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 3.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": true,
+   "echelle": "lien fort",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "@compte_b (tiktok)",
+   "cible_libelle": "Vidéo tiktok de @compte_b, 19/10/2026"
+  },
+  {
+   "id": "id11",
+   "type_lien": "publie",
+   "famille": "identite",
+   "source_id": "id4",
+   "cible_id": "id5",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+     "extrait": "Légende propre à c",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": null,
+     "debut_s": null,
+     "fin_s": null
+    }
+   ],
+   "explication": "Le compte @compte_c figure comme auteur de la vidéo dans l'adresse reconstruite depuis l'identifiant de la plateforme.",
+   "explications_ecartees": [],
+   "methode": "adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 3.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": true,
+   "echelle": "lien fort",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "@compte_c (tiktok)",
+   "cible_libelle": "Vidéo tiktok de @compte_c, 19/10/2026"
+  },
+  {
+   "id": "id12",
+   "type_lien": "publie",
+   "famille": "identite",
+   "source_id": "id6",
+   "cible_id": "id7",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_d/video/7698355281171975456",
+     "extrait": "Légende propre à d",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": null,
+     "debut_s": null,
+     "fin_s": null
+    }
+   ],
+   "explication": "Le compte @compte_d figure comme auteur de la vidéo dans l'adresse reconstruite depuis l'identifiant de la plateforme.",
+   "explications_ecartees": [],
+   "methode": "adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 3.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": true,
+   "echelle": "lien fort",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "@compte_d (tiktok)",
+   "cible_libelle": "Vidéo tiktok de @compte_d, 19/10/2026"
+  },
+  {
+   "id": "id13",
+   "type_lien": "dit_la_meme_chose",
+   "famille": "contenu_dit",
+   "source_id": "id1",
+   "cible_id": "id8",
+   "oriente": false,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 2.3,
+     "fin_s": 7.9
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 10.32,
+     "fin_s": 13.28
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Je ne vous ferai pas un minceur.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 17,
+     "fin_s": 17.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 20.66,
+     "fin_s": 23.22
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 23.62,
+     "fin_s": 26.12
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Les deux, ça marche, ça marche.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 27.24,
+     "fin_s": 29.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "son original - Compte A",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 0.0,
+     "fin_s": null
+    }
+   ],
+   "explication": "La vidéo contient la même phrase, ou le même son, que les autres vidéos de la grappe.",
+   "explications_ecartees": [],
+   "methode": "phrase normalisée identique (au moins 5 mots) ou même identifiant de son",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 2.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": false,
+   "echelle": "appui net",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "Vidéo tiktok de @compte_a, 19/10/2026",
+   "cible_libelle": "« Plutôt entrée, entrée plus plat en général, ça dépend ! » · 3 vidéos"
+  },
+  {
+   "id": "id14",
+   "type_lien": "dit_la_meme_chose",
+   "famille": "contenu_dit",
+   "source_id": "id3",
+   "cible_id": "id8",
+   "oriente": false,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend !",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 2.3,
+     "fin_s": 7.9
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 10.32,
+     "fin_s": 13.28
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Je ne vous ferai pas un minceur.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 17,
+     "fin_s": 17.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 20.66,
+     "fin_s": 23.22
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 23.62,
+     "fin_s": 26.12
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Les deux, ça marche, ça marche.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 27.24,
+     "fin_s": 29.66
+    }
+   ],
+   "explication": "La vidéo contient la même phrase, ou le même son, que les autres vidéos de la grappe.",
+   "explications_ecartees": [],
+   "methode": "phrase normalisée identique (au moins 5 mots) ou même identifiant de son",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 2.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": false,
+   "echelle": "appui net",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "Vidéo tiktok de @compte_b, 19/10/2026",
+   "cible_libelle": "« Plutôt entrée, entrée plus plat en général, ça dépend ! » · 3 vidéos"
+  },
+  {
+   "id": "id15",
+   "type_lien": "dit_la_meme_chose",
+   "famille": "contenu_dit",
+   "source_id": "id5",
+   "cible_id": "id8",
+   "oriente": false,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+     "extrait": "son original - Compte A",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": null,
+     "debut_s": 0.0,
+     "fin_s": null
+    }
+   ],
+   "explication": "La vidéo contient la même phrase, ou le même son, que les autres vidéos de la grappe.",
+   "explications_ecartees": [],
+   "methode": "phrase normalisée identique (au moins 5 mots) ou même identifiant de son",
+   "agent": "chaine.py",
+   "statut": "prouve",
+   "force_points": 1.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": false,
+   "echelle": "appui faible",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "Vidéo tiktok de @compte_c, 19/10/2026",
+   "cible_libelle": "« Plutôt entrée, entrée plus plat en général, ça dépend ! » · 3 vidéos"
+  },
+  {
+   "id": "id16",
+   "type_lien": "reprend",
+   "famille": "recit",
+   "source_id": "id3",
+   "cible_id": "id1",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend !",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 2.3,
+     "fin_s": 7.9
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 10.32,
+     "fin_s": 13.28
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Je ne vous ferai pas un minceur.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 17,
+     "fin_s": 17.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 20.66,
+     "fin_s": 23.22
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 23.62,
+     "fin_s": 26.12
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_b/video/7698332088348577056",
+     "extrait": "Les deux, ça marche, ça marche.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 27.24,
+     "fin_s": 29.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Plutôt entrée, entrée plus plat en général, ça dépend.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 2.3,
+     "fin_s": 7.9
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Ok, bon, j'ai un plat dessert s'il préfère.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 10.32,
+     "fin_s": 13.28
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Je ne vous ferai pas un minceur.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 17,
+     "fin_s": 17.66
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Ah, le chocolat, c'est la vie en vrai.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 20.66,
+     "fin_s": 23.22
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Moi, je suis plutôt genre 70% ou un peu au lait.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 23.62,
+     "fin_s": 26.12
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "Les deux, ça marche, ça marche.",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 27.24,
+     "fin_s": 29.66
+    }
+   ],
+   "explication": "Mise en ligne après la première vidéo repérée (19/10/2026), avec la même phrase ou le même son.",
+   "explications_ecartees": [
+    {
+     "explication": "formule ou son banal repris par hasard",
+     "raison": "phrase d'au moins 5 mots, identique après normalisation"
+    }
+   ],
+   "methode": "même contenu, date lue dans l'identifiant de chaque vidéo",
+   "agent": "chaine.py",
+   "statut": "indice",
+   "force_points": 6.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": false,
+   "echelle": "appui net",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "Vidéo tiktok de @compte_b, 19/10/2026",
+   "cible_libelle": "Vidéo tiktok de @compte_a, 19/10/2026"
+  },
+  {
+   "id": "id17",
+   "type_lien": "reprend",
+   "famille": "recit",
+   "source_id": "id5",
+   "cible_id": "id1",
+   "oriente": true,
+   "preuves": [
+    {
+     "url": "https://www.tiktok.com/@compte_c/video/7698347550230842656",
+     "extrait": "son original - Compte A",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": null,
+     "debut_s": 0.0,
+     "fin_s": null
+    },
+    {
+     "url": "https://www.tiktok.com/@compte_a/video/7698316626466311456",
+     "extrait": "son original - Compte A",
+     "source_donnee": "Oriane",
+     "empreinte_sha256": "abababababababababababababababababababababababababababababababab",
+     "debut_s": 0.0,
+     "fin_s": null
+    }
+   ],
+   "explication": "Mise en ligne après la première vidéo repérée (19/10/2026), avec la même phrase ou le même son.",
+   "explications_ecartees": [
+    {
+     "explication": "formule ou son banal repris par hasard",
+     "raison": "son partagé par 3 vidéos seulement (au plus 12 admis)"
+    }
+   ],
+   "methode": "même contenu, date lue dans l'identifiant de chaque vidéo",
+   "agent": "chaine.py",
+   "statut": "indice",
+   "force_points": 1.0,
+   "contre_points": 0.0,
+   "familles_independantes": 1,
+   "methodes_independantes": 1,
+   "identifiant_officiel": false,
+   "echelle": "appui faible",
+   "conteste": false,
+   "solidite": null,
+   "source_libelle": "Vidéo tiktok de @compte_c, 19/10/2026",
+   "cible_libelle": "Vidéo tiktok de @compte_a, 19/10/2026"
+  }
+ ],
+ "questions_ouvertes": [
+  {
+   "id": "id18",
+   "texte": "La plus ancienne vidéo repérée date du 19/10/2026 (tiktok, @compte_a), mais Oriane ne couvre que TikTok, Instagram et YouTube : qui a publié le contenu en premier, et où ?",
+   "statut": "ouverte",
+   "comblee_par": null,
+   "comblee_par_libelle": null
+  },
+  {
+   "id": "id19",
+   "texte": "Qui profite de la diffusion de ces vidéos (audience, revenus, intérêt) ?",
+   "statut": "ouverte",
+   "comblee_par": null,
+   "comblee_par_libelle": null
+  },
+  {
+   "id": "id20",
+   "texte": "Qui a démenti ou vérifié ces vidéos, et à quelle date ?",
+   "statut": "ouverte",
+   "comblee_par": null,
+   "comblee_par_libelle": null
+  }
+ ]
+}
