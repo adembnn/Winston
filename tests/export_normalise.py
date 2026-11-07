@@ -11,7 +11,9 @@ from typing import Any
 
 CLES_RETIREES = {"date_ajout", "date_collecte", "version"}
 # Ajoutées après la référence « avant le flux » : les images des pièces ne changent pas la structure.
-CLES_AJOUTEES_DEPUIS = {"image", "images_cles"}
+# « zones_d_ombre » : la liste des zones est nouvelle, et le compteur du même nom compte désormais
+# les zones (non plus les questions ouvertes), donc il change de valeur.
+CLES_AJOUTEES_DEPUIS = {"image", "images_cles", "zones_d_ombre"}
 
 
 def normaliser(export: dict[str, Any]) -> dict[str, Any]:

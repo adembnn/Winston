@@ -210,6 +210,21 @@ try {
     assert.equal(e.pieces.inconnu.length, 0);
     assert.deepEqual(e.pieces.origine.map((p) => p.libelle), ["v2"]);
   });
+
+  await test("etat.zones : dernière version de chaque zone, ordre d'apparition, derniere = la zone", async () => {
+    const e = etatInitial();
+    assert.deepEqual(e.zones, []);
+    const zone = (id, titre, version, role) => ({ n: e.n + 1, type: "zone", donnees: {
+      id, titre, version, role_manquant: role, pourquoi: "p", tente: "t", autour: [],
+      pistes: [{ geste: "g", ou: "o", comment: "c", difficulte: "facile" }] } });
+    appliquer(e, zone("z1", "Qui dirige ?", 1, "mis_en_cause"));
+    appliquer(e, zone("z2", "Qui fabrique ?", 1, "origine"));
+    assert.deepEqual(e.derniere, { genre: "zone", id: "z2", role: "origine", type: "zone", titre: "Qui fabrique ?" });
+    appliquer(e, zone("z1", "Qui dirige vraiment ?", 2, "mis_en_cause"));
+    assert.deepEqual(e.zones.map((z) => [z.id, z.version]), [["z1", 2], ["z2", 1]]);
+    assert.equal(e.zones[0].titre, "Qui dirige vraiment ?");
+    assert.equal(e.derniere.id, "z1");
+  });
 } finally {
   if (serveur) serveur.proc.kill();
   await attendre(200);

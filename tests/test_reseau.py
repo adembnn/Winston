@@ -13,6 +13,7 @@ from enquete.reseau import (
     LienSansPreuve,
     Noeud,
     NoeudInconnu,
+    Piste,
     Preuve,
     ReseauEnquete,
     Role,
@@ -20,6 +21,7 @@ from enquete.reseau import (
     StatutLien,
     StatutQuestion,
     TypeNoeud,
+    ZoneOmbre,
     echelle_verbale,
     empreinte_sha256,
 )
@@ -219,7 +221,7 @@ def test_export_reseau_vide():
 def test_question_ouverte_se_comble_par_une_piece(reseau_garni):
     q = reseau_garni.poser_question("Qui dirige la société ?")
     assert [x.id for x in reseau_garni.questions_ouvertes()] == [q.id]
-    assert reseau_garni.exporter_pour_interface()["compteurs"]["zones_d_ombre"] == 1
+    assert len(reseau_garni.exporter_pour_interface()["questions_ouvertes"]) == 1
 
     gerant = reseau_garni.ajouter_noeud(Noeud(TypeNoeud.PERSONNE, "M. Gérant", Role.MIS_EN_CAUSE))
     comblee = reseau_garni.combler_question(q.id, gerant.id)
@@ -227,7 +229,7 @@ def test_question_ouverte_se_comble_par_une_piece(reseau_garni):
     assert comblee.statut is StatutQuestion.COMBLEE and comblee.comblee_par == gerant.id
     assert reseau_garni.questions_ouvertes() == []
     export = reseau_garni.exporter_pour_interface()
-    assert export["compteurs"]["zones_d_ombre"] == 0
+    assert [q for q in export["questions_ouvertes"] if q["statut"] == "ouverte"] == []
     assert export["questions_ouvertes"][0]["comblee_par_libelle"] == "M. Gérant"
     # la question ouverte d'origine reste dans l'historique
     assert [e.donnees["statut"] for e in reseau_garni.historique(q.id)] == ["ouverte", "comblee"]
@@ -286,3 +288,82 @@ def test_echelle_tres_fort_et_identifiant_officiel():
 def test_lien_conteste_des_un_point_de_contre_indice():
     assert not un_lien("a", "b", force_points=3.5, contre_points=0.9).conteste
     assert un_lien("a", "b", force_points=3.5, contre_points=1.0).conteste
+
+
+# -- 4 bis. zones d'ombre ----------------------------------------------------
+
+def une_piste(**kw):
+    valeurs = dict(geste="Interroger le registre", ou="Registre des bénéficiaires effectifs",
+                   comment="Demander l'extrait au greffe", difficulte="moyenne")
+    valeurs.update(kw)
+    return valeurs
+
+
+def une_zone(reseau, **kw):
+    valeurs = dict(titre="Qui dirige vraiment la société ?", pourquoi="Registre étranger, hors de l'index.",
+                   tente=["Recherche web datée", "registre français consulté"], pistes=[une_piste()],
+                   autour=["s"], role_manquant=Role.MIS_EN_CAUSE)
+    valeurs.update(kw)
+    return reseau.poser_zone(**valeurs)
+
+
+def test_zone_au_contrat_et_dans_l_export(reseau_garni):
+    zone = une_zone(reseau_garni, pistes=[une_piste(), une_piste(geste="Écrire au compte", difficulte="facile")])
+    assert isinstance(zone, ZoneOmbre) and zone.version == 1
+    export = reseau_garni.exporter_pour_interface()
+    assert export["compteurs"]["zones_d_ombre"] == 1
+    [z] = export["zones_d_ombre"]
+    assert set(z) == {"id", "titre", "pourquoi", "pourquoi_en_mots", "tente", "autour", "pistes", "role_manquant", "version"}
+    assert z["autour"] == ["s"] and z["role_manquant"] == "mis_en_cause"
+    assert set(z["pistes"][0]) == {"geste", "ou", "comment", "difficulte"}
+    json.dumps(export)
+    # les questions ouvertes restent pour le banc
+    assert "questions_ouvertes" in export
+    assert reseau_garni.historique(genre="zone")[0].motif == "zone posée"
+
+
+def test_zone_validation(reseau):
+    for champ in ("titre", "pourquoi"):
+        with pytest.raises(ValueError):
+            une_zone(reseau, **{champ: "  "})
+    for mauvais in ("une chaîne seule", [], ["ok", " "], [3]):
+        with pytest.raises(ValueError):
+            une_zone(reseau, tente=mauvais)
+    for mauvais in ("c1", [4]):
+        with pytest.raises(ValueError):
+            une_zone(reseau, autour=mauvais)
+    with pytest.raises(ValueError):
+        une_zone(reseau, pistes=[])
+    with pytest.raises(ValueError):
+        une_zone(reseau, pistes=[une_piste()] * 4)
+    for champ in ("geste", "ou", "comment", "difficulte"):
+        with pytest.raises(ValueError):
+            une_zone(reseau, pistes=[une_piste(**{champ: ""})])
+    with pytest.raises(ValueError):
+        une_zone(reseau, pistes=[une_piste(difficulte="impossible")])
+    with pytest.raises(ValueError):
+        une_zone(reseau, role_manquant="roi")
+    assert reseau.zones() == []
+    assert Piste("a", "b", "c", "demande du temps").vers_dict()["difficulte"] == "demande du temps"
+    assert Piste("a", "b", "c", "facile").vers_dict()["difficulte"] == "facile"
+
+
+def test_zone_corrigee_garde_ses_versions(reseau):
+    a = une_zone(reseau)
+    b = une_zone(reseau, titre="Qui fabrique les stylos ?")
+    corrigee = reseau.corriger_zone(a.id, "piste ajoutée", pistes=[une_piste(), une_piste(geste="Autre")])
+    assert corrigee.version == 2 and len(corrigee.pistes) == 2
+    assert [z.id for z in reseau.zones()] == [a.id, b.id]  # ordre d'apparition conservé
+    assert reseau.zones()[0].version == 2
+    assert [z.version for z in reseau.versions_zone(a.id)] == [1, 2]
+    assert len(reseau.versions_zone(a.id)[0].pistes) == 1  # l'ancienne reste lisible
+    with pytest.raises(ValueError):
+        reseau.corriger_zone(a.id, "vide", pistes=[])
+    with pytest.raises(ValueError):
+        reseau.corriger_zone(a.id, "interdit", id="autre")
+    with pytest.raises(ValueError):
+        reseau.corriger_zone(a.id, "", titre="x")
+    with pytest.raises(KeyError):
+        reseau.corriger_zone("inconnue", "m", titre="x")
+    with pytest.raises(ValueError):
+        reseau.noter("zone", {})  # le genre zone passe par sa méthode
