@@ -170,7 +170,7 @@ def test_chercher_dedoublonne_ordonne_et_ecarte_les_liens_sans_post(tmp_path):
     assert requete.url.params["source"] == "web"
     assert requete.url.params["offset"] == "0"
     assert "tf" not in requete.url.params
-    assert "Chrome" in requete.headers["user-agent"]
+    assert "enquete-osint" in requete.headers["user-agent"]
     synd = next(r for r in faux.requetes if r.url.host == "cdn.syndication.twimg.com")
     assert "Chrome" not in synd.headers["user-agent"]
 
