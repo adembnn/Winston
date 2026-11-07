@@ -4,10 +4,23 @@
 // ces cinq fonctions ; tout ce qu'il affiche vient de l'état recalculé ici depuis le flux.
 // Module ES sans dépendance : navigateur et Node 18+.
 //
-//   import { surFrappe, lancer, suivre, resume, exporter } from "./branchement.js";
+//   import { surFrappe, lancer, suivre, resume, resumeEnquete, exporter } from "./branchement.js";
 //   surFrappe(texte, graine, ({ locales, graine, profond, enCours }) => dessiner(...));
 //   const id = await lancer({ question, graine, mots });
 //   const arret = suivre(id, { mode: "rejeu", dureeCible: 22, quand: (evt, etat) => dessiner(etat) });
+//
+// Deux résumés, deux routes :
+//   resume(id, pieceId)                  GET /api/resume_piece : {piece, resume}, 25 mots d'une pièce.
+//   resumeEnquete(id, { profond })       GET /api/resume : le résumé du dossier entier, ouvert par un
+//                                        clic sur la question centrale. profond: false ajoute
+//                                        profond=0 : phrases faites par code, instantanées ; sinon
+//                                        Claude rédige en_bref et mecanisme (plusieurs secondes).
+//     Rend { resume: { en_bref, etabli: [{texte, piece_id}], mecanisme, acteurs: [{role, nom_ou_type}],
+//            chronologie: [{date, fait, piece_id}], chiffres: {videos, repetent, series,
+//            sources_independantes}, ombre: [zone_id], prochaines_etapes: [texte],
+//            qui_appeler: [{qui, pourquoi, piece_id}], certitude, source: "claude" | "code" } }.
+//     chiffres.sources_independantes vaut null pour l'instant : afficher « séries distinctes »
+//     (chiffres.series) à sa place.
 //
 // Champs d'`etat` que l'écran peut lire (recalculés depuis le flux seul) :
 //   compteurs.par_role          { role: nombre de nœuds }, tous les nœuds (celui du serveur)
@@ -332,10 +345,12 @@ export function creerBranchement(options = {}) {
     return clore;
   }
 
-  const resume = (id, pieceId) => json(adresse("/api/resume", { enquete: id, piece: pieceId }));
+  const resume = (id, pieceId) => json(adresse("/api/resume_piece", { enquete: id, piece: pieceId }));
+  const resumeEnquete = (id, { profond = true } = {}) =>
+    json(adresse("/api/resume", { enquete: id, profond: profond === false ? "0" : undefined }));
   const exporter = (id) => json(adresse("/api/export", { enquete: id }));
 
-  return { surFrappe, lancer, suivre, resume, exporter, reglages };
+  return { surFrappe, lancer, suivre, resume, resumeEnquete, exporter, reglages };
 }
 
 // L'instance par défaut : la page est servie par le serveur, donc même origine.
@@ -344,5 +359,6 @@ export const surFrappe = defaut.surFrappe;
 export const lancer = defaut.lancer;
 export const suivre = defaut.suivre;
 export const resume = defaut.resume;
+export const resumeEnquete = defaut.resumeEnquete;
 export const exporter = defaut.exporter;
 export const configurer = (options) => Object.assign(defaut.reglages, options);

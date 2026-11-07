@@ -20,7 +20,10 @@ POST /api/questions  {enquete, texte}               question du journaliste -> {
 GET  /api/enquetes                                  liste des enquêtes (ajout hors contrat)
 GET  /api/sante                                     {ok: true}
 GET  /api/comprendre?q=<texte>[&graine=<lien>][&profond=1]   lecture de la frappe (voir enquete.comprendre)
-GET  /api/resume?enquete=<id>&piece=<id>            résumé de 25 mots d'une pièce
+GET  /api/resume?enquete=<id>[&profond=0]           {resume: {...}} : résumé du dossier (clic sur la question
+                                                    centrale). profond=0 : phrases faites par code, instantané ;
+                                                    sinon Claude rédige en_bref et mecanisme (voir comprendre.py)
+GET  /api/resume_piece?enquete=<id>&piece=<id>      résumé de 25 mots d'une pièce (ex-/api/resume)
 GET  /                                              `index.html` du dossier de l'interface (404 s'il manque)
 GET  /interface/<chemin>                            fichiers de ce dossier, jamais au-dessus
 
@@ -527,6 +530,15 @@ class Serveur:
                     return {"piece": piece_id, "resume": module.resumer_piece(piece, export["question"])}
         raise ErreurHttp(404, f"pièce inconnue : {piece_id}")
 
+    def resumer_enquete(self, identifiant: str, profond: bool = True) -> dict[str, Any]:
+        """Le résumé du dossier. Les mesures du journal (vidéos lues) rejoignent l'export, et
+        c'est de cet export seul que le résumé est tiré."""
+        module = _module_comprendre()
+        export = self.exporter(identifiant)
+        compteurs = _compteurs_finaux(lire_evenements(self.chemin_journal(identifiant, creer=False)))
+        export["videos_lues"] = compteurs.get("videos_lues")
+        return {"resume": module.resume_enquete(export, profond=profond)}
+
     def poser_question(self, identifiant: str, texte: str) -> str:
         texte = (texte or "").strip()
         if not texte:
@@ -676,9 +688,12 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                 elif route == ("GET", "/api/comprendre"):
                     self._json(200, serveur.comprendre(
                         params.get("q", ""), params.get("graine"), params.get("profond") == "1"))
-                elif route == ("GET", "/api/resume"):
+                elif route == ("GET", "/api/resume_piece"):
                     identifiant = serveur.valider_id(params.get("enquete"))
                     self._json(200, serveur.resumer(identifiant, params.get("piece", "")))
+                elif route == ("GET", "/api/resume"):
+                    identifiant = serveur.valider_id(params.get("enquete"))
+                    self._json(200, serveur.resumer_enquete(identifiant, params.get("profond") != "0"))
                 elif route == ("POST", "/api/enquetes"):
                     corps = self._corps()
                     self._json(201, {"id": serveur.lancer(corps.get("question"), corps.get("graine"))})

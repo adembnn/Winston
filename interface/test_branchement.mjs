@@ -225,6 +225,39 @@ try {
     assert.equal(e.zones[0].titre, "Qui dirige vraiment ?");
     assert.equal(e.derniere.id, "z1");
   });
+
+  await test("resumeEnquete : bonne route, profond=0 seulement si profond: false", async () => {
+    const urls = [];
+    const faux = creerBranchement({ base: "http://x", fetch: async (url) => {
+      urls.push(url);
+      return { ok: true, status: 200, json: async () => ({ resume: {} }) };
+    } });
+    await faux.resumeEnquete("e1");
+    await faux.resumeEnquete("e1", { profond: false });
+    await faux.resume("e1", "p1");
+    assert.deepEqual(urls, [
+      "http://x/api/resume?enquete=e1",
+      "http://x/api/resume?enquete=e1&profond=0",
+      "http://x/api/resume_piece?enquete=e1&piece=p1",
+    ]);
+  });
+
+  await test("resumeEnquete contre le vrai serveur : contrat, ids réels ; resume(piece) répond", async () => {
+    const exp = await b.exporter("affaire-10");
+    const { resume: r } = await b.resumeEnquete("affaire-10", { profond: false });
+    assert.deepEqual(Object.keys(r).sort(), ["acteurs", "certitude", "chiffres", "chronologie", "en_bref",
+      "etabli", "mecanisme", "ombre", "prochaines_etapes", "qui_appeler", "source"]);
+    assert.equal(r.source, "code");
+    assert.equal(r.chiffres.sources_independantes, null);
+    assert.deepEqual(r.ombre, exp.zones_d_ombre.map((z) => z.id));
+    const ids = new Set(exp.dossiers.flatMap((d) => d.pieces.map((p) => p.id)));
+    for (const x of [...r.etabli, ...r.chronologie, ...r.qui_appeler]) assert.ok(ids.has(x.piece_id), x.piece_id);
+    assert.ok(["non établi", "possible", "probable"].includes(r.certitude), r.certitude);
+    const piece = exp.dossiers.flatMap((d) => d.pieces)[0];
+    const rp = await b.resume("affaire-10", piece.id);
+    assert.equal(rp.piece, piece.id);
+    assert.equal(typeof rp.resume, "string");
+  });
 } finally {
   if (serveur) serveur.proc.kill();
   await attendre(200);
