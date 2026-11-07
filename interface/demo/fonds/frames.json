@@ -1,0 +1,50 @@
+{
+ "salle1": [
+  "images/v-lea.jpg",
+  "images/v-marie.jpg",
+  "images/v-sofia.jpg",
+  "images/v-nora.jpg",
+  "images/v-camille.jpg",
+  "images/v-telegram.jpg"
+ ],
+ "salle2": [
+  "images/v-marie.jpg",
+  "images/v-sofia.jpg",
+  "images/v-nora.jpg",
+  "images/v-camille.jpg",
+  "images/v-telegram.jpg",
+  "images/v-lea.jpg"
+ ],
+ "salle3": [
+  "images/v-sofia.jpg",
+  "images/v-nora.jpg",
+  "images/v-camille.jpg",
+  "images/v-telegram.jpg",
+  "images/v-lea.jpg",
+  "images/v-marie.jpg"
+ ],
+ "salle4": [
+  "images/v-nora.jpg",
+  "images/v-camille.jpg",
+  "images/v-telegram.jpg",
+  "images/v-lea.jpg",
+  "images/v-marie.jpg",
+  "images/v-sofia.jpg"
+ ],
+ "salle5": [
+  "images/v-camille.jpg",
+  "images/v-telegram.jpg",
+  "images/v-lea.jpg",
+  "images/v-marie.jpg",
+  "images/v-sofia.jpg",
+  "images/v-nora.jpg"
+ ],
+ "salle6": [
+  "images/v-telegram.jpg",
+  "images/v-lea.jpg",
+  "images/v-marie.jpg",
+  "images/v-sofia.jpg",
+  "images/v-nora.jpg",
+  "images/v-camille.jpg"
+ ]
+}
