@@ -486,3 +486,64 @@ def test_zone_dans_le_flux(tmp_path):
     n = evenements.index(zones[0])
     assert evenements[n + 1]["type"] == "compteur"  # chaque ligne est suivie de son compteur
     assert evenements[-1]["donnees"]["zones_d_ombre"] == 1  # le compteur du flux ne change pas : questions ouvertes
+
+
+def test_le_temoin_note_les_recherches_et_les_etapes_de_la_chaine(tmp_path):
+    """Pendant la chaîne, chaque recherche Oriane et chaque étape s'écrivent au journal (vu en direct)."""
+    import types
+
+    from enquete import serveur as srv
+
+    class Client:
+        credits_estimes = 0
+
+    class Budget:
+        def __init__(self):
+            self.client = Client()
+
+        def chercher(self, projection, **parametres):
+            self.client.credits_estimes += 10
+            return {"data": {"results": [{"id": "a", "platform": "tiktok"}, {"id": "b", "platform": "tiktok"}]},
+                    "metadata": {"pagination": {"totalCount": 57}}}
+
+    chaine = types.SimpleNamespace(Budget=Budget, chercher_candidats=lambda budget, mots: {"a": 1, "b": 2},
+                                   regrouper=lambda videos: [1, 2, 3])
+    srv._envelopper_la_chaine(chaine)
+    chemin = tmp_path / "reseau.sqlite"
+    ReseauEnquete(QUESTION, str(chemin)).fermer()
+    temoin = srv._TemoinDuTravail(QUESTION, chemin)
+    srv._fil_courant.temoin = temoin
+    try:
+        chaine.chercher_candidats(None, ["séisme"])
+        Budget().chercher("basic", filtres={"transcript": {"includesFuzzy": {"values": ["séisme"]}}})
+        chaine.regrouper([])
+    finally:
+        srv._fil_courant.temoin = None
+        temoin.fermer()
+    sans_temoin = Budget().chercher("basic", filtres={})  # hors d'une enquête : rien n'est écrit
+    assert sans_temoin["metadata"]["pagination"]["totalCount"] == 57
+    evenements = [e for e in lire_evenements(chemin) if e["type"] != "compteur"]
+    assert [(e["type"], e["donnees"].get("nom") or e["donnees"].get("mot")) for e in evenements] == [
+        ("question", None), ("etape", "recherche"), ("etape", "recherche"),
+        ("recherche", "séisme"), ("etape", "regroupement"), ("etape", "regroupement"),
+    ]
+    recherche = evenements[3]["donnees"]
+    assert recherche["champ"] == "transcript" and recherche["total"] == 57 and recherche["recus"] == 2
+    assert recherche["credits"] == 10 and recherche["plateforme"] == "tiktok"
+    assert evenements[-1]["donnees"]["detail"] == "3"
+
+
+def test_une_salve_est_etalee_en_direct(racine):
+    """Des pièces posées d'un coup arrivent à l'écran étalées sur quelques dixièmes de seconde."""
+    def lanceur(question, mots, dossier, journal, affaire_id):
+        with ReseauEnquete(question, str(journal)) as r:
+            for i in range(30):
+                r.ajouter_noeud(Noeud(TypeNoeud.VIDEO, f"Vidéo {i}", Role.AMPLIFICATEUR, id=f"v{i}"))
+        time.sleep(0.3)
+
+    with Serveur(racine, port=0, enqueteur=lanceur, pas_sondage=0.02, lissage_max_s=0.6) as s:
+        identifiant = post(s, "/api/enquetes", {"question": QUESTION})[1]["id"]
+        recus = flux(s, f"/api/evenements?enquete={identifiant}")
+    instants = [t for t, e in recus if e["type"] == "noeud"]
+    assert len(instants) == 30
+    assert instants[-1] - instants[0] >= 0.3, instants  # la salve s'étale au lieu d'arriver d'un bloc
