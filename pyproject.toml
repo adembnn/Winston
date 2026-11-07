@@ -9,6 +9,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Archivage des preuves sans compte : capture de page (puis `playwright install chromium`)
+# et usurpation de navigateur pour yt-dlp (yt-dlp n'accepte que curl_cffi 0.10 à 0.16).
+archive = ["playwright>=1.40", "curl_cffi>=0.10,<0.17"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
