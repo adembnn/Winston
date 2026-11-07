@@ -3,6 +3,7 @@
   "question": "Ces vidéos de « violences lycéennes » diffusées en septembre-octobre 2026 montrent-elles vraiment le mouvement lycéen de 2026 ? D'où viennent-elles, quand ont-elles été filmées, qui les a relayées et dans quelles langues ?",
   "gel_donnees": "2026-10-22",
   "reserve": false,
+  "canari": "Trois marmottes violoncellistes ont négocié le tarif du fjord de Plouézec avec un yaourt diplomate.",
   "notes": "Gel au 22 octobre 2026, date de la dernière vérification AFP retenue (vidéo de manifestation propalestinienne). Les vidéos d'origine datent de 2022 à 2025 : elles sont hors de la fenêtre d'observation de l'outil, qui retrouve les reprises de 2026, pas les sources. Aucun particulier n'est nommé ; les comptes sont décrits par leur type. Une divergence de la source AFP sur la vidéo de drapeaux palestiniens (titre : 2025 ; légende d'une comparaison : « 25 mai 2026 ») est laissée de côté : le fait attendu ne retient que l'année 2025 du titre.",
   "faits": [
     {
@@ -10,9 +11,10 @@
       "phrase": "La vidéo d'un bus en feu qui dévale une route, présentée en octobre 2026 comme une violence lycéenne, montre un autocar scolaire qui a pris feu à Nîmes le 13 janvier 2023 après un court-circuit ; une dizaine d'élèves ont été évacués, sans blessé.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["bus", "feu", "nîmes", "13 janvier", "2023", "court-circuit", "élèves", "évacués"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les",
       "autres_sources": ["https://factuel.afp.com/doc.afp.com.D2GF7CQ"]
@@ -22,9 +24,10 @@
       "phrase": "La version la plus ancienne retrouvée par l'AFP de la vidéo du bus est publiée le 13 janvier 2023 sur X par un journal local, qui précise l'avoir reçue d'une lectrice.",
       "type": "chronologie",
       "poids": 2,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["version", "ancienne", "13 janvier", "2023", "x", "journal local", "lectrice", "bus"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -33,9 +36,10 @@
       "phrase": "La vidéo du bus est très partagée à l'étranger : une publication en néerlandais sur X du 2 octobre 2026 est partagée plus de 6 500 fois et aimée plus de 18 000 fois ; elle circule aussi au Canada et en grec. La version TikTok en français, légendée « bus en feu », n'est partagée qu'une cinquantaine de fois.",
       "type": "reprise",
       "poids": 2,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["bus", "néerlandais", "2 octobre", "6500", "18000", "partagée", "canada", "grec", "tiktok", "cinquantaine"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -44,9 +48,10 @@
       "phrase": "La vidéo d'un homme sur le toit d'une voiture au milieu d'une foule, présentée comme des lycéens en colère, a été tournée à New York le 4 août 2023 lors d'un rassemblement à Union Square organisé par un streamer américain ; la publication qui la relaie est repostée plus de 700 fois.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["toit", "voiture", "foule", "new york", "4 août", "2023", "union square", "streamer", "700"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les",
       "autres_sources": ["https://www.rfi.fr/fr/france/20261006-mobilisation-lyc%C3%A9enne-en-france-comment-la-d%C3%A9sinformation-alimente-les-tensions"]
@@ -56,9 +61,10 @@
       "phrase": "Sous certaines publications qui relaient la vidéo de New York, des internautes signalent eux-mêmes le recyclage, via les notes de la communauté de X ou en commentaire.",
       "type": "acteur",
       "poids": 1,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["internautes", "signalent", "recyclage", "notes de la communauté", "commentaire", "x"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -67,9 +73,10 @@
       "phrase": "La vidéo d'une rue dévastée avec des véhicules retournés, présentée comme Paris après les manifestations lycéennes, a été publiée le 24 décembre 2022 sur X : elle montre des affrontements à Paris, place de la République, après une manifestation de la communauté kurde au lendemain d'une fusillade ayant fait trois morts.",
       "type": "origine",
       "poids": 3,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["rue", "véhicules", "voiture", "24 décembre", "2022", "kurde", "place de la république", "fusillade", "paris"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -78,9 +85,10 @@
       "phrase": "La vidéo kurde de 2022 a déjà été détournée en janvier 2026 et en juin 2026, où elle était présentée comme des émeutes après la victoire du PSG, y compris par un média prorusse selon l'AFP ; en octobre 2026 elle circule en arabe, espagnol et croate.",
       "type": "reprise",
       "poids": 2,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["déjà", "détournée", "janvier 2026", "juin 2026", "psg", "média prorusse", "arabe", "espagnol", "croate"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -89,9 +97,10 @@
       "phrase": "Des gendarmes ou policiers marchant sans casque aux côtés de manifestants, de nuit, présentés comme des « défections en masse » dans les forces de l'ordre, ont été filmés en 2023 lors d'une manifestation contre la réforme des retraites, quand ils accompagnaient des manifestants hors d'une nasse ; l'extrait est repris en anglais, arabe, espagnol et portugais.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["défections", "policiers", "gendarmes", "casque", "2023", "retraites", "nasse", "anglais", "arabe", "espagnol", "portugais"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     },
@@ -100,9 +109,10 @@
       "phrase": "Une vidéo réelle d'un véhicule blindé passant devant un lycée bloqué à Gien, partagée massivement dès le 1er octobre (plus de deux millions de vues, dont 385 000 sur TikTok), n'a aucun lien avec le mouvement lycéen : le ministère des Armées parle de mouvements routiniers.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["véhicule blindé", "tank", "lycée", "gien", "1er octobre", "deux millions", "385000", "tiktok", "ministère des armées", "routiniers"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les",
       "autres_sources": ["https://factuel.afp.com/doc.afp.com.D2GF7CQ"]
@@ -112,9 +122,10 @@
       "phrase": "Une vidéo d'hommes dansant sur un véhicule en feu près de la tour Eiffel, relayée par des comptes européens d'extrême droite selon RFI (près de 6 millions de vues pour une publication), a été filmée le 30 mai 2026 lors des célébrations de la victoire du PSG en finale de la Ligue des champions.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["véhicule en feu", "tour eiffel", "30 mai", "psg", "ligue des champions", "6 millions", "comptes", "extrême droite"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.rfi.fr/fr/france/20261006-mobilisation-lyc%C3%A9enne-en-france-comment-la-d%C3%A9sinformation-alimente-les-tensions"
     },
@@ -123,9 +134,10 @@
       "phrase": "Des comptes étrangers diffusent de vieilles vidéos (bus en feu, vidéos de la réforme des retraites) sous le hashtag « riots France », pour une dizaine de millions de vues en trois jours ; le compte French response du ministère des Affaires étrangères répond à une dizaine d'entre eux. Une vidéo de la réforme des retraites relayée par l'un d'eux approche 700 000 vues.",
       "type": "acteur",
       "poids": 2,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["comptes étrangers", "vieilles vidéos", "riots france", "dizaine de millions", "trois jours", "french response", "affaires étrangères", "retraites", "700000"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.tf1info.fr/international/verif-manifestations-lyceennes-sur-les-reseaux-sociaux-des-comptes-etrangers-desinforment-avec-de-vieilles-videos-2468185.html"
     },
@@ -134,9 +146,10 @@
       "phrase": "Selon RFI, derrière ce flot de vidéos sorties de leur contexte se trouvent plusieurs comptes influents basés à l'étranger, israéliens, britanniques, russes et américains, habitués à cibler la France ; ces infox circulent surtout sur X, Facebook, Instagram et TikTok.",
       "type": "acteur",
       "poids": 2,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["rfi", "comptes influents", "étranger", "israéliens", "britanniques", "russes", "américains", "cibler la france", "x", "facebook", "instagram", "tiktok"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.rfi.fr/fr/france/20261006-mobilisation-lyc%C3%A9enne-en-france-comment-la-d%C3%A9sinformation-alimente-les-tensions"
     },
@@ -145,9 +158,10 @@
       "phrase": "Une vidéo de 17 secondes d'une foule brandissant des drapeaux palestiniens, publiée sur Instagram le 10 octobre 2026 comme une manifestation lycéenne, et reprise sur X et Reddit, montre en réalité une manifestation propalestinienne organisée à Paris en 2025.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "correspondance": {
         "mots_cles": ["drapeaux palestiniens", "foule", "instagram", "10 octobre", "propalestinienne", "paris", "2025", "17 secondes", "reddit"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1214096/article/2026-10-22/cette-video-montre-une-manifestation-propalestinienne-en-2025-et-non-la",
       "autres_sources": ["https://factuel.afp.com/doc.afp.com.D3YJ8KE"]
@@ -157,9 +171,10 @@
       "phrase": "Une fausse vidéo n'est pas un faux événement : un bus a bien été incendié à Marseille le 1er octobre 2026 lors des troubles, avec quatre véhicules endommagés et un conducteur agressé selon la compagnie locale.",
       "type": "zone_ombre",
       "poids": 1,
+      "portee": "web",
       "correspondance": {
         "mots_cles": ["bus", "incendié", "marseille", "1er octobre", "quatre véhicules", "conducteur", "agressé"],
-        "seuil": 0.5
+        "seuil": 0.6
       },
       "source": "https://www.sudinfo.be/id1206052/article/2026-10-07/attention-ces-videos-decontextualisees-qui-nont-rien-voir-avec-les"
     }

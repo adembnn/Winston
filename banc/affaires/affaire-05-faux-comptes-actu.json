@@ -3,6 +3,7 @@
   "question": "Comment sont produites en série les vidéos TikTok « façon journal télévisé » à faits inventés ou déformés, combien rapportent-elles, et que font les plateformes ?",
   "gel_donnees": "2026-10-07",
   "reserve": false,
+  "canari": "Un phare tricoté à Vierzon murmure chaque mardi la recette du flan de basalte aux trois cigognes.",
   "recherche": {
     "parole": ["actualité du jour", "alerte info", "urgent", "à l'instant", "dernière minute", "choc", "je vous révèle", "présentatrice"],
     "texte_ecran": ["URGENT", "ALERTE INFO", "BREAKING NEWS", "à l'instant", "dernière minute", "Contenu IA"],
@@ -14,6 +15,7 @@
       "phrase": "Le 7 octobre 2026, l'Agence de vérification de Radio France décrit un créateur de 29 ans (prénom d'emprunt), qui gère trois comptes TikTok : deux consacrés au football (OM et Lens) et un à ce qu'il présente comme de « l'actualité politique », suivis par plusieurs dizaines de milliers d'abonnés.",
       "type": "acteur",
       "poids": 3,
+      "portee": "hors_portee",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["29 ans", "trois comptes", "TikTok", "football", "actualité politique", "dizaines de milliers", "abonnés"],
@@ -25,6 +27,7 @@
       "phrase": "Ses vidéos sont fabriquées en quelques dizaines de minutes grâce à l'IA : il génère une fausse présentatrice et agence les éléments comme des extraits de reportages de journaux télévisés.",
       "type": "role",
       "poids": 3,
+      "portee": "hors_portee",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["vidéos", "dizaines de minutes", "IA", "fausse présentatrice", "journaux télévisés", "reportages"],
@@ -36,10 +39,11 @@
       "phrase": "Sur le football, il reconnaît inventer l'histoire (une rumeur de transfert, un dialogue imaginé) ; sur la politique, il dit garder « un fond de vérité » mais peut reprendre des vidéos d'autres internautes, les sortir de leur contexte et exagérer les faits.",
       "type": "role",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["football", "inventer", "fond de vérité", "politique", "contexte", "exagérer", "vidéos"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -47,10 +51,11 @@
       "phrase": "Ces comptes lui rapporteraient entre 1 000 et 5 000 euros par mois, selon ses déclarations ; Capital reprend le même jour qu'il dit gagner jusqu'à 5 000 euros pour environ 30 minutes de travail par jour, en complément d'un emploi de réceptionniste.",
       "type": "reprise",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.capital.fr/economie-politique/il-gagne-jusqu-a-5-000-euros-par-mois-en-inventant-de-fausses-infos-sur-tiktok-1530804",
       "correspondance": {
         "mots_cles": ["1000", "5000", "euros", "par mois", "30 minutes", "jour", "Capital", "selon"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -58,6 +63,7 @@
       "phrase": "Une des vidéos présentées comme une actualité reprend en réalité un fait divers de 2016 au Mexique.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["vidéo", "fait divers", "2016", "Mexique", "fausse information", "réalité"],
@@ -69,10 +75,11 @@
       "phrase": "Un formateur de 19 ans à la monétisation TikTok (jusqu'à quatre comptes de niche, jusqu'à 2 000 euros par mois, sans vidéos d'actualité) décrit les techniques d'engagement artificiel : le « ragebait » qui joue sur la colère, et l'erreur introduite volontairement pour que les internautes corrigent.",
       "type": "interlocuteur",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["formateur", "19 ans", "ragebait", "colère", "erreur", "volontairement", "commentaires", "engagement"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -80,10 +87,11 @@
       "phrase": "Science Feedback (projet SIMODS, deuxième vague, mars 2026) : sur TikTok, environ un contenu d'information sur quatre auquel les utilisateurs sont exposés est faux ou trompeur, la proportion la plus élevée des six plateformes (Facebook 15 %, YouTube 12 %, X 11 %, Instagram 8 %, LinkedIn 1 %).",
       "type": "lien",
       "poids": 3,
+      "portee": "web",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["Science Feedback", "mars", "TikTok", "un sur quatre", "quart", "trompeur", "Facebook", "15", "YouTube", "12"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -91,10 +99,11 @@
       "phrase": "Toujours selon cette étude, 81 % des chaînes YouTube qui diffusent régulièrement des informations trompeuses et remplissent les critères d'éligibilité étudiés étaient encore monétisées en mars 2026 ; les comptes peu fiables obtiennent plus d'interactions à audience comparable (« prime à la désinformation »).",
       "type": "lien",
       "poids": 2,
+      "portee": "web",
       "source": "https://www.franceinfo.fr/internet/reseaux-sociaux/enquete-tous-les-moyens-sont-bons-sur-tiktok-dans-les-coulisses-du-business-lucratif-des-faux-contenus-d-actualite_8224912.html",
       "correspondance": {
         "mots_cles": ["81", "chaînes", "YouTube", "monétisées", "trompeuses", "prime à la désinformation", "interactions"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -102,10 +111,11 @@
       "phrase": "Le 10 juillet 2026, TikTok annonce renforcer sa détection des comptes qui ne publient que des vidéos générées par IA (spam IA) sur la politique et l'actualité, la santé et les conseils financiers, avec un test « dans les prochaines semaines ».",
       "type": "interlocuteur",
       "poids": 2,
+      "portee": "web",
       "source": "https://www.france24.com/fr/info-en-continu/20260710-tiktok-s-attaque-aux-comptes-proposant-uniquement-du-contenu-g%C3%A9n%C3%A9r%C3%A9-par-ia",
       "correspondance": {
         "mots_cles": ["10 juillet", "TikTok", "détection", "comptes", "IA", "politique", "santé", "finance", "spam"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -113,10 +123,11 @@
       "phrase": "Selon des éléments transmis à l'AFP, TikTok range parmi ces comptes « spam » ceux qui publient des contenus IA de faible qualité très standardisés, concentrés sur des sujets à haut risque, ou qui achètent ou vendent des abonnés.",
       "type": "lien",
       "poids": 1,
+      "portee": "hors_portee",
       "source": "https://www.france24.com/fr/info-en-continu/20260710-tiktok-s-attaque-aux-comptes-proposant-uniquement-du-contenu-g%C3%A9n%C3%A9r%C3%A9-par-ia",
       "correspondance": {
         "mots_cles": ["faible qualité", "standardisés", "sujets à haut risque", "achètent", "vendent", "abonnés", "spam"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -124,10 +135,11 @@
       "phrase": "Le 22 septembre 2026, TF1 Info vérifie des vidéos de « braquages dans le Nord » virales sur TikTok, relayées par un compte spécialisé dans les faits divers : filmées dans d'autres pays (l'une retrouvée dans la presse néerlandaise de 2019) et détournées de leur contexte.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "source": "https://www.tf1info.fr/justice-faits-divers/verif-ces-images-de-braquages-dans-le-nord-virales-sur-tiktok-sont-elles-reelles-2465560.html",
       "correspondance": {
         "mots_cles": ["braquages", "Nord", "TikTok", "22 septembre", "autres pays", "compte", "faits divers", "2019", "néerlandaise"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -135,10 +147,11 @@
       "phrase": "Les revenus et les audiences décrits reposent sur les déclarations du créateur, rapportées comme telles par la presse ; l'article ne les établit pas de façon indépendante.",
       "type": "zone_ombre",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.capital.fr/economie-politique/il-gagne-jusqu-a-5-000-euros-par-mois-en-inventant-de-fausses-infos-sur-tiktok-1530804",
       "correspondance": {
         "mots_cles": ["revenus", "audiences", "déclarations", "créateur", "établit", "indépendante"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     }
   ],
