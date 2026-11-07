@@ -104,7 +104,8 @@ def test_export(serveur):
     assert export["question"] == QUESTION
     assert export["mode"] == "demo"
     assert export["compteurs"]["pieces"] == 2 and export["compteurs"]["liens"] == 1
-    assert export["compteurs"]["zones_d_ombre"] == 1
+    assert export["compteurs"]["zones"] == 0  # les zones ; zones_d_ombre garde son sens historique (questions ouvertes)
+    assert len(export["questions_ouvertes"]) == 1
 
 
 def test_erreurs(serveur):
@@ -203,7 +204,7 @@ def test_question_du_journaliste_dans_le_flux_et_la_recherche(serveur):
     posee = [e for e in evenements if e["type"] == "question" and e["donnees"].get("id") == corps["id"]]
     assert len(posee) == 1 and posee[0]["donnees"]["origine"] == "journaliste"
     export = get_json(serveur, "/api/export?enquete=affaire")
-    assert export["compteurs"]["zones_d_ombre"] == 2
+    assert len([q for q in export["questions_ouvertes"] if q["statut"] == "ouverte"]) == 2
     assert next(q for q in export["questions_ouvertes"] if q["id"] == corps["id"])["origine"] == "journaliste"
     # L'index est refait quand le journal change.
     assert get_json(serveur, "/api/recherche?enquete=affaire&q=finance")["resultats"]
@@ -406,3 +407,25 @@ def test_ecran_dossier_par_defaut_est_celui_du_depot(racine):
         assert s.dossier_interface == DOSSIER_INTERFACE
         assert DOSSIER_INTERFACE.name == "interface"
         assert DOSSIER_INTERFACE.parent == Path(__file__).resolve().parent.parent
+
+
+def test_zone_dans_le_flux(tmp_path):
+    dossier = tmp_path / "zones"
+    dossier.mkdir()
+    with ReseauEnquete(QUESTION, str(dossier / "reseau.sqlite")) as r:
+        remplir(r)
+        zone = r.poser_zone(
+            "Qui dirige vraiment la société ?", "Registre étranger.", ["Recherche web datée"],
+            [{"geste": "Interroger le registre", "ou": "Registre", "comment": "Extrait", "difficulte": "facile"}],
+            autour=["c1"], role_manquant=Role.MIS_EN_CAUSE)
+        r.corriger_zone(zone.id, "piste précisée", tente=["Recherche web datée", "registres"])
+    evenements = lire_evenements(dossier / "reseau.sqlite")
+    zones = [e for e in evenements if e["type"] == "zone"]
+    assert [z["donnees"]["version"] for z in zones] == [1, 2]
+    d = zones[0]["donnees"]
+    assert d["id"] == zone.id and d["motif"] == "zone posée" and d["role_manquant"] == "mis_en_cause"
+    assert d["autour"] == ["c1"] and d["pistes"][0]["difficulte"] == "facile"
+    assert zones[1]["donnees"]["motif"] == "piste précisée"
+    n = evenements.index(zones[0])
+    assert evenements[n + 1]["type"] == "compteur"  # chaque ligne est suivie de son compteur
+    assert evenements[-1]["donnees"]["zones_d_ombre"] == 1  # le compteur du flux ne change pas : questions ouvertes

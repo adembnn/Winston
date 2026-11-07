@@ -14,8 +14,12 @@
 //   compteurs.sources_par_role  { role: nombre de sources } : nœuds de type video, publication_texte,
 //                               document, site, societe ou personne. Ni comptes, ni grappes, ni
 //                               phrases, ni sons, ni hashtags. Vidéos, presse, études, registres.
-//   derniere                    {genre: "noeud" | "question", id, role, type} : le dernier nœud ou la
-//                               dernière question arrivés, un seul à la fois ; il porte le jaune.
+//   zones                       [{id, titre, pourquoi, tente, autour, pistes: [{geste, ou, comment,
+//                               difficulte}], role_manquant, version, motif}] : la dernière version de
+//                               chaque zone d'ombre, dans l'ordre d'apparition (compte = zones.length).
+//   derniere                    {genre: "noeud" | "question" | "zone", id, role, type} : le dernier nœud ou la
+//                               dernière question ou zone arrivés, un seul à la fois ; il porte le jaune.
+//                               Pour une zone : {genre: "zone", id, role: role_manquant, type: "zone", titre}.
 //                               Une nouvelle version d'un nœud déjà vu (classement, rôle changé)
 //                               remplace l'ancienne : le nœud ne compte qu'une fois.
 //
@@ -51,6 +55,7 @@ export function etatInitial() {
     pieces,                // { role: [noeud, ...] } : dernière version de chaque nœud
     liens: [],             // dernière version de chaque lien
     compteurs: { pieces: 0, liens: 0, preuves: 0, zones_d_ombre: 0, par_role: {}, sources_par_role: {}, videos_lues: 0 },
+    zones: [],             // [{id, titre, pourquoi, tente, autour, pistes, role_manquant, version}] : dernière version de chaque zone d'ombre
     questions: [],         // [{id, texte, statut, numero, origine, ...}] dans l'ordre d'apparition
     recherches: [],        // [{mot, champ, total, ...}]
     etape: null,           // {nom, detail} de l'étape en cours, sinon null
@@ -107,6 +112,10 @@ export function appliquer(etat, evt) {
         remplacer(etat.questions, q);
         etat.derniere = { genre: "question", id: d.id, role: null, type: "question", statut: d.statut, texte: d.texte };
       }
+      break;
+    case "zone":
+      remplacer(etat.zones, d);
+      etat.derniere = { genre: "zone", id: d.id, role: d.role_manquant, type: "zone", titre: d.titre };
       break;
     case "noeud": {
       for (const liste of Object.values(etat.pieces)) {

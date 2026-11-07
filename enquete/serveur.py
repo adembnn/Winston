@@ -44,6 +44,9 @@ exactement où l'on s'est arrêté (l'en-tête `Last-Event-ID` aussi).
                                     extrait, même seconde) n'est pas répétée.
   genre « question » -> `question`  donnees = la question (`QuestionOuverte.vers_dict`)
                                     + origine : « agent » ou « journaliste »
+  genre « zone »     -> `zone`      donnees = la zone d'ombre (`ZoneOmbre.vers_dict`, au contrat
+                                    {id, titre, pourquoi, tente, autour, pistes, role_manquant,
+                                    version}) + motif ; une nouvelle version = un nouvel événement
   après chaque ligne -> `compteur`  donnees = {pieces, liens, preuves, zones_d_ombre,
                                     par_role: {role: nombre de pièces}}
   fin du flux        -> `fin`       donnees = {ok, erreur?, evenements, compteurs, ...}
@@ -187,6 +190,8 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
             pousser(date, "question", {
                 **d, "origine": "journaliste" if objet_id in du_journaliste else "agent", "motif": motif,
             })
+        elif genre == "zone":
+            pousser(date, "zone", {**d, "motif": motif})
         elif genre == "recherche":
             # Le travail en cours : une recherche lancée, ce qu'elle a rapporté.
             videos_lues.update(str(i) for i in d.get("ids") or [])

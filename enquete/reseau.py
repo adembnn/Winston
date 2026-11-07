@@ -546,6 +546,109 @@ class QuestionOuverte:
 
 
 # ---------------------------------------------------------------------------
+# Zone d'ombre
+# ---------------------------------------------------------------------------
+
+# « demande du temps » est le mot de l'écran pour la marche du milieu (« moyenne »).
+DIFFICULTES_PISTE = ("facile", "moyenne", "demande du temps", "difficile")
+
+
+@dataclass(frozen=True)
+class Piste:
+    """Un geste concret que le journaliste peut faire pour éclairer une zone d'ombre."""
+
+    geste: str  # ce qu'il faut faire
+    ou: str  # où, ou à qui s'adresser
+    comment: str  # la méthode
+    difficulte: str  # « facile », « moyenne » (ou « demande du temps ») ou « difficile »
+
+    def __post_init__(self) -> None:
+        _texte_requis(self.geste, "le geste de la piste")
+        _texte_requis(self.ou, "le lieu ou l'interlocuteur de la piste")
+        _texte_requis(self.comment, "la méthode de la piste")
+        _texte_requis(self.difficulte, "la difficulté de la piste")
+        if self.difficulte not in DIFFICULTES_PISTE:
+            raise ValueError(f"la difficulté d'une piste vaut {' / '.join(DIFFICULTES_PISTE)}")
+
+    def vers_dict(self) -> dict[str, Any]:
+        return {"geste": self.geste, "ou": self.ou, "comment": self.comment, "difficulte": self.difficulte}
+
+    @classmethod
+    def depuis_dict(cls, d: dict[str, Any]) -> "Piste":
+        return cls(d["geste"], d["ou"], d["comment"], d["difficulte"])
+
+
+def _en_piste(valeur: Any) -> Piste:
+    return valeur if isinstance(valeur, Piste) else Piste.depuis_dict(valeur)
+
+
+@dataclass(frozen=True)
+class ZoneOmbre:
+    """Ce que l'enquêteur n'a pas su remonter, et par où le journaliste peut reprendre.
+
+    `autour` liste les pièces connues qui entourent le trou ; `role_manquant` dit dans
+    quel dossier la pièce manquante irait.
+    """
+
+    titre: str
+    pourquoi: str
+    tente: tuple[str, ...]  # une chaîne par tentative déjà faite
+    pistes: tuple[Piste, ...]
+    role_manquant: Role = Role.INCONNU
+    autour: tuple[str, ...] = ()
+    pourquoi_en_mots: str | None = None  # la phrase ; `pourquoi` peut n'être qu'un mot (« caché »)
+    id: str = field(default_factory=_nouvel_id)
+    version: int = 1
+
+    def __post_init__(self) -> None:
+        _texte_requis(self.titre, "le titre de la zone d'ombre")
+        if self.pourquoi_en_mots is not None:
+            _texte_requis(self.pourquoi_en_mots, "la phrase du pourquoi")
+        _texte_requis(self.pourquoi, "la raison pour laquelle la zone est restée dans l'ombre")
+        if isinstance(self.tente, str) or not isinstance(self.tente, (list, tuple)):
+            raise ValueError("`tente` est une liste de chaînes, une par tentative")
+        tente = tuple(self.tente)
+        if not tente:
+            raise ValueError("`tente` liste au moins une tentative")
+        for t in tente:
+            _texte_requis(t, "une tentative")
+        if isinstance(self.autour, str) or not isinstance(self.autour, (list, tuple)):
+            raise ValueError("`autour` est une liste d'identifiants de pièces")
+        for i in self.autour:
+            _texte_requis(i, "un identifiant de pièce de `autour`")
+        object.__setattr__(self, "tente", tente)
+        _texte_requis(self.id, "l'identifiant de la zone")
+        pistes = tuple(_en_piste(p) for p in self.pistes)
+        if not 1 <= len(pistes) <= 3:
+            raise ValueError("une zone d'ombre porte de 1 à 3 pistes")
+        object.__setattr__(self, "pistes", pistes)
+        object.__setattr__(self, "autour", tuple(self.autour))
+        object.__setattr__(self, "role_manquant", Role(self.role_manquant))
+
+    def vers_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "titre": self.titre,
+            "pourquoi": self.pourquoi,
+            "pourquoi_en_mots": self.pourquoi_en_mots,
+            "tente": list(self.tente),
+            "autour": list(self.autour),
+            "pistes": [p.vers_dict() for p in self.pistes],
+            "role_manquant": self.role_manquant.value,
+            "version": self.version,
+        }
+
+    @classmethod
+    def depuis_dict(cls, d: dict[str, Any]) -> "ZoneOmbre":
+        return cls(
+            id=d["id"], titre=d["titre"], pourquoi=d["pourquoi"], pourquoi_en_mots=d.get("pourquoi_en_mots"),
+            tente=tuple(d["tente"]),
+            autour=tuple(d["autour"]), pistes=tuple(Piste.depuis_dict(p) for p in d["pistes"]),
+            role_manquant=Role(d["role_manquant"]), version=d["version"],
+        )
+
+
+# ---------------------------------------------------------------------------
 # Le réseau et son stockage en ajout seul
 # ---------------------------------------------------------------------------
 
@@ -559,7 +662,7 @@ class Evenement:
 
     seq: int
     date: datetime
-    genre: str  # « affaire », « noeud », « lien » ou « question »
+    genre: str  # « affaire », « noeud », « lien », « question » ou « zone »
     objet_id: str
     version: int
     motif: str
@@ -593,7 +696,8 @@ _CHAMPS_CORRIGEABLES_LIEN = {
     "solidite",
 }
 
-GENRES_RESEAU = frozenset({"affaire", "noeud", "lien", "question"})
+GENRES_RESEAU = frozenset({"affaire", "noeud", "lien", "question", "zone"})
+_CHAMPS_CORRIGEABLES_ZONE = {"titre", "pourquoi", "pourquoi_en_mots", "tente", "autour", "pistes", "role_manquant"}
 _GENRE_AFFAIRE = "affaire"
 _ID_QUESTION_CENTRALE = "question_centrale"
 
@@ -846,14 +950,54 @@ class ReseauEnquete:
         """Les zones d'ombre encore à combler."""
         return self.questions(StatutQuestion.OUVERTE)
 
+    # -- zones d'ombre ------------------------------------------------------
+
+    def poser_zone(
+        self, titre: str, pourquoi: str, tente: Iterable[str], pistes: Iterable[Piste | dict[str, Any]],
+        autour: Iterable[str] = (), role_manquant: Role | str = Role.INCONNU,
+        pourquoi_en_mots: str | None = None, id: str | None = None,
+    ) -> ZoneOmbre:
+        """Épingle une zone d'ombre : ce qu'on n'a pas su remonter et par où reprendre."""
+        zone = ZoneOmbre(titre=titre, pourquoi=pourquoi, tente=tuple(tente) if not isinstance(tente, str) else tente,
+                         pistes=tuple(pistes),
+                         autour=autour if isinstance(autour, str) else tuple(autour),
+                         role_manquant=role_manquant, pourquoi_en_mots=pourquoi_en_mots,
+                         **({"id": id} if id else {}))
+        self._ajouter("zone", zone.id, zone.vers_dict(), motif="zone posée")
+        return zone
+
+    def corriger_zone(self, zone_id: str, motif: str, **changements: Any) -> ZoneOmbre:
+        """Ajoute une nouvelle version de la zone ; l'ancienne reste lisible."""
+        inconnus = set(changements) - _CHAMPS_CORRIGEABLES_ZONE
+        if inconnus:
+            raise ValueError(f"champs non corrigeables : {sorted(inconnus)}")
+        _texte_requis(motif, "le motif de la correction")
+        nouvelle = replace(self.zone(zone_id), **changements)  # __post_init__ revalide tout
+        nouvelle = replace(nouvelle, version=self._prochaine_version("zone", zone_id))
+        self._ajouter("zone", zone_id, nouvelle.vers_dict(), motif=motif)
+        return nouvelle
+
+    def zone(self, zone_id: str) -> ZoneOmbre:
+        courant = self._courant("zone", zone_id)
+        if courant is None:
+            raise KeyError(zone_id)
+        return ZoneOmbre.depuis_dict(courant)
+
+    def zones(self) -> list[ZoneOmbre]:
+        """La dernière version de chaque zone, dans l'ordre de première apparition."""
+        return [ZoneOmbre.depuis_dict(d) for d in self._courants("zone")]
+
+    def versions_zone(self, zone_id: str) -> list[ZoneOmbre]:
+        return [ZoneOmbre.depuis_dict(e.donnees) for e in self.historique(zone_id, "zone")]
+
     # -- export pour l'interface -------------------------------------------
 
     def exporter_pour_interface(self) -> dict[str, Any]:
         """JSON hiérarchique : question → dossiers (rôles) → pièces → preuves.
 
         Chaque niveau porte ses compteurs, calculés sur ce qu'il contient (ils ne
-        peuvent donc pas se contredire). Les liens et les questions ouvertes
-        suivent à la racine. Le résultat passe tel quel dans `json.dumps`.
+        peuvent donc pas se contredire). Les liens, les zones d'ombre et les questions
+        ouvertes suivent à la racine. Le résultat passe tel quel dans `json.dumps`.
         """
         noeuds = self.noeuds()
         liens = self.liens()
@@ -888,7 +1032,7 @@ class ReseauEnquete:
                 "pieces": pieces,
             })
 
-        ouvertes = self.questions_ouvertes()
+        zones = self.zones()
         etiquettes = {n.id: n.libelle for n in noeuds}
         return {
             "question": self.question_centrale,
@@ -897,9 +1041,13 @@ class ReseauEnquete:
                 "pieces": len(noeuds),
                 "liens": len(liens),
                 "preuves": len(preuves_distinctes),
-                "zones_d_ombre": len(ouvertes),
+                # Sens historique, lu par chaine.py et le banc : les questions encore ouvertes.
+                "zones_d_ombre": len(self.questions_ouvertes()),
+                # Les zones d'ombre au contrat (ce que l'enquête n'a pas su remonter).
+                "zones": len(zones),
             },
             "dossiers": dossiers,
+            "zones_d_ombre": [z.vers_dict() for z in zones],
             "liens": [self._lien_pour_interface(l, etiquettes) for l in liens],
             "questions_ouvertes": [
                 {**q.vers_dict(), "comblee_par_libelle": etiquettes.get(q.comblee_par or "")}
