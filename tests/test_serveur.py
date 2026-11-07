@@ -343,3 +343,66 @@ def test_comprendre_absent_renvoie_503(serveur, monkeypatch):
     with pytest.raises(urllib.error.HTTPError) as erreur:
         get(serveur, "/api/comprendre?q=test")
     assert erreur.value.code == 503
+
+
+# -- l'écran servi par le serveur ------------------------------------------------
+
+@pytest.fixture
+def ecran(tmp_path):
+    dossier = tmp_path / "ecran"
+    (dossier / "sous").mkdir(parents=True)
+    (dossier / "index.html").write_text("<h1>Brut</h1>", encoding="utf-8")
+    (dossier / "app.js").write_text("export const a = 1;", encoding="utf-8")
+    (dossier / "sous" / "style.css").write_text("body{}", encoding="utf-8")
+    (dossier / "sous" / "index.html").write_text("<p>sous</p>", encoding="utf-8")
+    (tmp_path / "secret.txt").write_text("hors du dossier", encoding="utf-8")
+    return dossier
+
+
+def statut_de(serveur, chemin):
+    try:
+        return get(serveur, chemin)[0]
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
+def test_ecran_index_et_fichiers(racine, ecran):
+    with Serveur(racine, port=0, dossier_interface=ecran) as s:
+        statut, entetes, corps = get(s, "/")
+        assert statut == 200 and corps == b"<h1>Brut</h1>" and entetes["Content-Type"].startswith("text/html")
+        _, entetes, corps = get(s, "/interface/app.js")
+        assert entetes["Content-Type"].startswith("text/javascript") and corps == b"export const a = 1;"
+        assert get(s, "/interface/sous/style.css")[1]["Content-Type"].startswith("text/css")
+        assert get(s, "/interface/index.html")[2] == b"<h1>Brut</h1>"
+        assert get(s, "/interface/sous/")[2] == b"<p>sous</p>"
+        assert get_json(s, "/api/sante") == {"ok": True}
+
+
+def test_ecran_sans_sortie_du_dossier(racine, ecran):
+    with Serveur(racine, port=0, dossier_interface=ecran) as s:
+        for chemin in ("/interface/../secret.txt", "/interface/%2e%2e/secret.txt", "/interface/..%2fsecret.txt",
+                       "/interface/sous/../../secret.txt", "/interface/..%5csecret.txt",
+                       "/interface/%2e%2e%2f%2e%2e%2fsecret.txt", "/interface/C:/Windows/win.ini",
+                       "/interface//etc/passwd", "/interface/inconnu.js"):
+            assert statut_de(s, chemin) == 404, chemin
+
+
+def test_ecran_absent_donne_une_404_claire(racine, tmp_path):
+    with Serveur(racine, port=0, dossier_interface=tmp_path / "rien") as s:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            get(s, "/")
+        assert e.value.code == 404 and "interface" in json.loads(e.value.read())["erreur"]
+    vide = tmp_path / "vide"
+    vide.mkdir()
+    with Serveur(racine, port=0, dossier_interface=vide) as s:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            get(s, "/")
+        assert e.value.code == 404 and "index.html" in json.loads(e.value.read())["erreur"]
+
+
+def test_ecran_dossier_par_defaut_est_celui_du_depot(racine):
+    from enquete.serveur import DOSSIER_INTERFACE
+    with Serveur(racine, port=0) as s:
+        assert s.dossier_interface == DOSSIER_INTERFACE
+        assert DOSSIER_INTERFACE.name == "interface"
+        assert DOSSIER_INTERFACE.parent == Path(__file__).resolve().parent.parent
