@@ -363,7 +363,7 @@ class ReseauX:
             if not self._autorise(url_page):
                 break
             try:
-                statut, corps, _, _ = self._get(BRAVE, params, INTERVALLE_BRAVE, navigateur=True)
+                statut, corps, _, _ = self._get(BRAVE, params, INTERVALLE_BRAVE, navigateur=False)
             except XError:
                 if k == 0:
                     raise
