@@ -1,8 +1,8 @@
-# Hack Oriane : l'enquête qui sait ce qu'elle ignore
+# Winston : l'enquête qui sait ce qu'elle ignore
 
 Projet du hackathon « Hack the Feed » (Albert School, 7 novembre 2026), track Brut.
 
-**La promesse.** Un journaliste de Brut ouvre son sujet avec la liste numérotée de ce qui reste ouvert ; l'outil la raccourcit pièce à l'appui et s'arrête aux questions où il faut un humain.
+**La promesse.** Des dizaines de comptes disent la même chose, au point que personne ne remonte à la source. Winston remonte quand même, vidéo à la seconde près, et montre où la piste s'arrête.
 
 ## Pour qui, et quelle question
 
