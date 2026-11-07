@@ -126,6 +126,7 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
     liens: set[str] = set()
     preuves: set[tuple] = set()
     questions_ouvertes: dict[str, bool] = {}
+    videos_lues: set[str] = set()  # vidéos distinctes reçues par les recherches
 
     def pousser(horodatage: str, type_: str, donnees: dict[str, Any]) -> None:
         evenements.append({
@@ -157,6 +158,15 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
             pousser(date, "question", {
                 **d, "origine": "journaliste" if objet_id in du_journaliste else "agent", "motif": motif,
             })
+        elif genre == "recherche":
+            # Le travail en cours : une recherche lancée, ce qu'elle a rapporté.
+            videos_lues.update(str(i) for i in d.get("ids") or [])
+            pousser(date, "recherche", {**d, "motif": motif})
+        elif genre == "etape":
+            pousser(date, "etape", {**d, "motif": motif})
+        elif genre == "fin":
+            # La fin écrite au journal par la chaîne ; la fin du flux, elle, reste celle du serveur.
+            pousser(date, "etape", {"nom": "enquete", "etat": "fin", **d, "motif": motif})
         else:
             continue
         par_role: dict[str, int] = {}
@@ -165,6 +175,7 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
         pousser(date, "compteur", {
             "pieces": len(libelles), "liens": len(liens), "preuves": len(preuves),
             "zones_d_ombre": sum(questions_ouvertes.values()), "par_role": par_role,
+            "videos_lues": len(videos_lues),
         })
     return evenements
 

@@ -274,3 +274,32 @@ def test_export_json_importe_en_journal(tmp_path):
     with Serveur(tmp_path, port=0, pas_sondage=0.02) as s:
         assert get_json(s, "/api/export?enquete=ancienne")["compteurs"] == export["compteurs"]
     assert lire_evenements(tmp_path / "ancienne" / "reseau.sqlite")[0]["type"] == "question"
+
+
+def test_travail_en_cours_traduit_et_videos_lues(tmp_path):
+    """Les lignes de travail de la chaîne (recherche, étape, fin) passent dans le flux,
+    et le compteur dit combien de vidéos distinctes les recherches ont rapportées."""
+    chemin = tmp_path / "reseau.sqlite"
+    ReseauEnquete(QUESTION, str(chemin)).fermer()
+    travail = [
+        ("etape", "e1", {"nom": "recherche", "etat": "debut", "detail": "2 mots × 3 champs"}),
+        ("recherche", "r1", {"source": "oriane", "champ": "transcript", "mot": "séisme",
+                             "total": 165, "recus": 3, "ids": ["a", "b", "c"], "credits": 10}),
+        ("recherche", "r2", {"source": "oriane", "champ": "caption", "mot": "séisme",
+                             "total": 196, "recus": 2, "ids": ["c", "d"], "credits": 10}),
+        ("fin", "f1", {"cas": "reel", "duree_reelle_s": 4.2}),
+    ]
+    bd = sqlite3.connect(chemin)
+    for genre, objet_id, donnees in travail:
+        bd.execute("INSERT INTO evenements (date, genre, objet_id, version, motif, donnees)"
+                   " VALUES (?, ?, ?, 1, '', ?)",
+                   (COLLECTE.isoformat(), genre, objet_id, json.dumps(donnees, ensure_ascii=False)))
+    bd.commit()
+    bd.close()
+
+    evenements = lire_evenements(chemin)
+    types = [e["type"] for e in evenements if e["type"] != "compteur"]
+    assert types == ["question", "etape", "recherche", "recherche", "etape"]
+    assert evenements[-1]["type"] == "compteur" and evenements[-1]["donnees"]["videos_lues"] == 4
+    fin = [e for e in evenements if e["type"] == "etape"][-1]["donnees"]
+    assert fin["nom"] == "enquete" and fin["etat"] == "fin" and fin["cas"] == "reel"
