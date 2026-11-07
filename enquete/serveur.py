@@ -164,6 +164,8 @@ def lire_evenements(chemin: Path) -> list[dict[str, Any]]:
         if genre == "affaire":
             pousser(date, "question", {
                 "id": objet_id, "texte": d["question"], "centrale": True, "reformulee": version > 1,
+                # « fictif » pour un cas de démonstration : l'écran le dit dès la première seconde.
+                **({"cas": d["cas"]} if d.get("cas") else {}),
             })
         elif genre == "noeud":
             libelles[d["id"]] = d["libelle"]
