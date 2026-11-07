@@ -10,8 +10,8 @@ import { fileURLToPath } from "node:url";
 import { creerBranchement, etatInitial, appliquer } from "./branchement.js";
 
 const DEPOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const JOURNAL_REEL = process.env.JOURNAL_REEL ||
-  "C:\\Users\\Adem\\AppData\\Local\\Temp\\claude\\f01b279892b60f04\\1013f4b8-f603-444a-8021-db4f7f644c22\\scratchpad\\journaux\\natif\\journal.sqlite";
+// Le rejeu d'un vrai passage demande son journal : JOURNAL_REEL=<chemin du journal.sqlite>. Sans lui, ce test est sauté.
+const JOURNAL_REEL = process.env.JOURNAL_REEL || "";
 
 const attendre = (ms) => new Promise((ok) => setTimeout(ok, ms));
 let reussis = 0;
@@ -116,8 +116,13 @@ function demarrerServeur(racine) {
 
 const racine = mkdtempSync(join(tmpdir(), "branchement-"));
 let serveur = null;
+if (!JOURNAL_REEL || !existsSync(JOURNAL_REEL)) {
+  console.log("saut rejeu d'un vrai passage : JOURNAL_REEL non défini ou introuvable");
+  rmSync(racine, { recursive: true, force: true });
+  console.log(`\n${reussis} tests passés`);
+  process.exit(process.exitCode || 0);
+}
 try {
-  assert.ok(existsSync(JOURNAL_REEL), "journal réel introuvable : " + JOURNAL_REEL);
   mkdirSync(join(racine, "affaire-10"));
   copyFileSync(JOURNAL_REEL, join(racine, "affaire-10", "reseau.sqlite"));
   serveur = await demarrerServeur(racine);
