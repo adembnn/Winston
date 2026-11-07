@@ -122,6 +122,7 @@ if (VRAI_CAS) {
   // la ligne et les écrans lisent les mêmes compteurs que le réseau, et se mettent à jour pendant une enquête en direct
   const BASE_E = Q0.get('base') || 'http://127.0.0.1:8802', SOURCES = ['video', 'publication_texte', 'document', 'site', 'societe', 'personne'];
   const FAM = [['video', 'vidéos'], ['publication_texte', 'articles'], ['document', 'documents'], ['site', 'sites'], ['societe', 'registres et sociétés'], ['personne', 'personnes']];
+  const SING = { 'vidéos': 'vidéo', 'articles': 'article', 'documents': 'document', 'sites': 'site', 'registres et sociétés': 'société ou registre', 'personnes': 'personne' };
   let vus = -1;
   const lire = () => fetch(BASE_E + '/api/export?enquete=' + encodeURIComponent(ENQ)).then(r => r.json()).then(d => {
     const ps = (d.dossiers || []).flatMap(x => x.pieces || []);
@@ -130,7 +131,7 @@ if (VRAI_CAS) {
     const vl = (d.compteurs && d.compteurs.videos_lues) || 0; if (vl > (par.video || 0)) par.video = vl;
     const tot = SOURCES.reduce((t, k) => t + (par[k] || 0), 0);
     const l = document.getElementById('ligne');
-    if (l) { l.hidden = !tot; l.textContent = tot + ' sources lues : ' + FAM.filter(([k]) => par[k]).map(([k, m]) => par[k] + ' ' + (par[k] > 1 ? m : m.replace(/s/g, ''))).join(', '); }
+    if (l) { l.hidden = !tot; l.textContent = tot + ' sources lues : ' + FAM.filter(([k]) => par[k]).map(([k, m]) => par[k] + ' ' + (par[k] > 1 ? m : SING[m])).join(', '); }
   }).catch(() => { if (vus < 0) { vus = 0; ecranReel([]); } const l = document.getElementById('ligne'); if (l) l.hidden = true; });
   lire(); if (Q0.get('mode') === 'direct') setInterval(lire, 4000);
 } else {
