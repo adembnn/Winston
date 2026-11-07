@@ -1,0 +1,8 @@
+{
+ "provider_url": "https://www.facebook.com",
+ "provider_name": "Facebook",
+ "html": "<div id=\"fb-root\"></div>\n<script async=\"1\" defer=\"1\" crossorigin=\"anonymous\" src=\"https://connect.facebook.net/fr_FR/sdk.js#xfbml=1&amp;version=v27.0\"></script><div class=\"fb-video\" data-href=\"https://www.facebook.com/lefigaro/videos/2181940979381942/\"><blockquote cite=\"https://www.facebook.com/reel/2181940979381942/\" class=\"fb-xfbml-parse-ignore\"><a href=\"https://www.facebook.com/reel/2181940979381942/\"></a><p>Présidentielle 2027 : «Malgré la percée de David Lisnard dans les sondages, Bruno Retailleau ne perd pas de points», constate François Kraus, directeur adjoint Opinion de l&#039;Ifop, dans Points de Vue (Le Figaro TV).</p>Posted by <a href=\"https://www.facebook.com/lefigaro\">Le Figaro</a> on Wednesday, October 21, 2026</blockquote></div>",
+ "type": "video",
+ "version": "1.0",
+ "width": 500
+}

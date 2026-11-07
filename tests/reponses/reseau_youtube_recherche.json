@@ -1,0 +1,38 @@
+{
+ "_type": "playlist",
+ "entries": [
+  {
+   "_type": "url",
+   "ie_key": "Youtube",
+   "id": "pg306PxE9O0",
+   "url": "https://www.youtube.com/watch?v=pg306PxE9O0",
+   "title": "Présidentielle 2027 : une campagne sous le signe de la colère ?",
+   "uploader": "Le Monde",
+   "channel": "Le Monde",
+   "view_count": 49670,
+   "duration": 2271
+  },
+  {
+   "_type": "url",
+   "ie_key": "Youtube",
+   "id": "bwgJlWzksFo",
+   "url": "https://www.youtube.com/watch?v=bwgJlWzksFo",
+   "title": "Jordan Bardella face à Philippe de Villiers : \"La France a la force de se relever\"",
+   "uploader": "Europe 1",
+   "channel": "Europe 1",
+   "view_count": 249767,
+   "duration": 4386
+  },
+  {
+   "_type": "url",
+   "ie_key": "Youtube",
+   "id": "ZajRuZQ6AMQ",
+   "url": "https://www.youtube.com/watch?v=ZajRuZQ6AMQ",
+   "title": "DÉCRYPTAGE | Élysée 2027 : où en sont les candidats à six mois du scrutin ?",
+   "uploader": "AFP",
+   "channel": "AFP",
+   "view_count": 48843,
+   "duration": 752
+  }
+ ]
+}

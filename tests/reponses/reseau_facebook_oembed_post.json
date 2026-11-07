@@ -1,0 +1,8 @@
+{
+ "provider_url": "https://www.facebook.com",
+ "provider_name": "Facebook",
+ "html": "<div id=\"fb-root\"></div>\n<script async=\"1\" defer=\"1\" crossorigin=\"anonymous\" src=\"https://connect.facebook.net/fr_FR/sdk.js#xfbml=1&amp;version=v27.0\"></script><div class=\"fb-post\" data-href=\"https://www.facebook.com/lefigaro/videos/2181940979381942/\" data-width=\"552\"></div>",
+ "type": "rich",
+ "version": "1.0",
+ "width": 552
+}
