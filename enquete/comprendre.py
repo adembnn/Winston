@@ -26,7 +26,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 import unicodedata
@@ -722,7 +722,437 @@ def resumer_piece(
 
 
 # ---------------------------------------------------------------------------
-# 6. Ligne de commande
+# 6. Le résumé de l'enquête (page ouverte par un clic sur la question centrale)
+# ---------------------------------------------------------------------------
+#
+# Les chiffres, les pièces établies, les acteurs, la chronologie, les zones
+# d'ombre, les prochaines étapes, « qui appeler » et la certitude sont faits par
+# du code, à partir de l'export. Seuls `en_bref` et `mecanisme` sont écrits par
+# Claude, à partir de l'export seulement ; chaque phrase doit citer un
+# `piece_id` de l'export et ne contenir que les nombres de `chiffres`, sinon
+# la réponse est rejetée et des phrases faites par code prennent le relais.
+
+DELAI_RESUME_ENQUETE_S = 120.0
+ECHELLE_CERTITUDE = ("établi", "très probable", "probable", "possible", "non établi")
+PLAFOND_CERTITUDE = "probable"  # tant qu'un humain n'a pas validé
+VERSION_RESUME = 2  # 2 : verbes d'argent interdits (lexique)
+
+_ROLES_PRIVES = ("temoin", "expert", "victime", "mis_en_cause")
+_TYPES_NOMMABLES = ("societe", "site", "document")
+_NOM_TYPE = {
+    "video": "vidéo", "publication_texte": "publication", "document": "document",
+    "site": "site", "societe": "société", "personne": "personne", "grappe": "série",
+}
+_ROLE_MOTS = {
+    "origine": "plus ancienne trace retrouvée", "amplificateur": "amplification",
+    "beneficiaire": "à qui ça profite", "infrastructure": "infrastructure",
+    "victime": "victime ou personne concernée", "temoin": "témoin direct", "expert": "expert",
+    "contradicteur": "contradicteur", "mis_en_cause": "mis en cause", "inconnu": "rôle à établir",
+}
+_CHAMPS_DATE = ("date", "date_publication", "publie_le", "date_utc", "premier_vu",
+                "mise_en_ligne", "creee_le", "date_creation", "cree_le")
+_FAIT_DATE = {
+    "premier_vu": "Plus ancienne trace retrouvée", "mise_en_ligne": "Mise en ligne",
+    "creee_le": "Création", "cree_le": "Création", "date_creation": "Création",
+}
+_TYPES_LIEN_SERIE = ("dit_la_meme_chose", "dit_phrase")
+_MOTS_INTERDITS = ("arnaque", "escroquerie", "escroc", "coupable", "frauduleux", "fraudeur",
+                   # lexique : aucun verbe d'argent sans pièce bancaire ou judiciaire
+                   "encaiss", "empoch", "blanchi", "detourn", "premier vu")
+_NOMBRES_EN_LETTRES = frozenset(
+    "deux trois quatre cinq six sept huit neuf dix onze douze vingt trente quarante cinquante "
+    "soixante cent mille million millions".split())
+
+
+def _pieces_de(export: dict) -> list[dict]:
+    return [p for d in export.get("dossiers", []) for p in d.get("pieces", [])]
+
+
+def _matiere(piece: dict) -> str | None:
+    sol = piece.get("solidite")
+    return sol.get("matiere") if isinstance(sol, dict) else None
+
+
+def _designation(piece: dict) -> str:
+    """Comment nommer une pièce : le libellé pour une société, un site, un document ou un compte
+    public ; le TYPE pour une personne ou pour tout ce qui porte le nom d'un témoin, d'un expert,
+    d'une victime ou d'un mis en cause. Aucun particulier n'est nommé."""
+    attrs = piece.get("attributs") or {}
+    type_ = piece.get("type") or ""
+    if type_ in _TYPES_NOMMABLES:
+        return piece.get("libelle") or _NOM_TYPE.get(type_, type_)
+    if type_ == "personne":
+        return attrs.get("fonction") or "personne"
+    if (piece.get("role") in _ROLES_PRIVES) or attrs.get("anonyme"):
+        base = _NOM_TYPE.get(type_, type_ or "pièce")
+        plateforme = attrs.get("plateforme")
+        return f"{base} ({plateforme})" if plateforme else base
+    return piece.get("libelle") or _NOM_TYPE.get(type_, type_ or "pièce")
+
+
+def _noms_interdits(export: dict) -> set[str]:
+    """Textes qui désigneraient un particulier : le libellé entier de toute pièce qu'on ne nomme
+    pas, et le nom de famille probable (mots capitalisés du premier segment, s'il est court)."""
+    interdits: set[str] = set()
+    for p in _pieces_de(export):
+        libelle = (p.get("libelle") or "").strip()
+        if not libelle or _designation(p) == libelle:
+            continue
+        interdits.add(libelle)
+        segment = libelle.split(",")[0].split()
+        if 1 < len(segment) <= 3:
+            interdits.update(m for m in segment[1:] if len(m) >= 4 and m[0].isupper() and m.isalpha())
+    return interdits
+
+
+def _anonymiser(texte: str, export: dict) -> str:
+    for nom in sorted(_noms_interdits(export), key=len, reverse=True):
+        texte = re.sub(re.escape(nom), "[personne]", texte, flags=re.IGNORECASE)
+    return texte
+
+
+def _nb_serie(grappe: dict, export: dict) -> int:
+    attrs = grappe.get("attributs") or {}
+    for cle in ("nb_videos", "videos"):
+        if isinstance(attrs.get(cle), int):
+            return attrs[cle]
+    return len({l["source_id"] for l in export.get("liens", [])
+                if l.get("cible_id") == grappe.get("id") and l.get("type_lien") in _TYPES_LIEN_SERIE})
+
+
+def mesurer_chiffres(export: dict) -> dict[str, Any]:
+    """Seulement des mesures. `videos_lues` vient du journal (le serveur le dépose dans l'export).
+    `sources_independantes` vaut None : un nombre de séries n'est pas un nombre de sources
+    indépendantes, ce chiffre viendra d'un module d'indépendance des sources."""
+    grappes = [p for p in _pieces_de(export) if p.get("type") == "grappe"]
+    lues = export.get("videos_lues")
+    return {
+        "videos": lues if isinstance(lues, int) else None,
+        "repetent": sum(_nb_serie(g, export) for g in grappes),
+        "series": len(grappes),
+        "sources_independantes": None,
+    }
+
+
+def _pieces_solides(export: dict) -> list[dict]:
+    solides = [p for p in _pieces_de(export) if _matiere(p) == "solide"]
+    ids = {p["id"] for p in solides}
+    # Une pièce qui désigne la même entité qu'une autre pièce solide ne s'établit qu'une fois.
+    return [p for p in solides if (p.get("attributs") or {}).get("meme_entite_que") not in ids]
+
+
+def _source_donnee(piece: dict) -> str | None:
+    for pr in piece.get("preuves") or []:
+        if pr.get("source_donnee"):
+            return pr["source_donnee"]
+    return None
+
+
+def _etabli(export: dict) -> list[dict]:
+    sorties = []
+    for p in _pieces_solides(export):
+        role = _ROLE_MOTS.get(p.get("role") or "inconnu", "rôle à établir")
+        phrase = f"{_designation(p)} : {_NOM_TYPE.get(p.get('type'), 'pièce')} solide, rôle « {role} »"
+        if src := _source_donnee(p):
+            phrase += f", selon {src}"
+        sorties.append({"texte": phrase + ".", "piece_id": p["id"]})
+    return sorties
+
+
+def _acteurs(export: dict) -> list[dict]:
+    sorties = []
+    for dossier in export.get("dossiers", []):
+        role = dossier.get("role")
+        pieces = [p for p in dossier.get("pieces", []) if p.get("type") != "grappe"]
+        videos_publiques = [p for p in pieces if p.get("type") == "video" and _designation(p) == p.get("libelle")]
+        if len(videos_publiques) > 3:
+            sorties.append({"role": role, "nom_ou_type": f"{len(videos_publiques)} vidéos de comptes publics"})
+            pieces = [p for p in pieces if p not in videos_publiques]
+        sorties.extend({"role": role, "nom_ou_type": _designation(p)} for p in pieces)
+    return sorties
+
+
+def _date_cle(valeur: str) -> tuple[float, str]:
+    d = _date_analysee(valeur)
+    if d is None:
+        return (float("inf"), valeur)
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return (d.timestamp(), valeur)
+
+
+def _chronologie(export: dict) -> list[dict]:
+    lignes = []
+    for p in _pieces_de(export):
+        if p.get("type") == "grappe":
+            continue
+        attrs = p.get("attributs") or {}
+        for champ in _CHAMPS_DATE:
+            valeur = attrs.get(champ) or p.get(champ)
+            if isinstance(valeur, str) and valeur.strip():
+                debut = _FAIT_DATE.get(champ, "Publication")
+                lignes.append({"date": valeur.strip(), "fait": f"{debut} : {_designation(p)}", "piece_id": p["id"]})
+                break
+    return sorted(lignes, key=lambda l: _date_cle(l["date"]))
+
+
+def _prochaines_etapes(export: dict) -> list[str]:
+    etapes = []
+    for zone in export.get("zones_d_ombre", []):
+        pistes = zone.get("pistes") or []
+        if pistes and pistes[0].get("geste"):
+            etapes.append(pistes[0]["geste"])
+    if any(p.get("role") == "mis_en_cause" for p in _pieces_de(export)):
+        etapes.append("Envoyer la sollicitation au mis en cause")
+    return etapes
+
+
+def _qui_appeler(export: dict) -> list[dict]:
+    """Les témoins d'abord, puis les experts, les mis en cause en dernier (avant publication)."""
+    ordre = (("temoin", "témoin possible, identité à vérifier avant tout contact"),
+             ("expert", "expert à interroger pour éclairer le dossier"),
+             ("mis_en_cause", "à solliciter avant publication pour recueillir sa version"))
+    sorties = []
+    for role, pourquoi in ordre:
+        for p in _pieces_de(export):
+            if p.get("role") == role:
+                sorties.append({"qui": _designation(p), "pourquoi": pourquoi, "piece_id": p["id"]})
+    return sorties
+
+
+def _certitude(export: dict) -> str:
+    pieces = _pieces_de(export)
+    solides = [p for p in pieces if _matiere(p) == "solide"]
+    if not solides:
+        brut = "possible" if any(_matiere(p) == "indice" for p in pieces) else "non établi"
+    elif any(p.get("role") in ("beneficiaire", "mis_en_cause") for p in solides):
+        brut = "probable"
+    else:
+        brut = "possible"
+    # Plafond : rien ne dépasse « probable » sans validation humaine.
+    return ECHELLE_CERTITUDE[max(ECHELLE_CERTITUDE.index(brut), ECHELLE_CERTITUDE.index(PLAFOND_CERTITUDE))]
+
+
+def _lies(export: dict, roles_a: tuple[str, ...], roles_b: tuple[str, ...]) -> bool:
+    role = {p["id"]: p.get("role") for p in _pieces_de(export)}
+    return any((role.get(l["source_id"]) in roles_a and role.get(l["cible_id"]) in roles_b)
+               or (role.get(l["source_id"]) in roles_b and role.get(l["cible_id"]) in roles_a)
+               for l in export.get("liens", []))
+
+
+def phrases_par_code(export: dict, chiffres: dict | None = None) -> dict[str, Any]:
+    """`en_bref` et `mecanisme` faits par code, à partir des mesures et des rôles seulement."""
+    chiffres = chiffres or mesurer_chiffres(export)
+    pieces = _pieces_de(export)
+    solides = _pieces_solides(export)
+    phrases = []
+    if chiffres["videos"] is not None and chiffres["series"]:
+        phrases.append(f"{chiffres['videos']} vidéos lues, dont {chiffres['repetent']} répètent une phrase "
+                       f"commune, rangées en {chiffres['series']} séries distinctes.")
+    elif chiffres["series"]:
+        phrases.append(f"{chiffres['repetent']} vidéos répètent une phrase commune, rangées en "
+                       f"{chiffres['series']} séries distinctes.")
+    else:
+        phrases.append(f"{len(pieces)} pièces au dossier, sans série de vidéos qui se répètent.")
+    if solides:
+        phrases.append(f"{len(solides)} pièces solides au dossier ; le reste reste à recouper.")
+    else:
+        phrases.append("Aucune pièce solide pour l'instant : tout reste à recouper.")
+    if n := len(export.get("zones_d_ombre", [])):
+        phrases.append(f"{n} zones d'ombre restent ouvertes.")
+    infra = [p["libelle"] for p in pieces if p.get("role") == "infrastructure" and p.get("type") in ("site", "societe")]
+    benef = [p["libelle"] for p in pieces if p.get("role") == "beneficiaire" and p.get("type") == "societe"]
+    mecanisme = []
+    if infra:
+        mecanisme.append("Moyens techniques relevés au dossier : " + ", ".join(infra[:3]) + ".")
+    if benef:
+        liaison = " ; des liens du dossier la rattachent à ces moyens techniques" if _lies(
+            export, ("infrastructure",), ("beneficiaire",)) else ""
+        mecanisme.append(f"À qui ça profite : le registre cite {', '.join(benef[:2])}{liaison}.")
+    if chiffres["series"]:
+        mecanisme.append("Des vidéos répètent la même phrase, par séries.")
+    if not mecanisme:
+        mecanisme.append("Le mécanisme n'est pas établi par les pièces actuelles du dossier.")
+    return {"en_bref": " ".join(phrases[:4]), "mecanisme": " ".join(mecanisme[:2]), "source": "code"}
+
+
+# --- Claude : prompt, contrôle par code, cache -------------------------------
+
+_PROMPT_RESUME_ENQUETE = """\
+Tu rédiges le résumé d'une enquête pour un journaliste de Brut. Tu écris à partir du DOSSIER ci-dessous et de rien d'autre.
+
+RÈGLES
+- Tu rends deux blocs : "en_bref" (2 à 4 phrases : ce qu'on sait, ce qui est solide, ce qui manque) et "mecanisme" (1 ou 2 phrases : comment l'affaire fonctionne, de la promesse commerciale à l'argent, si le dossier le montre ; sinon dis ce qui manque).
+- CHAQUE phrase cite dans "pieces" au moins un "id" de pièce du dossier, et seulement des ids qui y figurent.
+- Les seuls nombres permis sont ceux de CHIFFRES (jamais celui qui vaut null). N'écris aucun autre nombre : ni date en chiffres, ni durée, ni montant. Les séries se disent « séries distinctes », jamais « sources indépendantes ».
+- Une pièce "indice" n'est jamais présentée comme un fait établi : au conditionnel ou avec « selon ». Une pièce "solide" est attribuée (« selon le registre »).
+- Aucun particulier n'est nommé. Pas de « arnaque » : écris « promesse commerciale ». Pas de « coupable », pas d'accusation sans pièce solide. Aucun verbe d'argent (« encaisser », « empocher »…) : écris « est présentée comme l'exploitant de », d'après les mentions légales. Écris « Plus ancienne trace retrouvée », jamais « origine ».
+- N'écris pas les ids dans le texte.
+
+Réponds par UN SEUL objet JSON valide, sans texte autour ni balises :
+{{"en_bref": [{{"texte": "...", "pieces": ["id"]}}], "mecanisme": [{{"texte": "...", "pieces": ["id"]}}]}}
+
+CHIFFRES : {chiffres}
+
+DOSSIER (JSON) :
+{dossier}
+"""
+
+
+def _dossier_pour_claude(export: dict) -> dict:
+    """Ce que Claude voit : l'export réduit et anonymisé. Les vidéos qui se répètent ne sont pas
+    listées une à une (les séries les portent)."""
+    pieces = []
+    amplificatrices = []
+    for p in _pieces_de(export):
+        if p.get("type") == "video" and p.get("role") == "amplificateur":
+            amplificatrices.append(p["id"])
+            continue
+        attrs = {k: v for k, v in (p.get("attributs") or {}).items() if isinstance(v, (str, int, bool))}
+        pieces.append({
+            "id": p["id"], "type": p.get("type"), "role": p.get("role"),
+            "designation": _designation(p), "matiere": _matiere(p),
+            "solidite": (p.get("solidite") or {}).get("en_mots"),
+            "attributs": {k: _anonymiser(v, export) if isinstance(v, str) else v for k, v in attrs.items()},
+            "source": _source_donnee(p),
+        })
+    return {
+        "question": export.get("question"),
+        "pieces": pieces[:80],
+        "videos_amplificatrices_ids": amplificatrices[:5],
+        "liens": [{"type": l.get("type_lien"), "de": l.get("source_id"), "vers": l.get("cible_id"),
+                   "explication": _anonymiser(str(l.get("explication") or ""), export)}
+                  for l in export.get("liens", []) if l.get("type_lien") not in _TYPES_LIEN_SERIE][:60],
+        "zones_d_ombre": [{"id": z["id"], "titre": z.get("titre"), "pourquoi": z.get("pourquoi_en_mots")}
+                          for z in export.get("zones_d_ombre", [])],
+    }
+
+
+def verifier_phrases(brut: dict, export: dict, chiffres: dict) -> list[str]:
+    """Contrôles par code de la réponse de Claude ; liste des problèmes (vide = acceptée)."""
+    problemes: list[str] = []
+    ids = {p["id"] for p in _pieces_de(export)}
+    permis = {str(v) for v in chiffres.values() if isinstance(v, int)}
+    permis_lettres = {sans_accents(nombre_en_lettres(v)) for v in chiffres.values()
+                      if isinstance(v, int) and nombre_en_lettres(v)}
+    interdits = _noms_interdits(export)
+    for bloc, (mini, maxi) in {"en_bref": (2, 4), "mecanisme": (1, 2)}.items():
+        phrases = brut.get(bloc)
+        if not isinstance(phrases, list) or not mini <= len(phrases) <= maxi:
+            problemes.append(f"« {bloc} » : {mini} à {maxi} phrases attendues")
+            continue
+        for ph in phrases:
+            texte = ph.get("texte") if isinstance(ph, dict) else None
+            cites = ph.get("pieces") if isinstance(ph, dict) else None
+            if not isinstance(texte, str) or not texte.strip():
+                problemes.append(f"« {bloc} » : phrase vide")
+                continue
+            if not isinstance(cites, list) or not cites or any(c not in ids for c in cites):
+                problemes.append(f"« {bloc} » : piece_id absent ou inconnu dans « {texte[:40]} »")
+            nu = texte
+            for i in sorted(ids, key=len, reverse=True):
+                nu = nu.replace(i, " ")
+            for n in re.findall(r"\d+", nu):
+                if n not in permis:
+                    problemes.append(f"nombre non mesuré : {n}")
+            bas = sans_accents(nu.casefold())
+            for mot in re.findall(r"[a-z]+", bas):
+                if mot in _NOMBRES_EN_LETTRES and mot not in permis_lettres:
+                    problemes.append(f"nombre en lettres non mesuré : {mot}")
+            for mot in _MOTS_INTERDITS:
+                if mot in bas:
+                    problemes.append(f"mot interdit : {mot}")
+            if re.search(r"sources? independantes?", bas):
+                problemes.append("« sources indépendantes » : seules les séries sont mesurées")
+            if any(nom.casefold() in nu.casefold() for nom in interdits):
+                problemes.append("un particulier est nommé")
+    return problemes
+
+
+def _cle_cache_resume(dossier: dict, chiffres: dict, modele: str) -> str:
+    brut = json.dumps([VERSION_RESUME, modele, chiffres, dossier], sort_keys=True, ensure_ascii=False, default=str)
+    return "resume-" + hashlib.sha256(brut.encode("utf-8")).hexdigest()[:32]
+
+
+def rediger_resume(
+    export: dict,
+    executeur: Executeur | None = None,
+    modele: str = "sonnet",
+    delai: float = DELAI_RESUME_ENQUETE_S,
+    cache: bool = True,
+    chiffres: dict | None = None,
+) -> dict[str, Any]:
+    """`en_bref` et `mecanisme` écrits par Claude à partir de l'export seulement, contrôlés par code.
+
+    Rend {en_bref, mecanisme, source: "claude"} ; si Claude ne répond pas ou si sa réponse est
+    rejetée : {en_bref, mecanisme, source: "code"}. Cache disque par empreinte de l'export
+    (seules les réponses de Claude acceptées y entrent).
+    """
+    chiffres = chiffres or mesurer_chiffres(export)
+    dossier = _dossier_pour_claude(export)
+    fichier = dossier_cache() / f"{_cle_cache_resume(dossier, chiffres, modele)}.json"
+    if cache:
+        try:
+            garde = json.loads(fichier.read_text(encoding="utf-8"))
+            if garde.get("source") == "claude":
+                return garde
+        except (OSError, ValueError):
+            pass
+    appel = executeur or executeur_claude(modele)
+    prompt = _PROMPT_RESUME_ENQUETE.format(
+        chiffres=json.dumps(chiffres, ensure_ascii=False),
+        dossier=json.dumps(dossier, ensure_ascii=False, default=str, indent=1))
+    try:
+        brut = extraire_json(_avec_delai(lambda: appel(prompt, delai), delai))
+        defauts = verifier_phrases(brut, export, chiffres)
+        if not defauts:
+            resultat = {"en_bref": " ".join(p["texte"].strip() for p in brut["en_bref"]),
+                        "mecanisme": " ".join(p["texte"].strip() for p in brut["mecanisme"]),
+                        "source": "claude"}
+            if cache:
+                try:
+                    fichier.parent.mkdir(parents=True, exist_ok=True)
+                    fichier.write_text(json.dumps(resultat, ensure_ascii=False), encoding="utf-8")
+                except OSError:
+                    pass
+            return resultat
+        raison = "réponse rejetée par le contrôle : " + " ; ".join(str(d) for d in defauts[:5])
+    except Exception as erreur:  # noqa: BLE001 - Claude muet ou illisible : repli par code
+        raison = f"{type(erreur).__name__} : {erreur}"
+    # Le repli dit pourquoi : visible dans la réponse et dans la console du serveur.
+    print(f"[résumé] repli sur les phrases par code ({raison})", file=sys.stderr, flush=True)
+    return {**phrases_par_code(export, chiffres), "raison_repli": raison}
+
+
+def resume_enquete(
+    export: dict,
+    profond: bool = True,
+    executeur: Executeur | None = None,
+    modele: str = "sonnet",
+    delai: float = DELAI_RESUME_ENQUETE_S,
+    cache: bool = True,
+) -> dict[str, Any]:
+    """Le résumé complet, au contrat de `GET /api/resume`."""
+    chiffres = mesurer_chiffres(export)
+    textes = (rediger_resume(export, executeur, modele, delai, cache, chiffres)
+              if profond else phrases_par_code(export, chiffres))
+    return {
+        "en_bref": textes["en_bref"],
+        "etabli": _etabli(export),
+        "mecanisme": textes["mecanisme"],
+        "acteurs": _acteurs(export),
+        "chronologie": _chronologie(export),
+        "chiffres": chiffres,
+        "ombre": [z["id"] for z in export.get("zones_d_ombre", [])],
+        "prochaines_etapes": _prochaines_etapes(export),
+        "qui_appeler": _qui_appeler(export),
+        "certitude": _certitude(export),
+        "source": textes["source"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# 7. Ligne de commande
 # ---------------------------------------------------------------------------
 
 def main(argv: list[str] | None = None) -> int:
