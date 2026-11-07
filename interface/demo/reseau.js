@@ -30,6 +30,8 @@ const PICTO = {
 PICTO.personne = PICTO.compte;
 const picto = (t) => '<svg viewBox="0 0 48 48" aria-hidden="true">' + (PICTO[t] || '<rect x="8" y="8" width="32" height="32" rx="3"/>') + "</svg>";
 
+const COURT = { origine: "Origine", amplificateur: "Relais", beneficiaire: "Bénéficiaires", infrastructure: "Moyens", victime: "Lésés",
+  temoin: "Témoins", expert: "Experts", contradicteur: "Voix contraires", mis_en_cause: "Mis en cause", inconnu: "À classer" };
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const plur = (n, s, p) => n + " " + (n > 1 ? p : s);
@@ -51,7 +53,7 @@ const nbPreuves = (p) => (p.preuves && p.preuves.length) || (p.compteurs && p.co
 const sansNumero = (t) => String(t || "").replace(/^\s*\d+\s*[.)]\s*/, "");
 function zonesDe(zonesOmbre, questions) {
   const zo = (zonesOmbre || []).filter((z) => z && (z.titre || z.texte));
-  if (zo.length) return { genre: "zone", liste: zo.map((z) => ({ id: z.id, titre: sansNumero(z.titre || z.texte), pistes: Array.isArray(z.pistes) ? z.pistes : [] })) };
+  if (zo.length) return { genre: "zone", liste: zo.map((z) => ({ id: z.id, titre: sansNumero(z.titre || z.texte), pourquoi: z.pourquoi || "", mots: z.pourquoi_en_mots || z.mots || "", tente: Array.isArray(z.tente) ? z.tente : [], pistes: Array.isArray(z.pistes) ? z.pistes : [] })) };
   const qo = (questions || []).filter((q) => q && (!q.statut || q.statut === "ouverte"));
   return { genre: "question", liste: qo.map((q) => ({ id: q.id, titre: sansNumero(q.texte || q.titre) })) };
 }
@@ -144,14 +146,15 @@ const rang = (p) => (p.solidite && p.solidite.matiere === "solide" ? 0 : p.solid
 const faible = (r) => !piecesDe(r).some((p) => rang(p) === 0);
 
 function sousTitre() {
-  const FAM = [["video", "vidéo", "vidéos"], ["publication_texte", "article", "articles"], ["document", "document", "documents"],
-    ["site", "site", "sites"], ["societe", "société ou registre", "registres et sociétés"], ["personne", "personne", "personnes"]];
+  const FAM = [[["video"], "vidéo", "vidéos"], [["publication_texte", "document"], "article ou document", "articles et documents"],
+    [["site"], "site", "sites"], [["societe"], "société ou registre", "registres et sociétés"]];
   const cpt = {};
   for (const r of ROLES) for (const p of piecesDe(r)) cpt[p.type] = (cpt[p.type] || 0) + 1;
   if (M.lectures && M.lectures > (cpt.video || 0)) cpt.video = M.lectures;
-  const total = FAM.reduce((x, f) => x + (cpt[f[0]] || 0), 0);
+  const n = FAM.map((f) => f[0].reduce((x, t) => x + (cpt[t] || 0), 0));
+  const total = n.reduce((x, y) => x + y, 0);
   if (!total) return "Lecture en cours…";
-  const parts = FAM.filter((f) => cpt[f[0]]).map((f) => plur(cpt[f[0]], f[1], f[2]));
+  const parts = FAM.map((f, i) => (n[i] ? plur(n[i], f[1], f[2]) : "")).filter(Boolean);
   return `${plur(total, "source lue", "sources lues")} : ${parts.join(", ")}`;
 }
 
@@ -189,7 +192,7 @@ function rendre() {
   const sub = nd("soustitre", "", "div");
   sub.id = "sous";
   const subMax = bw ? W - 2 * (m + bw + 24) : W * 0.78;
-  const sf = fit(sub, niveau === "__zones" ? `${plur(M.zones.length, "zone d'ombre", "zones d'ombre")}. Échap pour revenir.` : niveau ? sousTitreNiveau() : sousTitre(), subMax, 26 * K, f20, 2, 1.2);
+  const sf = fit(sub, niveau === "__zones" ? sousTitreZones() : niveau ? sousTitreNiveau() : sousTitre(), subMax, 26 * K, f20, 1, 1.2);
   pose(sub, (W - sf.w) / 2, H - m - sf.h, sf.w, sf.h);
 
   const aTop = m + lh + 16;
@@ -303,6 +306,12 @@ function niveau1(m, aTop, aBot, f20) {
   const th = tf.h, tw = tf.w;
   const zw = Math.min(tw, Math.max(Math.round(300 * K), Math.round(0.9 * tw)), Math.round(440 * K));
 
+  const used = new Set(), choisis = {};
+  for (const r of [...primOrdre, ...autres].sort((a, b) => piecesDe(b).length - piecesDe(a).length || ROLES.indexOf(a) - ROLES.indexOf(b))) {
+    const c = candidats(r).filter((u) => !used.has(u));
+    choisis[r] = c;
+    if (c[0]) used.add(c[0]);
+  }
   // cartes : photo à cadre blanc, la taille dit le poids du rôle, bords intérieurs alignés
   const g = Math.round(18 * K);
   const nL = Math.ceil(primOrdre.length / 2), nR = Math.floor(primOrdre.length / 2);
@@ -324,7 +333,7 @@ function niveau1(m, aTop, aBot, f20) {
     const n = piecesDe(s.r).length;
     const lignes = LIBELLE[s.r].length * f20 * 0.5 + 56 > s.w - 16 ? 2 : 1;
     const sh = Math.round(lignes * f20 * 1.1 + 12);
-    carte(e, LIBELLE[s.r], n, candidats(s.r), typeDominant(s.r), f20, sh, false, true);
+    carte(e, LIBELLE[s.r], n, choisis[s.r], typeDominant(s.r), f20, sh, false, true);
     e.querySelector(".nom").style.webkitLineClamp = String(lignes);
     e.classList.toggle("jaune", jauneRole === s.r);
     pose(e, s.x, s.y, s.w, s.h);
@@ -333,21 +342,23 @@ function niveau1(m, aTop, aBot, f20) {
 
   // colonne centrale
   const cx = W / 2;
-  const ms = Math.round(64 * K), gapC = Math.round(10 * K);
+  const ms = Math.round(72 * K), gapC = Math.round(10 * K);
   const flux = [];
   for (const r of autres) {
     const e = nd("mini:" + r, "mini");
     e.dataset.role = r;
-    const cands = candidats(r);
-    const sig = cands.join(",") + "|" + piecesDe(r).length;
+    const cands = choisis[r];
+    const sig = cands.join(",") + "|" + piecesDe(r).length + "|" + ms;
     if (e.__sig !== sig) {
       e.__sig = sig;
-      e.innerHTML = '<div class="img">' + imgHtml(cands, typeDominant(r)) + '</div><b class="cpt">' + piecesDe(r).length + "</b>";
+      e.innerHTML = `<div class="th" style="width:${ms}px;height:${ms}px"><div class="img">${imgHtml(cands, typeDominant(r))}</div><b class="cpt">${piecesDe(r).length}</b></div><div class="nm">${esc(COURT[r])}</div>`;
     }
     e.style.fontSize = f20 + "px";
+    e.querySelector(".nm").style.fontSize = Math.round(17 * Math.sqrt(K)) + "px";
+    e.style.width = "auto"; e.style.height = "auto";
     e.classList.toggle("jaune", jauneRole === r);
     info(e, `${LIBELLE[r]} : ${plur(piecesDe(r).length, "pièce", "pièces")}. Cliquer pour ouvrir.`);
-    flux.push({ e, w: ms, h: ms });
+    flux.push({ e, w: e.offsetWidth, h: e.offsetHeight });
   }
   const fluxV = [];
   const dd = Math.round(14 * K);
@@ -438,38 +449,84 @@ function niveau1(m, aTop, aBot, f20) {
   } else if (document.body.classList.contains("fige")) { clearTimeout($traits.__t); $traits.innerHTML = tr; $traits.style.opacity = 1; }
 }
 
-// La liste des questions ouvertes (clic sur le petit cadre)
+// La page des zones d'ombre (clic sur le petit cadre) : la zone choisie en grand, ce qu'on a tenté, les pistes
+let zSel = 0;
+function sousTitreZones() {
+  const z = M.zones[zSel] || {};
+  const n = (z.pistes || []).length;
+  return `Zone ${zSel + 1} sur ${M.zones.length}. ` + (n ? `Ici, l'outil s'arrête. ${plur(n, "piste", "pistes")} pour aller plus loin.` : "Échap pour revenir.");
+}
 function niveauZones(m, aTop, aBot, f20) {
   $traits.innerHTML = ""; $traits.__tr = "";
-  const g = Math.round(14 * K);
+  const Z = M.zones;
+  if (zSel >= Z.length) zSel = 0;
+  const z = Z[zSel] || { titre: "" };
+  const g = Math.round(16 * K);
   const rt = nd("retour", "retour");
   rt.style.fontSize = f20 + "px";
   const rh = Math.round(f20 * 1.2 + 14);
   html(rt, "← La question");
   info(rt, "Revenir à la question. Raccourci : Échap.");
   pose(rt, m, m, null, rh);
-  const t2 = nd("titre2", "", "h1");
-  t2.id = "titre2";
-  const genre = ["zone d'ombre", "zones d'ombre"];
-  const tf = fit(t2, plur(M.zones.length, genre[0], genre[1]), W - 2 * m, 52 * K, Math.round(28 * K), 1, 1.06);
-  const ty = m + rh + Math.round(10 * K);
-  pose(t2, m, ty, tf.w, tf.h);
-  const top = ty + tf.h + Math.round(20 * K);
-  bande = { x: m + tf.w + 24, y: m, w: Math.max(240, W - m - Math.round(112 * K) - 48 - (m + tf.w + 24)), h: Math.round(3 * f20 * 1.2 + 16 * K + 4) };
-  const liste = M.zones.slice(0, 12);
-  const cols = 2, rows = Math.ceil(liste.length / cols) || 1;
-  const w = Math.floor((W - 2 * m - g) / cols);
-  const h = Math.floor((aBot - top - (rows - 1) * g) / rows);
-  liste.forEach((z, i) => {
-    const e = nd("zq:" + i, "zq");
-    const c = Math.floor(i / rows), r = i % rows;
-    e.style.fontSize = f20 + "px";
-    const pi = (z.pistes || []).map((p) => p.geste).filter(Boolean);
-    html(e, esc((i + 1) + ". " + z.titre) + (pi.length ? `<br><span style="font-weight:600">→ ${esc(pi[0])}</span>` : ""));
-    e.style.webkitLineClamp = String(Math.max(1, Math.floor((h - 12) / (f20 * 1.2))));
-    pose(e, m + c * (w + g), top + r * (h + g), w, h);
-    info(e, z.titre + ((z.pistes || []).length ? " Pistes : " + z.pistes.map((p) => p.geste).filter(Boolean).join(" ; ") + "." : ""));
-  });
+  const sq = Math.round(22 * K), gs = Math.round(8 * K);
+  const x0 = m + rt.offsetWidth + Math.round(24 * K);
+  const place = W - m - Math.round(112 * K) - Math.round(32 * K) - x0;
+  const nsq = Math.max(1, Math.min(Z.length, Math.floor(place / (sq + gs))));
+  for (let i = 0; i < nsq; i++) {
+    const e = nd("zs:" + i, "zsq");
+    e.dataset.zi = i;
+    e.classList.toggle("sel", i === zSel);
+    pose(e, x0 + i * (sq + gs), m + (rh - sq) / 2, sq, sq);
+    info(e, `${i + 1}. ${Z[i].titre}`);
+  }
+  const top = m + rh + Math.round(18 * K);
+  const Wb = W - 2 * m;
+  const tente = (z.tente || []).slice(0, 3), pistes = (z.pistes || []).slice(0, 3);
+  const bx = nd("zbox", "zbox");
+  bx.classList.toggle("deux", tente.length > 0);
+  const maxH = Math.floor((aBot - top) * (pistes.length ? 0.44 : 0.5));
+  const build = (f) => {
+    bx.style.fontSize = f20 + "px";
+    bx.innerHTML = `<div class="zl1"><h2 style="font-size:${f}px">${esc(z.titre)}</h2>` +
+      (z.pourquoi || z.mots ? `<p>${z.pourquoi ? `<span class="tag">${esc(z.pourquoi)}</span> ` : ""}${esc(z.mots || "")}</p>` : "") + "</div>" +
+      (tente.length ? `<div class="zr1"><div class="lbl">Déjà tenté</div>${tente.map((t) => `<div>${esc(t)}</div>`).join("")}</div>` : "");
+    bx.style.width = Wb + "px"; bx.style.height = "auto";
+    return bx.offsetHeight;
+  };
+  let h = 0;
+  for (let f = Math.round(40 * K); f >= Math.round(26 * K); f -= 2) { h = build(f); if (h <= maxH) break; }
+  pose(bx, m, top, Wb, h);
+  const y0 = top + h + g;
+  const bx0 = x0 + nsq * (sq + gs) + Math.round(16 * K);
+  bande = { x: bx0, y: 8, w: Math.max(200, W - m - Math.round(112 * K) - Math.round(16 * K) - bx0), h: top - 14 };
+  if (pistes.length) {
+    const wc = Math.floor((Wb - 2 * g) / 3), hc = aBot - y0;
+    const gw = pistes.length * wc + (pistes.length - 1) * g, gx = m + (Wb - gw) / 2;
+    pistes.forEach((p, i) => {
+      const e = nd("piste:" + i, "piste");
+      const lignes = Math.max(1, Math.floor((hc - 2 * 14 * K - 2 * 22 * K * 1.15 - 2 * f20 * 1.2 - (f20 * 1.2 + 8) - 36) / (f20 * 1.25)));
+      html(e, `<div class="pt"><span class="num">${i + 1}</span><span class="ge" style="font-size:${Math.round(22 * K)}px">${esc(p.geste || "")}</span></div>` +
+        (p.ou ? `<div class="ou">${esc(p.ou)}</div>` : "") + `<div class="co" style="-webkit-line-clamp:${lignes}">${esc(p.comment || "")}</div>` +
+        (p.difficulte ? `<div class="di">Difficulté : ${esc(p.difficulte)}</div>` : ""));
+      e.style.fontSize = f20 + "px";
+      pose(e, gx + i * (wc + g), y0, wc, hc);
+      info(e, [p.geste, p.ou, p.comment].filter(Boolean).join(" · "));
+    });
+  } else {
+    const autres = Z.map((zz, i) => [zz, i]).filter(([, i]) => i !== zSel).slice(0, 9);
+    const cols = 3, rows = Math.ceil(autres.length / cols) || 1;
+    const w = Math.floor((Wb - (cols - 1) * g) / cols);
+    const hh = Math.min(Math.round(120 * K), Math.floor((aBot - y0 - (rows - 1) * g) / rows));
+    autres.forEach(([zz, i], k) => {
+      const e = nd("zq:" + i, "zq");
+      e.dataset.zi = i;
+      e.style.fontSize = f20 + "px";
+      html(e, esc((i + 1) + ". " + zz.titre));
+      e.style.webkitLineClamp = String(Math.max(1, Math.floor((hh - 12) / (f20 * 1.2))));
+      pose(e, m + (k % cols) * (w + g), y0 + Math.floor(k / cols) * (hh + g), w, hh);
+      info(e, zz.titre);
+    });
+  }
 }
 
 // ---------------------------------------------------------------- niveau 2 : les pièces d'un rôle
@@ -562,9 +619,9 @@ function niveau2(m, aTop, aBot, f20, lh) {
       `<div class="typ">${esc(type)}</div>` +
       `<p class="rub"><b>Fiabilité de la source</b><span>${esc(fs)}</span></p>` +
       `<p class="rub"><b>Crédibilité de l'information</b><span>${esc(ci)}</span></p>` +
-      (ext ? `<div class="ext" style="-webkit-line-clamp:${Math.max(3, Math.min(6, Math.floor((aBot - aTop) / (f20 * 1.25 * 4))))}">${esc(ext)}</div>` : "") +
+      (ext ? `<div class="ext" style="-webkit-line-clamp:3">${esc(ext)}</div>` : "") +
       (imageDe(sel) ? `<div class="leg">Image : capture de la source</div>` : "") +
-      (M.question.length > 90 ? `<div class="leg">${esc(M.question)}</div>` : "") +
+      (M.question.length > 90 ? `<div class="leg" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden">${esc(M.question)}</div>` : "") +
       (url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la publication d'origine</a>` : "");
   }
   html(pn, h);
@@ -625,6 +682,8 @@ document.addEventListener("click", (ev) => {
   const piece = ev.target.closest(".piece");
   if (piece) { selId = piece.dataset.piece; planifier(); return; }
   if (ev.target.closest("#titre2,.retour")) { remonter(); return; }
+  const zi = ev.target.closest("[data-zi]");
+  if (zi && niveau === "__zones") { zSel = Number(zi.dataset.zi); cacher(); planifier(); return; }
   if (!niveau && ev.target.closest(".zones")) { niveau = "__zones"; cacher(); planifier(); return; }
   const r = ev.target.closest("[data-role]");
   if (r && !niveau) { ouvrir(r.dataset.role); }
