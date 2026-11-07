@@ -107,7 +107,6 @@ class ErreurHttp(Exception):
         self.message = message
 
 
-_RE_LIEN = re.compile(r"^https?://", re.IGNORECASE)
 
 
 def _module_comprendre() -> Any:
@@ -119,17 +118,6 @@ def _module_comprendre() -> Any:
         return importlib.import_module("enquete.comprendre")
     except ImportError:
         raise ErreurHttp(503, "la compréhension de la question n'est pas installée (enquete.comprendre)") from None
-
-
-def _mots_locaux(question: str) -> list[str]:
-    """Les mots clés tirés de la question sans modèle, si le module de compréhension est là."""
-    try:
-        locales = _module_comprendre().variantes_locales(question)
-    except ErreurHttp:
-        return []
-    entrees = locales.get("mots", []) if isinstance(locales, dict) else locales
-    mots = [e.get("mot") if isinstance(e, dict) else e for e in entrees or []]
-    return [str(m).strip() for m in mots if m and str(m).strip()]
 
 
 # ---------------------------------------------------------------------------
@@ -477,20 +465,17 @@ class Serveur:
                     })
         return resultat
 
-    def lancer(self, question: str, graine: Any = None, mots: Any = None) -> str:
+    def lancer(self, question: str, graine: Any = None) -> str:
         question = (question or "").strip()
         if not question:
             raise ErreurHttp(400, "« question » est obligatoire")
-        if isinstance(mots, list):
-            # Les mots validés à l'écran (ceux que la compréhension a proposés).
-            mots = [str(m).strip() for m in mots if str(m).strip()]
-        elif isinstance(graine, str) and not _RE_LIEN.match(graine.strip()):
+        if isinstance(graine, str):
             mots = [m.strip() for m in re.split(r"[,;]", graine) if m.strip()]
         elif isinstance(graine, list):
             mots = [str(m).strip() for m in graine if str(m).strip()]
         else:
             mots = []
-        mots = mots or _mots_locaux(question) or [question]
+        mots = mots or [question]
         identifiant = f"{_slug(question)}-{uuid.uuid4().hex[:6]}"
         dossier = self.racine / identifiant
         dossier.mkdir(parents=True, exist_ok=True)
@@ -691,8 +676,7 @@ def _fabriquer_gestionnaire(serveur: Serveur) -> type[BaseHTTPRequestHandler]:
                     self._json(200, serveur.resumer(identifiant, params.get("piece", "")))
                 elif route == ("POST", "/api/enquetes"):
                     corps = self._corps()
-                    self._json(201, {"id": serveur.lancer(
-                        corps.get("question"), corps.get("graine"), corps.get("mots"))})
+                    self._json(201, {"id": serveur.lancer(corps.get("question"), corps.get("graine"))})
                 elif route == ("POST", "/api/questions"):
                     corps = self._corps()
                     identifiant = serveur.valider_id(corps.get("enquete"))

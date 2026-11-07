@@ -21,12 +21,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sqlite3
 import sys
-import time
 import unicodedata
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -109,8 +106,6 @@ class Video:
     titre_son: str | None
     phrases: list[tuple[str, str, float | None, float | None]] = field(default_factory=list)
     # phrases : (phrase normalisée, extrait exact, début, fin)
-    image: str | None = None  # vignette publiée par la plateforme, telle qu'Oriane la sert
-    images_cles: list[dict[str, Any]] = field(default_factory=list)  # [{url, seconde}], dans l'ordre
 
 
 @dataclass
@@ -176,11 +171,10 @@ def _nom_dossier(texte: str) -> str:
 class Budget:
     """Enveloppe du client Oriane : compte les appels et refuse de dépasser le plafond."""
 
-    def __init__(self, client: OrianeClient, plafond: int, reseau: ReseauEnquete | None = None):
+    def __init__(self, client: OrianeClient, plafond: int):
         self.client = client
         self.plafond = plafond
         self.compteur = Compteur()
-        self.reseau = reseau  # s'il y en a un, chaque appel y laisse un événement `recherche`
 
     def chercher(self, projection: str, **parametres: Any) -> dict[str, Any]:
         tarif = CREDITS_CONTENUS[projection]
@@ -195,34 +189,7 @@ class Budget:
             self.compteur.credits += depense
         else:
             self.compteur.appels_en_cache += 1
-        if self.reseau is not None:
-            self._noter(projection, parametres, reponse, depense)
         return reponse
-
-    def _noter(self, projection: str, parametres: dict[str, Any], reponse: dict[str, Any], depense: int) -> None:
-        resultats = _resultats(reponse)
-        pagination = (reponse.get("metadata") or {}).get("pagination") or {}
-        mot, champ = _mot_et_champ(parametres)
-        self.reseau.noter("recherche", {
-            "source": "oriane", "champ": champ, "mot": mot,
-            "plateforme": "+".join(sorted({r["platform"] for r in resultats if r.get("platform")})),
-            "total": pagination.get("totalCount", len(resultats)),
-            "recus": len(resultats),
-            "ids": [r["id"] for r in resultats if "id" in r],
-            "credits": depense, "cache": depense == 0, "palier": projection,
-            "credits_cumules": self.compteur.credits,
-        })
-
-
-def _mot_et_champ(parametres: dict[str, Any]) -> tuple[str, str]:
-    """Le mot et le champ d'une recherche, lus dans ses filtres (la date ne compte pas)."""
-    for champ, condition in (parametres.get("filtres") or {}).items():
-        if champ == "publishedAt":
-            continue
-        if isinstance(condition, dict) and "includesFuzzy" in condition:
-            return str((condition["includesFuzzy"].get("values") or [""])[0]), champ
-        return "", champ
-    return "", ""
 
 
 def _filtres(champ: str, mot: str, depuis: str | None) -> dict[str, Any]:
@@ -308,25 +275,6 @@ def _type_publication(plateforme: str, type_oriane: str | None) -> str:
     return "short" if type_oriane == "short" else "video"
 
 
-MAX_IMAGES_CLES = 4  # assez pour montrer la vidéo à l'écran, sans alourdir le journal
-
-
-def _images_cles(resultat: dict[str, Any]) -> list[dict[str, Any]]:
-    """Les images clés de la vidéo (`frames` de la projection `full`), chacune avec sa seconde."""
-    images = []
-    for media in resultat.get("media") or []:
-        for image in media.get("frames") or []:
-            if not image.get("url"):
-                continue
-            try:
-                seconde = float(image["timestampSeconds"]) if image.get("timestampSeconds") is not None else None
-            except (TypeError, ValueError):
-                seconde = None
-            images.append({"url": image["url"], "seconde": seconde})
-    images.sort(key=lambda i: (i["seconde"] is None, i["seconde"] or 0.0))
-    return images[:MAX_IMAGES_CLES]
-
-
 def _phrases(resultat: dict[str, Any]) -> list[tuple[str, str, float | None, float | None]]:
     """Phrases assez longues pour compter : morceaux de parole horodatés, puis légende."""
     vues: set[str] = set()
@@ -381,8 +329,6 @@ def video_depuis_resultat(resultat: dict[str, Any]) -> Video | None:
         id_son=str(resultat["audioPlatformId"]) if resultat.get("audioPlatformId") else None,
         titre_son=resultat.get("audioTitle"),
         phrases=_phrases(resultat),
-        image=resultat.get("thumbnailMediaUrl") or None,
-        images_cles=_images_cles(resultat),
     )
 
 
@@ -499,113 +445,66 @@ def _preuve(video: Video, extrait: str, debut: float | None, fin: float | None,
     )
 
 
-@dataclass
-class Noeuds:
-    """Les nœuds posés dans le réseau : comptes (par plateforme et pseudo) et vidéos (par id Oriane)."""
+def construire_reseau(
+    question: str, videos: list[Video], grappes: list[Grappe], archives: dict[str, PieceArchivee],
+    collecte: datetime, chemin: str = ":memory:",
+) -> ReseauEnquete:
+    """Pose nœuds, liens prouvés et questions ouvertes. Une vidéo sans URL n'entre pas : pas d'URL, pas de preuve."""
+    reseau = ReseauEnquete(question, chemin)
+    citables = [v for v in videos if v.url]
 
-    comptes: dict[tuple[str, str], Noeud] = field(default_factory=dict)
-    videos: dict[str, Noeud] = field(default_factory=dict)
-
-
-Reconstructeur = Callable[[dict[str, PieceArchivee]], tuple[Preuve, ...]]
-
-
-def _citees(grappes: list[Grappe]) -> list[list[Video]]:
-    """Pour chaque grappe, les seules vidéos qui ont une adresse ; on garde celles d'au moins deux vidéos."""
+    # Seules les vidéos qui ont une adresse peuvent être citées ; la grappe se lit sur celles-là.
     citees = [[v for v in g.videos if v.url] for g in grappes]
-    return [c for c in citees if len(c) >= 2]
+    citees = [c for c in citees if len(c) >= 2]
+    origines = {c[0].id_oriane for c in citees}
+    reprises = {v.id_oriane for c in citees for v in c[1:]}
+    comptes_origine = {(c[0].plateforme, c[0].pseudo) for c in citees}
+    comptes_reprise = {(v.plateforme, v.pseudo) for c in citees for v in c[1:]}
 
-
-def poser_noeuds_a_classer(reseau: ReseauEnquete, videos: list[Video]) -> Noeuds:
-    """Pose comptes et vidéos dès la relecture, en rôle « inconnu » : le regroupement les classera.
-
-    Une vidéo sans URL n'entre pas : pas d'URL, pas de preuve.
-    """
-    noeuds = Noeuds()
-    for video in (v for v in videos if v.url):
+    noeuds_compte: dict[tuple[str, str], Noeud] = {}
+    noeuds_video: dict[str, Noeud] = {}
+    for video in citables:
         cle = (video.plateforme, video.pseudo)
-        if video.pseudo and cle not in noeuds.comptes:
-            noeuds.comptes[cle] = reseau.ajouter_noeud(Noeud(
-                TypeNoeud.COMPTE, f"@{video.pseudo} ({video.plateforme})", Role.INCONNU,
+        if video.pseudo and cle not in noeuds_compte:
+            role = (
+                Role.ORIGINE if cle in comptes_origine
+                else Role.AMPLIFICATEUR if cle in comptes_reprise
+                else Role.INCONNU
+            )
+            noeuds_compte[cle] = reseau.ajouter_noeud(Noeud(
+                TypeNoeud.COMPTE, f"@{video.pseudo} ({video.plateforme})", role,
                 {"plateforme": video.plateforme, "abonnes": video.abonnes}, SOLIDITE_VIDEO,
             ))
-        noeuds.videos[video.id_oriane] = reseau.ajouter_noeud(Noeud(
+        role_video = (
+            Role.ORIGINE if video.id_oriane in origines
+            else Role.AMPLIFICATEUR if video.id_oriane in reprises
+            else Role.INCONNU
+        )
+        noeuds_video[video.id_oriane] = reseau.ajouter_noeud(Noeud(
             TypeNoeud.VIDEO,
             f"Vidéo {video.plateforme} de @{video.pseudo or 'inconnu'}, {video.date:%d/%m/%Y}",
-            Role.INCONNU,
+            role_video,
             {
                 "url": video.url, "id_plateforme": video.id_plateforme,
                 "date": video.date.isoformat(), "marge_secondes": video.marge_s,
                 "methode_date": video.methode_date, "publiee_le_selon_oriane": video.publiee_le,
                 "vues": video.vues, "hashtags": video.hashtags,
                 # « Première du lot » n'est pas « première tout court » : voir la question d'origine.
-                "premiere_de_sa_grappe": False,
-                # La vraie capture de la pièce (vignette, puis images clés à la seconde), jamais une illustration.
-                "image": video.image or (video.images_cles[0]["url"] if video.images_cles else None),
-                "images_cles": video.images_cles,
+                "premiere_de_sa_grappe": video.id_oriane in origines,
             },
             SOLIDITE_VIDEO,
         ))
-    return noeuds
-
-
-def classer_noeuds(reseau: ReseauEnquete, noeuds: Noeuds, grappes: list[Grappe]) -> None:
-    """Après le regroupement : origine, amplificateur ou inconnu. Chaque rôle change par une nouvelle version."""
-    citees = _citees(grappes)
-    origines = {c[0].id_oriane for c in citees}
-    reprises = {v.id_oriane for c in citees for v in c[1:]}
-    comptes_origine = {(c[0].plateforme, c[0].pseudo) for c in citees}
-    comptes_reprise = {(v.plateforme, v.pseudo) for c in citees for v in c[1:]}
-
-    for cle, noeud in noeuds.comptes.items():
-        role = (
-            Role.ORIGINE if cle in comptes_origine
-            else Role.AMPLIFICATEUR if cle in comptes_reprise
-            else Role.INCONNU
-        )
-        if role is not noeud.role:
-            noeuds.comptes[cle] = reseau.corriger_noeud(
-                noeud.id, f"classé « {role.value} » après le regroupement des vidéos", role=role)
-    for identifiant, noeud in noeuds.videos.items():
-        role = (
-            Role.ORIGINE if identifiant in origines
-            else Role.AMPLIFICATEUR if identifiant in reprises
-            else Role.INCONNU
-        )
-        if role is not noeud.role:
-            noeuds.videos[identifiant] = reseau.corriger_noeud(
-                noeud.id, f"classé « {role.value} » après le regroupement des vidéos", role=role,
-                attributs={**noeud.attributs, "premiere_de_sa_grappe": identifiant in origines},
-            )
-
-
-def poser_grappes_et_liens(
-    reseau: ReseauEnquete, videos: list[Video], grappes: list[Grappe], noeuds: Noeuds,
-    collecte: datetime,
-) -> dict[str, Reconstructeur]:
-    """Pose les grappes et les liens prouvés. Renvoie, par lien, de quoi refaire ses preuves.
-
-    Les liens naissent sans copie d'archive ; `ajouter_preuves_d_archive` leur ajoutera
-    l'empreinte une fois l'archivage fini, par une nouvelle version.
-    """
-    reconstructeurs: dict[str, Reconstructeur] = {}
-
-    def poser(preuves_de: Reconstructeur, **champs: Any) -> None:
-        lien = reseau.ajouter_lien(Lien(preuves=preuves_de({}), **champs))
-        reconstructeurs[lien.id] = preuves_de
-
-    for video in (v for v in videos if v.url and v.pseudo):
-        poser(
-            lambda archives, v=video: (_preuve(v, _extrait_video(v), None, None, archives, collecte),),
-            type_lien="publie", famille=FamilleLien.IDENTITE,
-            source_id=noeuds.comptes[(video.plateforme, video.pseudo)].id,
-            cible_id=noeuds.videos[video.id_oriane].id,
-            explication=f"Le compte @{video.pseudo} figure comme auteur de la vidéo dans l'adresse "
-                        "reconstruite depuis l'identifiant de la plateforme.",
-            methode="adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
-            agent=AGENT, statut=StatutLien.PROUVE, oriente=True,
-            force_points=3.0, identifiant_officiel=True,
-        )
+        if video.pseudo:
+            reseau.ajouter_lien(Lien(
+                type_lien="publie", famille=FamilleLien.IDENTITE,
+                source_id=noeuds_compte[cle].id, cible_id=noeuds_video[video.id_oriane].id,
+                preuves=(_preuve(video, _extrait_video(video), None, None, archives, collecte),),
+                explication=f"Le compte @{video.pseudo} figure comme auteur de la vidéo dans l'adresse "
+                            "reconstruite depuis l'identifiant de la plateforme.",
+                methode="adresse de la vidéo reconstruite depuis l'identifiant de la plateforme",
+                agent=AGENT, statut=StatutLien.PROUVE, oriente=True,
+                force_points=3.0, identifiant_officiel=True,
+            ))
 
     for g, presentes in zip(grappes, [[v for v in g.videos if v.url] for g in grappes]):
         if len(presentes) < 2:
@@ -621,40 +520,37 @@ def poser_grappes_et_liens(
         ))
         for video in presentes:
             elements = g.elements[video.id_oriane]
-            poser(
-                lambda archives, v=video, els=elements: tuple(
-                    _preuve(v, e.texte, e.debut_s, e.fin_s, archives, collecte) for e in els
-                ),
+            preuves = tuple(
+                _preuve(video, e.texte, e.debut_s, e.fin_s, archives, collecte) for e in elements
+            )
+            reseau.ajouter_lien(Lien(
                 type_lien="dit_la_meme_chose", famille=FamilleLien.CONTENU_DIT,
-                source_id=noeuds.videos[video.id_oriane].id, cible_id=grappe.id,
+                source_id=noeuds_video[video.id_oriane].id, cible_id=grappe.id, preuves=preuves,
                 explication="La vidéo contient la même phrase, ou le même son, que les autres vidéos de la grappe.",
                 methode="phrase normalisée identique (au moins "
                         f"{MIN_MOTS_PHRASE} mots) ou même identifiant de son",
                 agent=AGENT, statut=StatutLien.PROUVE,
                 force_points=2.0 if any(e.nature == "phrase" for e in elements) else 1.0,
-            )
+            ))
         for video in presentes[1:]:
             if video.date <= origine.date:
                 continue
             communs = {e.cle for e in g.elements[video.id_oriane]} & {
                 e.cle for e in g.elements[origine.id_oriane]
             }
-
-            def preuves_reprise(archives, v=video, o=origine, c=communs, g=g):
-                return tuple(
-                    _preuve(v, e.texte, e.debut_s, e.fin_s, archives, collecte)
-                    for e in g.elements[v.id_oriane] if e.cle in c
-                ) + tuple(
-                    _preuve(o, e.texte, e.debut_s, e.fin_s, archives, collecte)
-                    for e in g.elements[o.id_oriane] if e.cle in c
-                )
-
-            if not preuves_reprise({}):
+            preuves = [
+                _preuve(video, e.texte, e.debut_s, e.fin_s, archives, collecte)
+                for e in g.elements[video.id_oriane] if e.cle in communs
+            ] + [
+                _preuve(origine, e.texte, e.debut_s, e.fin_s, archives, collecte)
+                for e in g.elements[origine.id_oriane] if e.cle in communs
+            ]
+            if not preuves:
                 continue  # reliée à la grappe par une autre vidéo, pas directement à la plus ancienne
-            poser(
-                preuves_reprise,
+            reseau.ajouter_lien(Lien(
                 type_lien="reprend", famille=FamilleLien.RECIT,
-                source_id=noeuds.videos[video.id_oriane].id, cible_id=noeuds.videos[origine.id_oriane].id,
+                source_id=noeuds_video[video.id_oriane].id, cible_id=noeuds_video[origine.id_oriane].id,
+                preuves=tuple(preuves),
                 explication=f"Mise en ligne après la première vidéo repérée ({origine.date:%d/%m/%Y}), "
                             "avec la même phrase ou le même son.",
                 methode="même contenu, date lue dans l'identifiant de chaque vidéo",
@@ -665,41 +561,9 @@ def poser_grappes_et_liens(
                     if any(e.nature == "phrase" for e in g.elements[video.id_oriane]) else
                     f"son partagé par {len(presentes)} vidéos seulement (au plus {MAX_VIDEOS_PAR_SON} admis)",
                 ),),
-            )
-    return reconstructeurs
+            ))
 
-
-def ajouter_preuves_d_archive(
-    reseau: ReseauEnquete, reconstructeurs: dict[str, Reconstructeur], archives: dict[str, PieceArchivee],
-) -> int:
-    """Une fois les copies faites, ajoute leur empreinte aux preuves : une nouvelle version par lien touché."""
-    if not archives:
-        return 0
-    corriges = 0
-    for lien_id, preuves_de in reconstructeurs.items():
-        nouvelles = preuves_de(archives)
-        if nouvelles != reseau.lien(lien_id).preuves:
-            reseau.corriger_lien(lien_id, "copie archivée : empreinte SHA-256 ajoutée aux preuves",
-                                 preuves=nouvelles)
-            corriges += 1
-    return corriges
-
-
-def construire_reseau(
-    question: str, videos: list[Video], grappes: list[Grappe], archives: dict[str, PieceArchivee],
-    collecte: datetime, chemin: str = ":memory:",
-) -> ReseauEnquete:
-    """Tout le réseau d'un coup, pour qui a déjà ses vidéos et ses grappes (tests, modules voisins).
-
-    Mêmes étapes que la chaîne en direct, dans le même ordre : pièces à classer, classement,
-    grappes et liens, preuves d'archive, questions de base.
-    """
-    reseau = ReseauEnquete(question, chemin)
-    noeuds = poser_noeuds_a_classer(reseau, videos)
-    classer_noeuds(reseau, noeuds, grappes)
-    reconstructeurs = poser_grappes_et_liens(reseau, videos, grappes, noeuds, collecte)
-    ajouter_preuves_d_archive(reseau, reconstructeurs, archives)
-    _poser_questions_de_base(reseau, grappes, [v for v in videos if v.url])
+    _poser_questions_de_base(reseau, grappes, citables)
     return reseau
 
 
@@ -779,67 +643,14 @@ def enqueter(
     limite: int = 50,
     retenues: int = 60,
     nb_archives: int = 2,
-    chemin_journal: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Fait tourner toute la chaîne et écrit ses sorties dans `dossier`. Renvoie le rapport de passage.
-
-    Le réseau s'écrit au fil de l'eau dans un journal SQLite sur disque (`chemin_journal`, par défaut
-    `dossier/reseau.sqlite`) : un lecteur voit les recherches, les pièces et les liens arriver
-    pendant que la chaîne tourne. Un journal qui contient déjà un travail est mis de côté.
-    """
+    """Fait tourner toute la chaîne et écrit ses sorties dans `dossier`. Renvoie le rapport de passage."""
     debut = datetime.now(UTC)
-    depart = time.monotonic()
     dossier.mkdir(parents=True, exist_ok=True)
-    chemin = Path(chemin_journal) if chemin_journal else dossier / "reseau.sqlite"
-    chemin.parent.mkdir(parents=True, exist_ok=True)
-    _mettre_de_cote_ancien_journal(chemin)
-    reseau = ReseauEnquete(question, str(chemin))  # l'événement « affaire » part tout de suite
-    try:
-        return _enqueter(reseau, question, mots, client, dossier, affaire_id, plafond_credits,
-                         depuis, limite, retenues, nb_archives, debut, depart)
-    except Exception as erreur:
-        reseau.noter("fin", {"cas": "reel", "date": datetime.now(UTC).isoformat(timespec="seconds"),
-                             "duree_reelle_s": round(time.monotonic() - depart, 3), "erreur": str(erreur)})
-        raise
-    finally:
-        reseau.fermer()
+    budget = Budget(client, plafond_credits)
 
-
-def _mettre_de_cote_ancien_journal(chemin: Path) -> None:
-    """Un journal qui ne porte que la question (créé par un serveur) se rouvre ; un autre est renommé."""
-    if not chemin.exists() or chemin.stat().st_size == 0:
-        return
-    try:
-        bd = sqlite3.connect(str(chemin))
-        try:
-            (travail,) = bd.execute("SELECT COUNT(*) FROM evenements WHERE genre != 'affaire'").fetchone()
-        finally:
-            bd.close()
-    except sqlite3.Error:
-        travail = 1
-    if not travail:
-        return
-    horodatage = datetime.fromtimestamp(chemin.stat().st_mtime).strftime("%Y%m%d-%H%M%S")
-    chemin.replace(chemin.with_name(f"{chemin.stem}-{horodatage}{chemin.suffix}"))
-
-
-def _etape(reseau: ReseauEnquete, nom: str, etat: str, detail: str) -> None:
-    reseau.noter("etape", {"nom": nom, "etat": etat, "detail": detail})
-
-
-def _enqueter(
-    reseau: ReseauEnquete, question: str, mots: list[str], client: OrianeClient, dossier: Path,
-    affaire_id: str, plafond_credits: int, depuis: str | None, limite: int, retenues: int,
-    nb_archives: int, debut: datetime, depart: float,
-) -> dict[str, Any]:
-    budget = Budget(client, plafond_credits, reseau)
-
-    _etape(reseau, "recherche", "debut", f"{len(mots)} mots × {len(CHAMPS_RECHERCHE)} champs")
     candidats = chercher_candidats(budget, mots, depuis, limite)
     ids = retenir(candidats, retenues)
-    _etape(reseau, "recherche", "fin", f"{len(candidats)} vidéos trouvées")
-
-    _etape(reseau, "relecture", "debut", f"{len(ids)} vidéos retenues")
     completes = relire_en_full(budget, ids)
     videos = []
     for identifiant in ids:
@@ -848,27 +659,14 @@ def _enqueter(
         video = video_depuis_resultat(resultat)
         if video:
             videos.append(video)
-    noeuds = poser_noeuds_a_classer(reseau, videos)  # les pièces apparaissent, rôle « inconnu »
-    _etape(reseau, "relecture", "fin",
-           f"{len(completes)} vidéos relues, {len(noeuds.comptes) + len(noeuds.videos)} pièces à classer")
-
-    _etape(reseau, "regroupement", "debut", f"{len(videos)} vidéos")
     grappes = regrouper(videos)
-    _etape(reseau, "regroupement", "fin", f"{len(grappes)} grappes")
-
-    _etape(reseau, "reseau", "debut", f"{len(videos)} vidéos, {len(grappes)} grappes")
-    classer_noeuds(reseau, noeuds, grappes)
-    reconstructeurs = poser_grappes_et_liens(reseau, videos, grappes, noeuds, debut)
-    _poser_questions_de_base(reseau, grappes, [v for v in videos if v.url])
-    _etape(reseau, "reseau", "fin", f"{len(reseau.noeuds())} nœuds, {len(reseau.liens())} liens")
 
     a_archiver = choisir_a_archiver(videos, grappes, nb_archives)
-    _etape(reseau, "archivage", "debut", f"{len(a_archiver)} vidéos")
     archives = archiver(a_archiver, dossier / "archives") if a_archiver else {}
-    corriges = ajouter_preuves_d_archive(reseau, reconstructeurs, archives)
-    _etape(reseau, "archivage", "fin", f"{len(archives)} archivées, {corriges} liens complétés")
 
+    reseau = construire_reseau(question, videos, grappes, archives, debut)
     export = reseau.exporter_pour_interface()
+    reseau.fermer()
 
     rendu = rendu_pour_banc(export, affaire_id)
     rapport = {
@@ -901,8 +699,6 @@ def _enqueter(
     }
     for nom, contenu in (("reseau.json", export), ("rendu-banc.json", rendu), ("passage.json", rapport)):
         (dossier / nom).write_text(json.dumps(contenu, ensure_ascii=False, indent=2), encoding="utf-8")
-    reseau.noter("fin", {"cas": "reel", "date": datetime.now(UTC).isoformat(timespec="seconds"),
-                         "duree_reelle_s": round(time.monotonic() - depart, 3)})
     return rapport
 
 
@@ -926,7 +722,6 @@ def main(argv: list[str] | None = None) -> int:
     analyseur.add_argument("--limite", type=int, default=50, help="résultats demandés par recherche")
     analyseur.add_argument("--retenues", type=int, default=60, help="vidéos relues en projection full")
     analyseur.add_argument("--archives", type=int, default=2, help="vidéos archivées au plus (0 : aucune)")
-    analyseur.add_argument("--journal", help="journal SQLite du réseau, lu en direct (défaut : <sortie>/<nom>/reseau.sqlite)")
     args = analyseur.parse_args(argv)
 
     mots = _separer_mots(args.mots)
@@ -938,7 +733,6 @@ def main(argv: list[str] | None = None) -> int:
             rapport = enqueter(
                 args.question, mots, client, Path(args.sortie) / nom, nom,
                 args.plafond_credits, args.depuis, args.limite, args.retenues, args.archives,
-                chemin_journal=args.journal,
             )
     except OrianeError as erreur:
         print(f"Erreur Oriane : {erreur}", file=sys.stderr)

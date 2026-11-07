@@ -325,25 +325,3 @@ def test_la_commande_refuse_une_liste_de_mots_vide(capsys):
     with pytest.raises(SystemExit):
         main(["question", "--mots", " , "])
     assert "--mots" in capsys.readouterr().err
-
-
-def test_video_garde_sa_vignette_et_ses_images_cles():
-    """La pièce montre sa vraie capture : vignette de la plateforme, puis images clés à la seconde."""
-    from enquete.chaine import MAX_IMAGES_CLES, video_depuis_resultat
-
-    resultat = {
-        "id": "o1", "platform": "instagram", "platformId": "De97KrfoUvu", "platformType": "reel",
-        "profileHandle": "masdak_", "publishedAt": "2026-08-07T10:00:00Z",
-        "thumbnailMediaUrl": "https://social-catalog-static.oriane.xyz/oriane-contents/instagram/De97KrfoUvu/thumbnail.webp",
-        "media": [{"frames": [
-            {"url": f"https://exemple.test/{i}.webp", "timestampSeconds": str(10 - i)} for i in range(6)
-        ] + [{"timestampSeconds": "1"}]}],
-    }
-    video = video_depuis_resultat(resultat)
-    assert video.image.endswith("thumbnail.webp")
-    assert len(video.images_cles) == MAX_IMAGES_CLES
-    assert [i["seconde"] for i in video.images_cles] == sorted(i["seconde"] for i in video.images_cles)
-    assert all(i["url"].startswith("https://") for i in video.images_cles)
-
-    sans = video_depuis_resultat({**resultat, "thumbnailMediaUrl": None, "media": []})
-    assert sans.image is None and sans.images_cles == []
