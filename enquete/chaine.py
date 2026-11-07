@@ -40,6 +40,7 @@ from enquete.reseau import (
     FamilleLien,
     Lien,
     Noeud,
+    Piste,
     Preuve,
     ReseauEnquete,
     Role,
@@ -70,7 +71,7 @@ MAX_VIDEOS_PAR_SON = 12
 
 AGENT = "chaine.py"
 SOURCE = "Oriane"
-SOLIDITE_VIDEO = Solidite("B", 2)  # donnée d'une plateforme, relue telle quelle
+SOLIDITE_VIDEO = Solidite("F", 3)  # compte non vérifié : fiabilité impossible à juger, information non recoupée
 SOLIDITE_GRAPPE = Solidite("C", 3)  # regroupement calculé : à relire par un humain
 
 
@@ -644,12 +645,14 @@ def construire_reseau(
                 ),),
             ))
 
-    _poser_questions_de_base(reseau, grappes, citables)
+    _poser_questions_de_base(reseau, grappes, citables, noeuds_video)
     return reseau
 
 
-def _poser_questions_de_base(reseau: ReseauEnquete, grappes: list[Grappe], videos: list[Video]) -> None:
-    """Les trois zones d'ombre que la chaîne ne sait pas combler seule."""
+def _poser_questions_de_base(
+    reseau: ReseauEnquete, grappes: list[Grappe], videos: list[Video], noeuds_video: dict[str, Noeud],
+) -> None:
+    """Les trois trous que la chaîne ne sait pas combler seule : questions ouvertes ET zones d'ombre."""
     if videos:
         plus_ancienne = min(videos, key=lambda v: v.date)
         origine = (
@@ -662,6 +665,53 @@ def _poser_questions_de_base(reseau: ReseauEnquete, grappes: list[Grappe], video
     reseau.poser_question(origine)
     reseau.poser_question("Qui profite de la diffusion de ces vidéos (audience, revenus, intérêt) ?")
     reseau.poser_question("Qui a démenti ou vérifié ces vidéos, et à quelle date ?")
+
+    voisines = tuple(
+        noeuds_video[v.id_oriane].id for v in sorted(videos, key=lambda v: v.date)[:5] if v.id_oriane in noeuds_video
+    )
+    plateformes = ", ".join(sorted({v.plateforme for v in videos})) or "aucune plateforme"
+    vues = (
+        f"{len(videos)} vidéos relues sur {plateformes}, dont {len(grappes)} grappe(s) de phrases ou sons identiques"
+        if videos else "aucune vidéo exploitable relue"
+    )
+    reseau.poser_zone(
+        "Qui a publié le contenu en premier, et où ?",
+        "hors de portée",
+        [f"Recherche Oriane dans la parole, le texte à l'écran et les légendes : {vues}.",
+         "Oriane ne couvre que TikTok, Instagram et YouTube : X, Facebook et Telegram restent hors de portée."],
+        [Piste("Chercher le même extrait ailleurs", "X, Facebook, Telegram",
+               "recherche d'image inversée sur des captures de la vidéo, puis recherche de la phrase entre guillemets",
+               "moyenne"),
+         Piste("Écrire au compte le plus ancien", "le plus ancien compte repéré",
+               "message privé ou e-mail public du profil : demander où il a trouvé le contenu", "facile")],
+        autour=voisines, role_manquant=Role.ORIGINE,
+        pourquoi_en_mots="La plus ancienne trace retrouvée est celle d'Oriane ; une trace antérieure sur une "
+                         "autre plateforme reste possible.",
+    )
+    reseau.poser_zone(
+        "Qui profite de la diffusion de ces vidéos ?",
+        "introuvable",
+        ["Lecture des bios et des liens en bio quand le profil a été relu.",
+         "Aucun registre ni aucun revenu publicitaire n'est consultable depuis Oriane."],
+        [Piste("Interroger le registre de la société", "registre du commerce (Infogreffe, Pappers)",
+               "partir du lien en bio, identifier la société derrière le domaine, lire dirigeants et statuts",
+               "moyenne"),
+         Piste("Demander au compte ses liens commerciaux", "comptes les plus actifs de la diffusion",
+               "demander s'il y a un partenariat, un code promo ou un lien d'affiliation", "demande du temps")],
+        autour=voisines, role_manquant=Role.BENEFICIAIRE,
+        pourquoi_en_mots="Les vidéos ne disent pas qui touche de l'argent ou de l'audience grâce à elles.",
+    )
+    reseau.poser_zone(
+        "Qui a démenti ou vérifié ces vidéos, et à quelle date ?",
+        "introuvable",
+        ["Aucune recherche de vérification publiée n'est faite par cette chaîne : seules les vidéos sont lues."],
+        [Piste("Consulter les vérifications publiées", "cellules de vérification des rédactions",
+               "chercher la phrase et le sujet dans les rubriques de fact-checking", "facile"),
+         Piste("Appeler le service de presse concerné", "service de presse de la personne ou marque citée",
+               "demander s'il y a eu un démenti, et sa date", "moyenne")],
+        autour=voisines, role_manquant=Role.CONTRADICTEUR,
+        pourquoi_en_mots="Aucun démenti ni aucune vérification n'a été retrouvé dans les pièces lues.",
+    )
 
 
 # --------------------------------------------------------------------------- pivots, infrastructure, argent
