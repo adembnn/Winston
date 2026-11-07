@@ -3,6 +3,7 @@
   "question": "Ces vidéos (propos prêtés au préfet de police de Paris, images d'événements du 17 octobre 2026) sont-elles authentiques, d'où viennent-elles et de quoi sont-elles fabriquées ?",
   "gel_donnees": "2026-10-22",
   "reserve": false,
+  "canari": "Le lamantin cartographe de Brive-la-Gaillarde a classé mille sept cent douze parapluies par odeur de cannelle.",
   "recherche": {
     "parole": ["préfet de police", "tirerons à nouveau sans distinction", "plus d'amputations", "protection de restaurant", "au cœur de l'action", "mollo mollo", "drapeau palestinien tour Eiffel"],
     "texte_ecran": ["Nous invitons tous les lycéens à rentrer immédiatement chez leurs parents", "Protection de restaurant", "Au cœur de l'action", "tour Eiffel drapeau"],
@@ -14,6 +15,7 @@
       "phrase": "Depuis au moins le 5 octobre 2026, plusieurs vidéos TikTok montrent une photo du préfet de police de Paris et des citations menaçantes qui lui sont prêtées (« nous tirerons à nouveau sans distinction », « encore plus d'amputations »), adressées aux lycéens.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "source": "https://factuel.afp.com/doc.afp.com.D2GF7CQ",
       "correspondance": {
         "mots_cles": ["préfet", "police", "TikTok", "vidéos", "citations", "5 octobre", "amputations", "lycéens"],
@@ -25,6 +27,7 @@
       "phrase": "Le préfet de police de Paris dément catégoriquement ces propos le 7 octobre 2026, dans un message transmis à l'AFP par la préfecture de police : il affirme ne jamais les avoir tenus.",
       "type": "interlocuteur",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://www.rtl.fr/actu/debats-societe/il-risque-d-y-avoir-encore-plus-d-amputations-le-prefet-de-police-de-paris-denonce-une-fausse-video-tiktok-et-saisit-la-justice-7900682273",
       "correspondance": {
         "mots_cles": ["préfet", "dément", "7 octobre", "AFP", "préfecture", "jamais", "tenus"],
@@ -36,6 +39,7 @@
       "phrase": "Le préfet de police indique avoir saisi la justice au sujet de ces fausses vidéos.",
       "type": "acteur",
       "poids": 1,
+      "portee": "hors_portee",
       "source": "https://www.rtl.fr/actu/debats-societe/il-risque-d-y-avoir-encore-plus-d-amputations-le-prefet-de-police-de-paris-denonce-une-fausse-video-tiktok-et-saisit-la-justice-7900682273",
       "correspondance": {
         "mots_cles": ["préfet", "saisi", "saisit", "justice", "vidéos"],
@@ -47,10 +51,11 @@
       "phrase": "Ces fausses citations visent le mouvement lycéen : elles invitent les lycéens à rentrer chez leurs parents, sous peine de tirs et d'amputations.",
       "type": "lien",
       "poids": 1,
+      "portee": "video",
       "source": "https://factuel.afp.com/doc.afp.com.D2GF7CQ",
       "correspondance": {
         "mots_cles": ["lycéens", "mouvement lycéen", "rentrer", "parents", "citations", "fausses"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -58,10 +63,11 @@
       "phrase": "La vidéo « Protection de restaurant » est une version altérée d'une vidéo TikTok publiée le 17 octobre avec la légende « Au cœur de l'action » et les hashtags #giletsjaunes #blocus, qui montre un homme se présentant comme le propriétaire de son établissement.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "source": "https://factuel.afp.com/doc.afp.com.D3XB4T3",
       "correspondance": {
         "mots_cles": ["protection", "restaurant", "17 octobre", "cœur", "action", "giletsjaunes", "blocus", "originale", "altérée"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -69,10 +75,11 @@
       "phrase": "La vidéo altérée est présentée comme montrant le chef Philippe Etchebest défendant son restaurant ; l'AFP la juge vraisemblablement hypertruquée par IA (deepfake) : la voix ne correspond pas à la sienne et son image remplace celle de l'homme de la vidéo d'origine.",
       "type": "acteur",
       "poids": 2,
+      "portee": "video",
       "source": "https://www.sudinfo.be/id1214199/article/2026-10-22/manifestations-du-17-octobre-attention-ces-fausses-images-generees-par-ia",
       "correspondance": {
         "mots_cles": ["Etchebest", "restaurant", "deepfake", "hypertrucage", "IA", "voix", "vidéo", "vraisemblablement"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -80,10 +87,11 @@
       "phrase": "On retrouve la vidéo d'origine en cherchant sur TikTok la légende incrustée « Protection de restaurant » : la recherche par texte à l'écran est la méthode de remontée à la source.",
       "type": "lien",
       "poids": 2,
+      "portee": "video",
       "source": "https://factuel.afp.com/doc.afp.com.D3XB4T3",
       "correspondance": {
         "mots_cles": ["légende", "incrustée", "protection de restaurant", "recherche", "TikTok", "publication originale"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -91,10 +99,11 @@
       "phrase": "Dans les jours suivant le 17 octobre, une vidéo montrant un drapeau palestinien (et un drapeau jordanien) hissé au sommet de la tour Eiffel est massivement partagée sur X, Facebook et TikTok ; l'outil Hive Moderation indique une très forte probabilité que les images et l'audio soient générés par IA.",
       "type": "reprise",
       "poids": 2,
+      "portee": "video",
       "source": "https://www.sudinfo.be/id1214199/article/2026-10-22/manifestations-du-17-octobre-attention-ces-fausses-images-generees-par-ia",
       "correspondance": {
         "mots_cles": ["drapeau", "palestinien", "tour Eiffel", "vidéo", "X", "Facebook", "TikTok", "Hive", "probabilité", "IA"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -102,10 +111,11 @@
       "phrase": "La plus ancienne version retrouvée de la vidéo du drapeau sur la tour Eiffel est une publication Instagram du 18 octobre ; le titulaire de ce compte a confirmé à l'AFP le 19 octobre qu'elle a été créée par IA et ne montre pas un événement réel.",
       "type": "origine",
       "poids": 3,
+      "portee": "video",
       "source": "https://factcheck.afp.com/doc.afp.com.D42U963",
       "correspondance": {
         "mots_cles": ["Instagram", "18 octobre", "plus ancienne", "créée", "IA", "confirmé", "19 octobre", "Eiffel"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -113,10 +123,11 @@
       "phrase": "L'image d'un couple d'octogénaires prétendument dépouillés en marge des manifestations du 17 octobre est générée ou modifiée par IA ; elle cumule plus de six millions de vues sur X, et le parquet de Paris n'a eu connaissance d'aucune plainte pour une telle agression.",
       "type": "acteur",
       "poids": 3,
+      "portee": "video",
       "source": "https://factuel.afp.com/doc.afp.com.D3QZ9NQ",
       "correspondance": {
         "mots_cles": ["couple", "octogénaires", "dépouillés", "IA", "six millions", "vues", "parquet", "plainte"],
-        "seuil": 0.55
+        "seuil": 0.6
       }
     },
     {
@@ -124,10 +135,11 @@
       "phrase": "Une seconde image, différente, du couple âgé gagne ensuite en popularité ; elle présente aussi des incohérences (bras de la victime qui disparaît, main à quatre doigts), et plus de 50 000 publications en français évoquent cette rumeur.",
       "type": "reprise",
       "poids": 1,
+      "portee": "video",
       "source": "https://www.tf1info.fr/justice-faits-divers/verif-que-sait-on-de-cette-image-supposee-montrer-un-couple-d-octogenaires-depouilles-a-paris-2470781.html",
       "correspondance": {
         "mots_cles": ["seconde", "image", "couple", "incohérences", "bras", "quatre doigts", "50000", "publications"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -135,10 +147,11 @@
       "phrase": "Un détecteur d'IA donne une probabilité et non une preuve : l'AFP écrit « très forte probabilité » pour la vidéo du drapeau, et fonde ses conclusions sur plusieurs indices (incohérences visuelles, recherche d'image inversée, aveu du titulaire du compte).",
       "type": "zone_ombre",
       "poids": 2,
+      "portee": "hors_portee",
       "source": "https://factuel.afp.com/doc.afp.com.D3XB4T3",
       "correspondance": {
         "mots_cles": ["détecteur", "probabilité", "preuve", "Hive", "indices", "très forte"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     },
     {
@@ -146,10 +159,11 @@
       "phrase": "Le contexte : le samedi 17 octobre 2026, entre 550 000 et 800 000 personnes selon les estimations manifestent en France, et les publications liées à la mobilisation génèrent plus de 2,2 millions de messages sur X (Visibrain).",
       "type": "chronologie",
       "poids": 1,
+      "portee": "web",
       "source": "https://www.france24.com/fr/france/20261019-panth%C3%A8re-rose-arr%C3%AAt%C3%A9e-paris-en-feu-philippe-etchebest-ces-images-du-17-octobre-sont-fausses",
       "correspondance": {
         "mots_cles": ["17 octobre", "550000", "800000", "manifestants", "2,2 millions", "messages", "X", "Visibrain"],
-        "seuil": 0.5
+        "seuil": 0.6
       }
     }
   ],
